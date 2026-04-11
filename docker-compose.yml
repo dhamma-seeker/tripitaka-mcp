@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  db:
+    image: ankane/pgvector:latest # Postgres ที่ลง pgvector มาให้แล้ว
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: tripitaka_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data

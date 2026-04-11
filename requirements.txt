@@ -1,0 +1,9 @@
+tripitaka-mcp/
+├── .cursorrules          # (สำคัญมาก) กฎสำหรับ AI Agent ในการเขียน Code
+├── docker-compose.yml    # ตั้งค่า Postgres + pgvector
+├── Dockerfile            # สำหรับรัน Python MCP Server
+├── requirements.txt      # รายชื่อ library (fastmcp, psycopg2-binary, pgvector)
+├── main.py               # ไฟล์หลักของ MCP Server (Python)
+├── scripts/
+│   └── data_loader.py    # สคริปต์สำหรับนำเข้าข้อมูลพระไตรปิฎก
+└── data/                 # เก็บไฟล์พระไตรปิฎกเบื้องต้น (JSON/CSV)
