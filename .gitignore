@@ -29,3 +29,7 @@ Thumbs.db
 # Data files (large files — manage separately if needed)
 # data/*.json
 # data/*.csv
+data/bilara-data/
+
+# Model cache
+model_cache/

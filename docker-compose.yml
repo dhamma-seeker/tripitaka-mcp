@@ -1,7 +1,12 @@
 version: '3.8'
+
 services:
+  # --------------------------------------------------------------------------
+  # PostgreSQL + pgvector — ฐานข้อมูลหลัก
+  # --------------------------------------------------------------------------
   db:
-    image: ankane/pgvector:latest # Postgres ที่ลง pgvector มาให้แล้ว
+    image: ankane/pgvector:latest
+    container_name: tripitaka-db
     ports:
       - "5432:5432"
     environment:
@@ -10,3 +15,32 @@ services:
       POSTGRES_PASSWORD: password123
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # เปิด pgvector extension อัตโนมัติ
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d tripitaka_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --------------------------------------------------------------------------
+  # MCP Server — Tripitaka MCP Server (Python)
+  # --------------------------------------------------------------------------
+  mcp-server:
+    build: .
+    container_name: tripitaka-mcp-server
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://admin:password123@db:5432/tripitaka_db
+      EMBEDDING_MODEL: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+      EMBEDDING_DIMENSIONS: 384
+      MCP_TRANSPORT: stdio
+    volumes:
+      - .:/app                          # mount source สำหรับ development
+      - model_cache:/root/.cache        # cache embedding model
+    stdin_open: true                    # สำหรับ stdio transport
+    tty: true
+
+volumes:
+  model_cache:
