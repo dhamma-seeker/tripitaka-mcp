@@ -5,11 +5,12 @@ MCP Server สำหรับค้นหาและอ้างอิงเน
 
 ## ✨ Features
 
-- 🔍 **Keyword Search** — ค้นหาด้วยคำสำคัญ รองรับ 3 ภาษา (บาลี, ไทย, อังกฤษ)
-- 🧠 **Semantic Search** — ค้นหาตามความหมาย ด้วย vector similarity (pgvector)
-- 📖 **Get Sutta** — ดึงเนื้อหาสูตรตาม ID (เช่น mn1, dn22, sn56.11)
-- 📚 **Structure** — แสดงโครงสร้างพระไตรปิฎกทั้ง 3 ปิฎก
-- 📝 **Reference** — สร้างข้อมูลอ้างอิงที่ถูกต้องตามหลักวิชาการ
+- ⚖️ **Hybrid Search (ใหม่!)** — ขีดสุดของความแม่นยำด้วยการนำ Keyword และ Semantic Search มารวมกันผ่านอัลกอริทึม Reciprocal Rank Fusion (RRF)
+- 🔍 **Keyword Search** — ค้นหาด้วยคำสำคัญ รองรับ 3 ภาษา (บาลี, ไทย, อังกฤษ) แบบ Trigram Fuzzy Match ซิงก์ข้ามภาษา
+- 🧠 **Semantic Search** — ค้นหาตามความหมาย สัมผัสถึงแก่นเจตนาด้วย Vector similarity (pgvector)
+- 📖 **Translation Comparison** — เรียกดูและเทียบสำนวนการแปลข้ามฉบับ (Edition) โยงตรงตาม Segment บรรทัดต่อบรรทัด
+- 📚 **Dictionary Bridge** — ระบบพจนานุกรมในตัวผนวกกำลัง ป.อ. ปยุตฺโต (ไทย) และ PTS/DPPN (อิ้ง)
+- 📖 **Get Sutta & Reference** — ดึงเนื้อหาสูตรตาม ID (เช่น mn1) และสร้างข้อความอ้างอิงวิชาการมาตรฐาน
 
 ## 🏗️ Tech Stack
 
@@ -47,13 +48,19 @@ pip install -r requirements.txt
 ### 4. Initialize Database & Load Data
 
 ```bash
-# Seed metadata (pitaka, nikaya)
+# 1. Seed metadata (pitaka, nikaya)
 python scripts/seed_metadata.py
 
-# Download & load Sutta Pitaka data from SuttaCentral
+# 2. Download & load Sutta Pitaka data จาก SuttaCentral
 python scripts/data_loader.py
 
-# Generate embeddings สำหรับ semantic search (optional)
+# 3. Load Thai CC0 Translations (Dhiranandi & Jayasaro)
+python scripts/load_thai_cc0.py
+
+# 4. Load Dictionary (DPD, PTS, DPPN และพจนานุกรม ป.อ. ปยุตฺโต)
+python scripts/load_dictionary.py
+
+# 5. Generate embeddings สำหรับ semantic/hybrid search
 python scripts/generate_embeddings.py
 ```
 
@@ -85,27 +92,34 @@ python main.py
 
 | Tool | คำอธิบาย |
 |---|---|
+| `search_hybrid` | **(แนะนำ)** ค้นหาผสมผสาน (Hybrid Search) ด้วยเทคนิค RRF เพื่อความแม่นยำสูงสุด |
 | `search_by_keyword` | ค้นหาด้วย keyword (trigram fuzzy match) |
-| `get_sutta` | ดึงเนื้อหาสูตรตาม ID |
 | `search_semantic` | ค้นหาแบบ semantic (vector similarity) |
-| `list_structure` | แสดงโครงสร้างพระไตรปิฎก |
-| `get_reference` | สร้างข้อมูลอ้างอิงที่ถูกต้อง |
+| `get_sutta` | ดึงเนื้อหาสูตรตาม ID พร้อมดึงคำแปลทั้งหมดที่เกี่ยวข้อง |
+| `compare_translations`| เปรียบเทียบสำนวนการแปลข้ามฉบับ (Edition) ในแต่ละ Segment |
+| `get_word_definition` | ค้นหาพจนานุกรมข้ามภาษา (PTS, DPPN, และพจนานุกรม ป.อ. ปยุตฺโต) |
+| `list_structure` | แสดงโครงสร้างคัมภีร์พระไตรปิฎก |
+| `get_reference` | สร้างข้อมูลอ้างอิงที่ถูกต้องตามรูปแบบวิชาการ |
 
 ## 📁 โครงสร้างโปรเจค
 
-```
+```text
 tripitaka-mcp/
-├── main.py                 # MCP Server หลัก
+├── main.py                 # MCP Server หลัก (Tools ทั้งหมด)
 ├── db/
 │   ├── connection.py       # Database connection pool
-│   └── schema.py           # Database schema (tables, indexes)
+│   └── schema.py           # Database schema (รองรับ translation table)
 ├── embedding/
-│   └── model.py            # Embedding model wrapper
+│   └── model.py            # SentenceTransformer wrapper
 ├── scripts/
 │   ├── seed_metadata.py    # Seed pitaka/nikaya metadata
-│   ├── data_loader.py      # Load data จาก SuttaCentral
+│   ├── data_loader.py      # Load Pali/English จาก SuttaCentral
+│   ├── load_thai_cc0.py    # สคริปต์โหลดคำแปลภาษาไทยประโยคต่อประโยค
+│   ├── load_dictionary.py  # โหลดฐานข้อมูลพจนานุกรมเข้าสู่ระบบ
+│   ├── scrape_payutto.py   # Web Scraper พจนานุกรม ป.อ. ปยุตฺโต
 │   └── generate_embeddings.py  # สร้าง vector embeddings
-├── data/                   # ข้อมูลพระไตรปิฎก (bilara-data)
+├── data/
+│   └── payutto_dict.json   # ฐานข้อมูลศัพท์ภาษาไทยที่ขูดมาจากเว็บ
 ├── docker-compose.yml
 ├── Dockerfile
 └── requirements.txt
@@ -114,7 +128,8 @@ tripitaka-mcp/
 ## 📜 แหล่งข้อมูล
 
 - [SuttaCentral bilara-data](https://github.com/suttacentral/bilara-data) — ข้อมูลพระไตรปิฎก (CC0 License)
-- [SuttaCentral](https://suttacentral.net) — เว็บไซต์พระไตรปิฎกดิจิทัล
+- [พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์ (ป.อ. ปยุตฺโต)](https://tripitaka-online.blogspot.com/) — สำหรับข้อมูลศัพท์ภาษาไทย
+- [SuttaCentral](https://suttacentral.net) — เว็บไซต์อ้างอิงพระไตรปิฎกดิจิทัลหลัก
 
 ## 📄 License
 

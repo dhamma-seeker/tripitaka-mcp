@@ -61,6 +61,7 @@ LANGUAGE_COLUMNS = {
 
 def _build_context(row: tuple, columns: list[str]) -> dict[str, Any]:
     """แปลง database row เป็น dict ตาม columns ที่กำหนด"""
+    # print(f"DEBUG BUILD: cols={len(columns)}, row={len(row)}")
     return dict(zip(columns, row))
 
 
@@ -79,37 +80,24 @@ def search_by_keyword(
 ) -> list[dict[str, Any]]:
     """ค้นหาข้อความในพระไตรปิฎกด้วย keyword
 
-    ค้นหาแบบ trigram (fuzzy match) รองรับทั้ง 3 ภาษา
+    ค้นหาแบบ trigram (word similarity) รองรับทั้ง 3 ภาษา
     สามารถกรองผลลัพธ์ตามปิฎกและฉบับแปลได้
 
     Args:
         keyword: คำที่ต้องการค้นหา
         language: ภาษาที่ค้นหา — "pali", "thai", หรือ "english" (default: "pali")
         edition: ฉบับแปลภาษาไทย — "dhiranandi", "jayasaro", "mbu", "royal" หรือ None
-                 ใช้เฉพาะเมื่อ language="thai" เพื่อเลือกฉบับที่ต้องการ
-                 ถ้าไม่ระบุ จะค้นจาก text_thai (bilara-data) ก่อน แล้วค้นจาก translation table
         pitaka: กรองตามปิฎก — "vinaya", "sutta", "abhidhamma" หรือ None (ค้นทั้งหมด)
         limit: จำนวนผลลัพธ์สูงสุด (default: 10, max: 50)
-
-    Returns:
-        รายการผลลัพธ์ แต่ละรายการมี:
-        - segment_id: รหัส segment (เช่น "mn1:1.1")
-        - sutta_id: รหัสสูตร (เช่น "mn1")
-        - text_pali: เนื้อหาภาษาบาลี
-        - text_thai: เนื้อหาภาษาไทย (ถ้ามี)
-        - text_english: เนื้อหาภาษาอังกฤษ (ถ้ามี)
-        - edition: ฉบับแปลที่ใช้ (ถ้าค้นจาก translation table)
-        - similarity: คะแนนความคล้ายคลึง (0-1)
     """
     limit = min(max(1, limit), 50)
-
     conn = get_connection()
     try:
         cur = conn.cursor()
+        params = {"kw": keyword, "limit": limit}
 
-        # ค้นหาจาก translation table เมื่อภาษาไทยและระบุ edition
-        # หรือเมื่อต้องการค้นจากฉบับแปลที่เพิ่มเข้ามา
-        if language == "thai" and edition:
+        if language == "thai":
+            # ค้นหาภาษาไทยจากตาราง translation
             query = """
                 SELECT
                     seg.segment_id,
@@ -118,7 +106,8 @@ def search_by_keyword(
                     t.text AS text_thai,
                     seg.text_english,
                     t.edition,
-                    similarity(t.text, %s) AS sim
+                    similarity(t.text, %(kw)s) AS similarity,
+                    word_similarity(%(kw)s, t.text) AS word_similarity
                 FROM translation t
                 JOIN segment seg ON t.segment_id = seg.id
                 JOIN section sec ON seg.section_id = sec.id
@@ -126,28 +115,23 @@ def search_by_keyword(
                 JOIN nikaya n ON b.nikaya_id = n.id
                 JOIN pitaka p ON n.pitaka_id = p.id
                 WHERE t.language = 'th'
-                  AND t.edition = %s
-                  AND t.text %% %s
+                  AND %(kw)s <%% t.text
             """
-            params: list[Any] = [keyword, edition, keyword]
-
+            if edition:
+                query += " AND t.edition = %(edition)s"
+                params["edition"] = edition
             if pitaka:
-                query += " AND p.code = %s"
-                params.append(pitaka)
+                query += " AND p.code = %(pitaka)s"
+                params["pitaka"] = pitaka
 
-            query += " ORDER BY sim DESC LIMIT %s"
-            params.append(limit)
-
+            query += " ORDER BY word_similarity DESC, similarity DESC LIMIT %(limit)s"
             cur.execute(query, params)
-            columns = ["segment_id", "sutta_id", "text_pali", "text_thai", "text_english", "edition", "similarity"]
-            results = [_build_context(row, columns) for row in cur.fetchall()]
+            cols = [desc[0] for desc in cur.description]
+            results = [dict(zip(cols, row)) for row in cur.fetchall()]
 
         else:
-            # ค้นหาจาก segment table (pali/english/thai จาก bilara-data)
-            if language not in LANGUAGE_COLUMNS:
-                return [{"error": f"ภาษาไม่ถูกต้อง: {language}. ใช้ได้: pali, thai, english"}]
-
-            text_col = LANGUAGE_COLUMNS[language]
+            # ค้นหาภาษาอื่นจากตาราง segment
+            text_col = LANGUAGE_COLUMNS.get(language, "text_pali")
             query = f"""
                 SELECT
                     seg.segment_id,
@@ -155,26 +139,23 @@ def search_by_keyword(
                     seg.text_pali,
                     seg.text_thai,
                     seg.text_english,
-                    similarity(seg.{text_col}, %s) AS sim
+                    similarity(seg.{text_col}, %(kw)s) AS similarity,
+                    word_similarity(%(kw)s, seg.{text_col}) AS word_similarity
                 FROM segment seg
                 JOIN section sec ON seg.section_id = sec.id
                 JOIN book b ON sec.book_id = b.id
                 JOIN nikaya n ON b.nikaya_id = n.id
                 JOIN pitaka p ON n.pitaka_id = p.id
-                WHERE seg.{text_col} %% %s
+                WHERE %(kw)s <%% seg.{text_col}
             """
-            params = [keyword, keyword]
-
             if pitaka:
-                query += " AND p.code = %s"
-                params.append(pitaka)
+                query += " AND p.code = %(pitaka)s"
+                params["pitaka"] = pitaka
 
-            query += " ORDER BY sim DESC LIMIT %s"
-            params.append(limit)
-
+            query += " ORDER BY word_similarity DESC, similarity DESC LIMIT %(limit)s"
             cur.execute(query, params)
-            columns = ["segment_id", "sutta_id", "text_pali", "text_thai", "text_english", "similarity"]
-            results = [_build_context(row, columns) for row in cur.fetchall()]
+            cols = [desc[0] for desc in cur.description]
+            results = [dict(zip(cols, row)) for row in cur.fetchall()]
 
         if not results:
             hint = f" (edition: {edition})" if edition else ""
@@ -266,12 +247,21 @@ def get_sutta(
                 (edition, section_id),
             )
         else:
+            # ถ้าไม่ระบุ edition ให้พยายามดึงจาก segment.text_thai
+            # และ fallback ไปยัง translation table ฉบับใดก็ได้ที่มีบทแปลไทย
             cur.execute(
                 """
-                SELECT segment_id, text_pali, text_thai, text_english
-                FROM segment
-                WHERE section_id = %s
-                ORDER BY id
+                SELECT 
+                    seg.segment_id, 
+                    seg.text_pali, 
+                    COALESCE(
+                        seg.text_thai, 
+                        (SELECT text FROM translation WHERE segment_id = seg.id AND language = 'th' LIMIT 1)
+                    ) AS text_thai, 
+                    seg.text_english
+                FROM segment seg
+                WHERE seg.section_id = %s
+                ORDER BY seg.id
                 """,
                 (section_id,),
             )
@@ -364,7 +354,10 @@ def search_semantic(
                 seg.segment_id,
                 sec.sutta_id,
                 seg.text_pali,
-                seg.text_thai,
+                COALESCE(
+                    seg.text_thai, 
+                    (SELECT text FROM translation WHERE segment_id = seg.id AND language = 'th' LIMIT 1)
+                ) AS text_thai,
                 seg.text_english,
                 seg.embedding <=> %s::vector AS distance
             FROM segment seg
@@ -439,15 +432,19 @@ def search_hybrid(
         semantic_ranks = {row[0]: rank + 1 for rank, row in enumerate(semantic_results)}
 
         # 2. Keyword Search (Top 50)
-        # Using ILIKE to search across all text fields
+        # Using word_similarity for better matching and searching translations table
         cur.execute(
             """
-            SELECT seg.id
-            FROM segment seg
-            WHERE seg.text_pali ILIKE %s OR seg.text_thai ILIKE %s OR seg.text_english ILIKE %s
+            SELECT seg_id FROM (
+                SELECT id as seg_id FROM segment 
+                WHERE text_pali ILIKE %s OR text_thai ILIKE %s OR text_english ILIKE %s
+                UNION
+                SELECT segment_id as seg_id FROM translation 
+                WHERE language = 'th' AND text ILIKE %s
+            ) AS combined_search
             LIMIT 50
             """,
-            (f"%{query}%", f"%{query}%", f"%{query}%")
+            (f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%")
         )
         keyword_results = cur.fetchall()
         keyword_ranks = {row[0]: rank + 1 for rank, row in enumerate(keyword_results)}
@@ -480,7 +477,10 @@ def search_hybrid(
                 seg.segment_id,
                 sec.sutta_id,
                 seg.text_pali,
-                seg.text_thai,
+                COALESCE(
+                    seg.text_thai, 
+                    (SELECT text FROM translation WHERE segment_id = seg.id AND language = 'th' LIMIT 1)
+                ) AS text_thai,
                 seg.text_english
             FROM segment seg
             JOIN section sec ON seg.section_id = sec.id
