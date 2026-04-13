@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sutta List - Volume {{ vol_id }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-[#0a0a0c] text-slate-200 min-h-screen pb-12" x-data="batchList()">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 glass py-4 px-8 flex justify-between items-center mb-12">
+        <div class="flex items-center gap-3">
+            <a href="/" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center text-white hover:bg-slate-700 transition-colors">←</a>
+            <div>
+                <div class="text-[10px] text-slate-500 uppercase tracking-widest mb-0.5" x-text="breadcrumb"></div>
+                <h1 class="text-xl font-semibold tracking-tight leading-none">เล่มที่ <span class="text-amber-500">{{ vol_id }}</span></h1>
+            </div>
+        </div>
+        <div class="flex gap-4">
+            <button @click="refresh()" class="px-4 py-2 rounded-lg glass text-sm hover:bg-white/5 transition-colors">Refresh</button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-8">
+        
+        <!-- Empty State / Initialization -->
+        <template x-if="batches.length === 0">
+            <div class="glass rounded-2xl p-12 text-center flex flex-col items-center max-w-2xl mx-auto border-dashed border-2 border-slate-700">
+                <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-slate-500 mb-6">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                </div>
+                <h2 class="text-xl font-semibold mb-2">ยังไม่มีข้อมูลในเล่มนี้</h2>
+                <p class="text-slate-400 text-sm mb-8">เล่มนี้ยังไม่ได้ทำการลงทะเบียนพิกัดพระสูตร (Metadata) เข้าสู่ระบบ คุณสามารถกดปุ่มด้านล่างเพื่อดึงข้อมูลจาก SuttaCentral ได้ทันที</p>
+                <button 
+                    @click="registerVolume" 
+                    class="bg-amber-500 hover:bg-amber-600 text-black font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-amber-500/20 active:scale-95"
+                    :disabled="isRegistering"
+                >
+                    <span x-show="!isRegistering">ลงทะเบียนพิกัดพระสูตร (Initialize Metadata)</span>
+                    <span x-show="isRegistering">กำลังลงทะเบียน...</span>
+                </button>
+            </div>
+        </template>
+
+        <!-- Batch Table -->
+        <template x-if="batches.length > 0">
+            <div class="glass rounded-2xl overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-white/5 text-slate-400 text-xs uppercase tracking-widest font-semibold">
+                        <tr>
+                            <th class="px-6 py-4">Sutta ID</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4">Created At</th>
+                            <th class="px-6 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        <template x-for="batch in batches" :key="batch.id">
+                            <tr class="hover:bg-white/[0.02] transition-colors">
+                                <td class="px-6 py-4 font-mono text-amber-500/80" x-text="batch.sutta_id"></td>
+                                <td class="px-6 py-4">
+                                    <span 
+                                        class="px-2 py-1 rounded text-[10px] uppercase font-bold"
+                                        :class="getStatusClass(batch.status)"
+                                        x-text="batch.status"
+                                    ></span>
+                                </td>
+                                <td class="px-6 py-4 text-xs text-slate-500" x-text="formatDate(batch.created_at)"></td>
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        <a 
+                                            :href="`/batches/${batch.id}/review`"
+                                            class="px-3 py-1.5 glass rounded text-xs font-semibold hover:bg-white/10 transition-colors text-slate-300 border-white/10"
+                                        >
+                                            Read Source
+                                        </a>
+                                        <template x-if="['pending', 'deferred', 'error'].includes(batch.status)">
+                                            <button 
+                                                @click="runTranslation(batch.id)"
+                                                class="px-3 py-1.5 bg-amber-600 rounded text-xs font-semibold text-black hover:bg-amber-500 transition-colors"
+                                            >
+                                                AI Draft
+                                            </button>
+                                        </template>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </template>
+    </main>
+
+    <script>
+        function batchList() {
+            return {
+                batches: [],
+                breadcrumb: 'Loading...',
+                volId: {{ vol_id }},
+                isRegistering: false,
+                async init() {
+                    this.refresh();
+                },
+                async refresh() {
+                    const res = await fetch(`/volumes/${this.volId}/batches`);
+                    const data = await res.json();
+                    this.batches = data.batches;
+                    this.breadcrumb = data.breadcrumb;
+                },
+                async registerVolume() {
+                    this.isRegistering = true;
+                    try {
+                        const res = await fetch(`/volumes/${this.volId}/register`, { method: 'POST' });
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            alert(`ลงทะเบียนสำเร็จ! พบ ${data.count} รายการ`);
+                            this.refresh();
+                        } else {
+                            alert('เกิดข้อผิดพลาด: ' + data.message);
+                        }
+                    } finally {
+                        this.isRegistering = false;
+                    }
+                },
+                getStatusClass(status) {
+                    switch(status) {
+                        case 'pending': return 'bg-slate-800 text-slate-400';
+                        case 'drafting': return 'bg-blue-900/40 text-blue-400 animate-pulse';
+                        case 'review': return 'bg-amber-900/40 text-amber-400';
+                        case 'imported': return 'bg-green-900/40 text-green-400';
+                        case 'error': return 'bg-red-900/40 text-red-400';
+                        default: return 'bg-slate-800 text-slate-400';
+                    }
+                },
+                async runTranslation(batchId) {
+                    // Optimized to update UI immediately
+                    const batch = this.batches.find(b => b.id === batchId);
+                    if (batch) batch.status = 'drafting';
+                    
+                    fetch(`/batches/${batchId}/translate`, { method: 'POST' });
+                },
+                formatDate(dateStr) {
+                    if (!dateStr) return '-';
+                    return dateStr.split('.')[0].replace('T', ' ');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+| Segment ID | Thai Translation |
+|---|---|

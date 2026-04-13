@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review & Audit - Batch {{ batch_id }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .segment-row:hover { background: rgba(255, 255, 255, 0.02); }
+        textarea:focus { outline: none; border-color: rgba(245, 158, 11, 0.5); background: rgba(245, 158, 11, 0.05); }
+    </style>
+</head>
+<body class="bg-[#0a0a0c] text-slate-200 min-h-screen pb-12" x-data="editor()">
+
+    <!-- Fixed Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 glass py-3 px-8 flex justify-between items-center bg-[#0a0a0c]/80">
+        <div class="flex items-center gap-6">
+            <a href="javascript:history.back()" class="text-slate-400 hover:text-white">← Back</a>
+            <div>
+                <h1 class="text-xl font-semibold" x-text="batch ? batch.sutta_id : 'Loading...'"></h1>
+                <div class="text-[10px] text-slate-500 uppercase tracking-widest">Translation Audit Mode</div>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-6">
+            <div x-show="saving" class="text-xs text-amber-500 animate-pulse">Saving changes...</div>
+            <div x-show="!saving && lastSaved" class="text-[10px] text-slate-600">Autosaved at <span x-text="lastSaved"></span></div>
+            
+            <button 
+                @click="syncSource()" 
+                class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg transition-colors border border-white/5"
+                x-show="batch && batch.segments.length === 0"
+                :disabled="syncing"
+            >
+                <span x-show="!syncing">🔄 Sync Source Data</span>
+                <span x-show="syncing">Syncing...</span>
+            </button>
+
+            <button 
+                @click="approve()"
+                class="px-6 py-2 bg-green-600 rounded-lg text-sm font-bold text-black hover:bg-green-500 transition-all shadow-lg shadow-green-900/20"
+                :disabled="approving"
+            >
+                <span x-show="!approving">Approve & Import</span>
+                <span x-show="approving">Processing...</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Editor Content -->
+    <main class="pt-24 px-8 max-w-[100vw]">
+        
+        <!-- Table Header -->
+        <div class="grid grid-cols-12 gap-0 sticky top-[74px] z-40 bg-slate-900 py-3 text-[10px] uppercase font-bold tracking-widest text-slate-500 border-y border-white/5">
+            <div class="col-span-1 px-4">Segment</div>
+            <div class="col-span-3 px-4 border-l border-white/5">Pāḷi MS</div>
+            <div class="col-span-3 px-4 border-l border-white/5">English (Sujato)</div>
+            <div class="col-span-5 px-4 border-l border-white/5 text-amber-500">Thai AI Draft (Editable)</div>
+        </div>
+
+        <!-- Empty State -->
+        <template x-if="batch && batch.segments.length === 0">
+            <div class="flex flex-col items-center justify-center py-32 text-slate-500">
+                <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </div>
+                <p class="text-lg font-medium mb-2">ไม่มีข้อมูลเนื้อหา</p>
+                <p class="text-sm text-slate-600 mb-8">กรุณากดปุ่ม Sync Source ด้านบน หรือรอผลการทำ AI Draft</p>
+            </div>
+        </template>
+
+        <!-- Segments -->
+        <div class="divide-y divide-white/5" x-show="batch && batch.segments.length > 0">
+            <template x-for="(seg, index) in batch?.segments" :key="seg.segment_id">
+                <div class="grid grid-cols-12 gap-0 segment-row">
+                    <!-- ID -->
+                    <div class="col-span-1 py-4 px-4 text-[10px] font-mono text-slate-600" x-text="seg.segment_id"></div>
+                    
+                    <!-- Pali -->
+                    <div class="col-span-3 py-4 px-4 border-l border-white/5 text-sm leading-relaxed text-slate-400 italic" x-text="seg.text_pali"></div>
+                    
+                    <!-- English -->
+                    <div class="col-span-3 py-4 px-4 border-l border-white/5 text-sm leading-relaxed text-slate-400" x-text="seg.text_english"></div>
+                    
+                    <!-- Thai Draft -->
+                    <div class="col-span-5 py-3 px-4 border-l border-white/5">
+                        <textarea 
+                            x-model="seg.text_thai_draft"
+                            @input.debounce.1000ms="saveDraft()"
+                            class="w-full h-full min-h-[60px] bg-transparent border border-transparent rounded p-2 text-sm leading-relaxed transition-all resize-none"
+                            placeholder="Add translation..."
+                        ></textarea>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </main>
+
+    <script>
+        function editor() {
+            return {
+                batchId: {{ batch_id }},
+                saving: false,
+                approving: false,
+                syncing: false,
+                lastSaved: '',
+                async init() {
+                    const res = await fetch(`/batches/${this.batchId}`);
+                    this.batch = await res.json();
+                },
+                async syncSource() {
+                    this.syncing = true;
+                    try {
+                        const res = await fetch(`/batches/${this.batchId}/sync-source`, { method: 'POST' });
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            alert(`ดึงข้อมูลสำเร็จ! พบ ${data.count} รายการ กำลังรีโหลด...`);
+                            window.location.reload();
+                        } else {
+                            alert('ผิดพลาด: ' + data.message);
+                        }
+                    } finally {
+                        this.syncing = false;
+                    }
+                },
+                async saveDraft() {
+                    this.saving = true;
+                    const payload = {
+                        segments: this.batch.segments.map(s => ({
+                            segment_id: s.segment_id,
+                            text_thai: s.text_thai_draft
+                        }))
+                    };
+                    try {
+                        await fetch(`/batches/${this.batchId}/save-draft`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        this.lastSaved = new Date().toLocaleTimeString();
+                    } catch (e) { console.error(e); }
+                    this.saving = false;
+                },
+                async approve() {
+                    if(!confirm('Are you sure you want to approve and import this translation into the main database?')) return;
+                    
+                    this.approving = true;
+                    const payload = {
+                        segments: this.batch.segments.map(s => ({
+                            segment_id: s.segment_id,
+                            text_thai: s.text_thai_draft
+                        }))
+                    };
+                    try {
+                        const res = await fetch(`/batches/${this.batchId}/approve`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if(res.ok) {
+                            alert('Translation successfully approved and imported!');
+                            window.location.href = `/volumes/${this.batch.thai_volume}`;
+                        } else {
+                            alert('Import failed. Please check backend logs.');
+                        }
+                    } catch (e) { console.error(e); }
+                    this.approving = false;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

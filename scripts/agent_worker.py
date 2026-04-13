@@ -8,7 +8,7 @@ from db.connection import get_connection
 load_dotenv()
 
 # Constants
-MODEL_NAME = "claude-3-5-sonnet-20240620"
+MODEL_NAME = "claude-sonnet-4-6"
 STRATEGIC_TERMS = ["dukkha", "taṇhā", "magga", "nirodha", "ariyasacca", "bhikkhave", "tathāgata"]
 MAX_BUDGET_USD = float(os.getenv("MAX_BUDGET_USD", "5.0"))
 
@@ -59,6 +59,27 @@ def draft_translation(sutta_id, volume_number, batch_id):
         return None, "Sutta data invalid"
         
     all_segments = sutta_data["segments"]
+    
+    # NEW: Ensure segments are stored in the DB for the Audit Editor to see
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        # Find section_id
+        cur.execute("SELECT id FROM section WHERE sutta_id = %s", (sutta_id,))
+        sec_row = cur.fetchone()
+        if sec_row:
+            section_id = sec_row[0]
+            for seg in all_segments:
+                cur.execute("""
+                    INSERT INTO segment (section_id, segment_id, text_pali, text_english)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (segment_id) DO UPDATE 
+                    SET text_pali = EXCLUDED.text_pali, text_english = EXCLUDED.text_english
+                """, (section_id, seg["segment_id"], seg.get("text_pali"), seg.get("text_english")))
+            conn.commit()
+    finally:
+        cur.close()
+        conn.close()
     
     # 3. Terminology & Conventions
     terminology_context = []
@@ -136,6 +157,7 @@ def process_next_batch():
     try:
         draft_content, error = draft_translation(sutta_id, vol, batch_id)
         if error:
+            print(f"❌ Error in batch {batch_id}: {error}")
             cur.execute("UPDATE translation_batch SET status = 'error', error_log = %s WHERE id = %s", (error, batch_id))
         else:
             # We preserve the draft for review (Option 2)
@@ -157,5 +179,51 @@ def process_next_batch():
     cur.close()
     conn.close()
 
+def process_batch_by_id(batch_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+    
+    cur.execute("""
+        SELECT b.id, s.sutta_id, b.thai_volume 
+        FROM translation_batch b
+        JOIN section s ON b.section_id = s.id
+        WHERE b.id = %s
+    """, (batch_id,))
+    row = cur.fetchone()
+    if not row:
+        print(f"Batch {batch_id} not found.")
+        return
+        
+    batch_id, sutta_id, vol = row
+    print(f"Force processing Batch {batch_id}: {sutta_id} (Volume {vol})...")
+    
+    # Update status to drafting
+    cur.execute("UPDATE translation_batch SET status = 'drafting', agent_id = 'Antigravity' WHERE id = %s", (batch_id,))
+    conn.commit()
+    
+    try:
+        draft_content, error = draft_translation(sutta_id, vol, batch_id)
+        if error:
+            print(f"❌ Error in batch {batch_id}: {error}")
+            cur.execute("UPDATE translation_batch SET status = 'error', error_log = %s WHERE id = %s", (error, batch_id))
+        else:
+            cur.execute("UPDATE translation_batch SET status = 'review', raw_draft = %s WHERE id = %s", (draft_content, batch_id))
+            out_dir = f"drafts/vol_{vol}"
+            os.makedirs(out_dir, exist_ok=True)
+            with open(f"{out_dir}/{sutta_id}.md", "w", encoding="utf-8") as f:
+                f.write(draft_content)
+            print(f"Batch {batch_id} ready for review.")
+    except Exception as e:
+        cur.execute("UPDATE translation_batch SET status = 'error', error_log = %s WHERE id = %s", (str(e), batch_id))
+        print(f"Error: {e}")
+        
+    conn.commit()
+    cur.close()
+    conn.close()
+
 if __name__ == "__main__":
-    process_next_batch()
+    import sys
+    if len(sys.argv) > 1:
+        process_batch_by_id(int(sys.argv[1]))
+    else:
+        process_next_batch()
