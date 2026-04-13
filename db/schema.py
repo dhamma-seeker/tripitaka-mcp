@@ -67,7 +67,7 @@ def create_tables() -> None:
                 name_pali       VARCHAR(300),
                 name_thai       VARCHAR(300),
                 name_english    VARCHAR(300),
-                volume_number   INTEGER,
+                thai_volume     INTEGER,                -- เลขเล่ม 1-45 (Thai Standard)
                 sort_order      INTEGER NOT NULL DEFAULT 0
             );
         """)
@@ -146,6 +146,8 @@ def create_tables() -> None:
                 edition         VARCHAR(50) NOT NULL,   -- e.g. "dhiranandi", "mbu", "royal"
                 translator      VARCHAR(100),           -- ชื่อผู้แปล (optional)
                 text            TEXT NOT NULL,
+                verified_by     VARCHAR(100),           -- ชื่อผู้ตรวจสอบ (Human-in-the-loop)
+                verified_at     TIMESTAMP,              -- วันที่ตรวจสอบ
                 created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE (segment_id, language, edition)
             );
@@ -158,6 +160,26 @@ def create_tables() -> None:
             CREATE INDEX IF NOT EXISTS idx_translation_text_trgm
             ON translation USING gin (text gin_trgm_ops);
         """)
+
+        # ------------------------------------------------------------------
+        # ระบบจัดการคิวงานแปล (Translation Batch Management)
+        # ------------------------------------------------------------------
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS translation_batch (
+                id              SERIAL PRIMARY KEY,
+                section_id      INTEGER NOT NULL REFERENCES section(id) ON DELETE CASCADE,
+                thai_volume     INTEGER NOT NULL,
+                status          VARCHAR(20) DEFAULT 'pending', -- pending, drafting, review, imported, error
+                agent_id        VARCHAR(100),                  -- ID of the agent working on this
+                raw_draft       TEXT,                          -- Draft content in Markdown/JSON
+                audit_score     FLOAT,                         -- Verification score (0-1)
+                error_log       TEXT,
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_batch_status ON translation_batch(status);")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_batch_volume ON translation_batch(thai_volume);")
 
         # ------------------------------------------------------------------
         # พจนานุกรม (Dictionary) — สำหรับ Pali Dictionary Bridge
