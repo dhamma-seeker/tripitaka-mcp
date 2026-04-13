@@ -33,3 +33,15 @@ data/bilara-data/
 
 # Model cache
 model_cache/
+
+# OpenTofu / Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+*.tfvars.json
+.terraform.lock.hcl
+
+# Database Dumps
+*.dump
+*.sql.gz

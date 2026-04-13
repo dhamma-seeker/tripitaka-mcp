@@ -5,12 +5,13 @@ MCP Server สำหรับค้นหาและอ้างอิงเน
 
 ## ✨ Features
 
-- ⚖️ **Hybrid Search (ใหม่!)** — ขีดสุดของความแม่นยำด้วยการนำ Keyword และ Semantic Search มารวมกันผ่านอัลกอริทึม Reciprocal Rank Fusion (RRF)
+- ⚖️ **Hybrid Search** — ขีดสุดของความแม่นยำด้วยการนำ Keyword และ Semantic Search มารวมกันผ่านอัลกอริทึม Reciprocal Rank Fusion (RRF) (พร้อมใช้งานแล้ว!)
 - 🔍 **Keyword Search** — ค้นหาด้วยคำสำคัญ รองรับ 3 ภาษา (บาลี, ไทย, อังกฤษ) แบบ Trigram Fuzzy Match ซิงก์ข้ามภาษา
 - 🧠 **Semantic Search** — ค้นหาตามความหมาย สัมผัสถึงแก่นเจตนาด้วย Vector similarity (pgvector)
 - 📖 **Translation Comparison** — เรียกดูและเทียบสำนวนการแปลข้ามฉบับ (Edition) โยงตรงตาม Segment บรรทัดต่อบรรทัด
-- 📚 **Dictionary Bridge** — ระบบพจนานุกรมในตัวผนวกกำลัง ป.อ. ปยุตฺโต (ไทย) และ PTS/DPPN (อิ้ง)
+- 📚 **Dictionary Bridge** — ระบบพจนานุกรมในตัวกว่า 20,000+ คำ (ป.อ. ปยุตฺโต, PTS, DPPN)
 - 📖 **Get Sutta & Reference** — ดึงเนื้อหาสูตรตาม ID (เช่น mn1) และสร้างข้อความอ้างอิงวิชาการมาตรฐาน
+- 📮 **Postman Ready** — มีคอลเลกชันสำหรับทดสอบ API ในโหมด sse เข้ากับโมเดลพัฒนาได้ทันที
 
 ## 🏗️ Tech Stack
 
@@ -69,6 +70,19 @@ python scripts/generate_embeddings.py
 ```bash
 python main.py
 ```
+
+### 🧪 การทดสอบด้วย Postman
+
+โปรเจคนี้รองรับการทดสอบผ่าน Postman ในโหมด SSE:
+1. รันเซิร์ฟเวอร์ด้วย: `MCP_TRANSPORT=sse python main.py`
+2. Import ไฟล์ [postman_collection.json](./postman_collection.json) เข้าสู่ Postman
+3. เรียกใช้ Tool ต่างๆ ได้ทันที
+
+## 🚢 Production Deployment
+
+หากต้องการ Deploy ขึ้น Production โดยไม่ต้องโหลดข้อมูลและรัน AI Model ใหม่ แนะนำให้ใช้การ Restore จาก Database Dump
+
+👉 ดูรายละเอียดที่: **[DEPLOYMENT.md](./DEPLOYMENT.md)**
 
 ## 🔧 เชื่อมต่อกับ Claude Desktop
 

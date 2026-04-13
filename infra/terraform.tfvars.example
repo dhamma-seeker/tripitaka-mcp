@@ -1,0 +1,9 @@
+# Copy this file to terraform.tfvars and fill in your token
+do_token = "your_digitalocean_token_here"
+
+# Optional: Override default region or size
+# region   = "sgp1"
+# droplet_size = "s-2vcpu-4gb"
+
+# Local path to your public SSH key (detected as id_rsa.pub)
+public_key_path = "~/.ssh/id_rsa.pub"
