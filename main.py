@@ -323,6 +323,7 @@ def search_semantic(
     query: str,
     language: str = "pali",
     limit: int = 5,
+    threshold: float = 0.7,
 ) -> list[dict[str, Any]]:
     """ค้นหาแบบ semantic — ค้นหาตามความหมาย ไม่จำเป็นต้องตรงคำ
 
@@ -334,6 +335,7 @@ def search_semantic(
         query: ข้อความที่ต้องการค้นหา (ภาษาอะไรก็ได้)
         language: ภาษาที่ต้องการแสดงผล — "pali", "thai", "english", หรือ "all"
         limit: จำนวนผลลัพธ์สูงสุด (default: 5, max: 20)
+        threshold: ระยะห่างความหมาย (ยิ่งน้อยยิ่งตรงเผง, default: 0.7)
 
     Returns:
         รายการผลลัพธ์เรียงตามความใกล้เคียงทางความหมาย
@@ -350,7 +352,7 @@ def search_semantic(
     except ImportError:
         return [{"error": "Embedding module ยังไม่ได้ติดตั้ง — กรุณาใช้ search_by_keyword แทน"}]
     except Exception as e:
-        return [{"error": f"ไม่สามารถสร้าง embedding ได้: {str(e)}"}]
+        return [{"error": f"ไม่สามารถสร้าง embeddingได้: {str(e)}"}]
 
     conn = get_connection()
     try:
@@ -368,22 +370,139 @@ def search_semantic(
             FROM segment seg
             JOIN section sec ON seg.section_id = sec.id
             WHERE seg.embedding IS NOT NULL
-            ORDER BY seg.embedding <=> %s::vector
+              AND (seg.embedding <=> %s::vector) <= %s
+            ORDER BY distance
             LIMIT %s
             """,
-            (query_embedding, query_embedding, limit),
+            (query_embedding, query_embedding, threshold, limit),
         )
 
         columns = ["segment_id", "sutta_id", "text_pali", "text_thai", "text_english", "distance"]
         results = [_build_context(row, columns) for row in cur.fetchall()]
 
         if not results:
-            return [{"message": "ไม่พบผลลัพธ์ — อาจยังไม่ได้สร้าง embeddings"}]
+            return [{"message": f"ไม่พบผลลัพธ์ที่ตรงกับความหมาย (ระยะวิเคราะห์ < {threshold}) — ทดลองคลาย threshold เพื่อค้นหาแบบกว้าง"}]
 
         return results
 
     except Exception as e:
         return [{"error": f"เกิดข้อผิดพลาดในการค้นหา: {str(e)}"}]
+    finally:
+        cur.close()
+        release_connection(conn)
+
+
+@mcp.tool()
+def search_hybrid(
+    query: str,
+    language: str = "pali",
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    """ค้นหาแบบผสมผสาน (Hybrid Search) — รวมพลัง Keyword + Semantic
+    
+    ใช้เทคนิค RRF (Reciprocal Rank Fusion) เพื่อนำผลลัพธ์จาก
+    การค้นหาคำตรงๆ มารวมกับผลลัพธ์จากการค้นหาความหมาย
+    ทำให้ระบบค้นหาครอบคลุมที่สุด หาอะไรก็เจอแน่ๆ
+    
+    Args:
+        query: ข้อความ (ภาษาไทย, บาลี หรืออังกฤษ)
+        language: ภาษาที่ต้องการให้แสดงในผลลัพธ์ ("pali", "thai", "english", "all")
+        limit: จำนวนข้อความที่ต้องการค้นพบ
+
+    Returns:
+        รายการประโยคจากพระไตรปิฎกที่มีค่า rrf_score สูงที่สุด 
+    """
+    limit = min(max(1, limit), 20)
+    
+    try:
+        from embedding.model import generate_embedding
+        query_embedding = generate_embedding(query)
+    except Exception as e:
+        return [{"error": f"ไม่สามารถสร้าง embedding ได้: {str(e)}"}]
+        
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        
+        # 1. Semantic Search (Top 50)
+        cur.execute(
+            """
+            SELECT seg.id, seg.embedding <=> %s::vector AS distance
+            FROM segment seg
+            WHERE seg.embedding IS NOT NULL
+            ORDER BY distance
+            LIMIT 50
+            """,
+            (query_embedding,)
+        )
+        semantic_results = cur.fetchall()
+        semantic_ranks = {row[0]: rank + 1 for rank, row in enumerate(semantic_results)}
+
+        # 2. Keyword Search (Top 50)
+        # Using ILIKE to search across all text fields
+        cur.execute(
+            """
+            SELECT seg.id
+            FROM segment seg
+            WHERE seg.text_pali ILIKE %s OR seg.text_thai ILIKE %s OR seg.text_english ILIKE %s
+            LIMIT 50
+            """,
+            (f"%{query}%", f"%{query}%", f"%{query}%")
+        )
+        keyword_results = cur.fetchall()
+        keyword_ranks = {row[0]: rank + 1 for rank, row in enumerate(keyword_results)}
+
+        # 3. Reciprocal Rank Fusion (RRF) Scoring
+        k = 60
+        rrf_scores = {}
+        all_ids = set(semantic_ranks.keys()) | set(keyword_ranks.keys())
+        
+        for seg_id in all_ids:
+            score = 0.0
+            if seg_id in semantic_ranks:
+                score += 1.0 / (k + semantic_ranks[seg_id])
+            if seg_id in keyword_ranks:
+                score += 1.0 / (k + keyword_ranks[seg_id])
+            rrf_scores[seg_id] = score
+            
+        # Select Top N
+        top_ids = sorted(rrf_scores.keys(), key=lambda x: rrf_scores[x], reverse=True)[:limit]
+        
+        if not top_ids:
+            return [{"message": "ไม่พบผลลัพธ์จาก Hybrid Search"}]
+            
+        # Fetch actual segment content
+        format_strings = ','.join(['%s'] * len(top_ids))
+        cur.execute(
+            f"""
+            SELECT
+                seg.id,
+                seg.segment_id,
+                sec.sutta_id,
+                seg.text_pali,
+                seg.text_thai,
+                seg.text_english
+            FROM segment seg
+            JOIN section sec ON seg.section_id = sec.id
+            WHERE seg.id IN ({format_strings})
+            """,
+            tuple(top_ids)
+        )
+        
+        id_to_row = {row[0]: row for row in cur.fetchall()}
+        
+        columns = ["segment_id", "sutta_id", "text_pali", "text_thai", "text_english", "rrf_score"]
+        results = []
+        for seg_id in top_ids:
+            if seg_id in id_to_row:
+                row = id_to_row[seg_id]
+                context_row = (row[1], row[2], row[3], row[4], row[5], round(rrf_scores[seg_id], 4))
+                results.append(_build_context(context_row, columns))
+                
+        return results
+
+    except Exception as e:
+        return [{"error": f"เกิดข้อผิดพลาดในการค้นหา hybrid: {str(e)}"}]
     finally:
         cur.close()
         release_connection(conn)
@@ -680,6 +799,240 @@ def compare_translations(
     finally:
         cur.close()
         release_connection(conn)
+
+
+@mcp.tool()
+def get_word_definition(word: str, language: str = "all", limit_context: int = 3) -> dict[str, Any]:
+    """ดึงความหมายพจนานุกรมของคําศัพท์บาลี พร้อมด้วยตัวอย่างประโยคบริบทในพระสูตร
+    
+    ใช้เป็น Pali Dictionary Bridge เพื่อทำความเข้าใจความหมายแท้จริงของคำ 
+    โดยนำเสนอ "นิยาม" ควบคู่กับ "บริบทที่พระพุทธองค์ทรงใช้จริง"
+
+    Args:
+        word: คำที่ต้องการค้นหา (เช่น "dukkha", "กฐิน")
+        language: ภาษาของพจนานุกรม (เช่น "en", "thai", หรือ "all" เป็นค่าเริ่มต้น)
+        limit_context: จำนวนตัวอย่างประโยคในพระสูตรที่จะแสดง (1-5)
+
+    Returns:
+        ข้อมูลพจนานุกรมจาก SuttaCentral/Payutto และตัวอย่างบริบทการใช้คำนั้นจาก segment
+    """
+    word_search = word.lower().strip()
+    limit_context = min(max(1, limit_context), 5)
+    
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        
+        # 1. Fetch definitions from dictionary table
+        if language == "all":
+            cur.execute(
+                """
+                SELECT source, text 
+                FROM dictionary 
+                WHERE word = %s 
+                ORDER BY source
+                """,
+                (word_search,)
+            )
+        else:
+            cur.execute(
+                """
+                SELECT source, text 
+                FROM dictionary 
+                WHERE word = %s AND language = %s
+                ORDER BY source
+                """,
+                (word_search, language)
+            )
+            
+        definitions = [{"source": r[0], "text": r[1]} for r in cur.fetchall()]
+        
+        if not definitions:
+            # Fallback fuzzy match just in case
+            if language == "all":
+                cur.execute(
+                    """
+                    SELECT word, source, text
+                    FROM dictionary
+                    WHERE word ILIKE %s
+                    ORDER BY length(word)
+                    LIMIT 3
+                    """,
+                    (f"{word_search}%",)
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT word, source, text
+                    FROM dictionary
+                    WHERE word ILIKE %s AND language = %s
+                    ORDER BY length(word)
+                    LIMIT 3
+                    """,
+                    (f"{word_search}%", language)
+                )
+            fallback = cur.fetchall()
+            if fallback:
+                definitions = [{"word": r[0], "source": r[1], "text": r[2]} for r in fallback]
+                return {
+                    "note": f"ไม่พบคำตรงตัวสำหรับ '{word}' แต่พบคำที่ใกล้เคียง:",
+                    "suggestions": definitions
+                }
+            return {"error": f"ไม่พบคำว่า '{word}' ในพจนานุกรม"}
+            
+        # 2. Fetch context from segment where text_pali contains the word
+        # ใช้ ROW_NUMBER() + PARTITION BY เพื่อให้ดึงแค่ 1 ตัวอย่างต่อพระสูตร 
+        # และ ORDER BY random() เพื่อสุ่มความหลากหลายของนิกาย
+        cur.execute(
+            """
+            WITH matched AS (
+                SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english, seg.text_thai,
+                       ROW_NUMBER() OVER (PARTITION BY sec.sutta_id ORDER BY random()) as rn
+                FROM segment seg
+                JOIN section sec ON seg.section_id = sec.id
+                WHERE seg.text_pali ~* %s
+            )
+            SELECT sutta_id, segment_id, text_pali, text_english, text_thai
+            FROM matched
+            WHERE rn = 1
+            ORDER BY random()
+            LIMIT %s
+            """,
+            (f"\\y{word_search}\\y", limit_context)
+        )
+        appears_in = [
+            {
+                "sutta_id": r[0],
+                "segment_id": r[1],
+                "pali": r[2],
+                "english": r[3],
+                "thai": r[4]
+            }
+            for r in cur.fetchall()
+        ]
+        
+        # If no strict word boundary match, fall back to simple ILIKE
+        if not appears_in:
+            cur.execute(
+                """
+                WITH matched AS (
+                    SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english, seg.text_thai,
+                           ROW_NUMBER() OVER (PARTITION BY sec.sutta_id ORDER BY random()) as rn
+                    FROM segment seg
+                    JOIN section sec ON seg.section_id = sec.id
+                    WHERE seg.text_pali ILIKE %s
+                )
+                SELECT sutta_id, segment_id, text_pali, text_english, text_thai
+                FROM matched
+                WHERE rn = 1
+                ORDER BY random()
+                LIMIT %s
+                """,
+                (f"%{word_search}%", limit_context)
+            )
+            appears_in = [
+                {
+                    "sutta_id": r[0],
+                    "segment_id": r[1],
+                    "pali": r[2],
+                    "english": r[3],
+                    "thai": r[4]
+                }
+                for r in cur.fetchall()
+            ]
+        
+        # 3. Find related words (Compound words)
+        cur.execute(
+            """
+            SELECT word 
+            FROM dictionary 
+            WHERE word LIKE %s AND word != %s
+            GROUP BY word
+            ORDER BY length(word), word
+            LIMIT 10
+            """,
+            (f"%{word_search}%", word_search)
+        )
+        related_words = [r[0] for r in cur.fetchall()]
+
+        return {
+            "word": word,
+            "definitions": definitions,
+            "related_words": related_words,
+            "appears_in_context": appears_in
+        }
+        
+    except Exception as e:
+        return {"error": f"เกิดข้อผิดพลาด: {str(e)}"}
+    finally:
+        cur.close()
+        release_connection(conn)
+
+
+@mcp.tool()
+def parse_pali_word(word: str) -> dict[str, Any]:
+    """วิเคราะห์คำบาลีเพื่อหารากศัพท์ (Stemming/Lemmatization เบื้องต้น)
+    
+    ใช้เมื่อเจอคำศัพท์บาลีที่ถูกแจกวิภัตติแล้ว (มี suffix) และค้นหาในพจนานุกรมไม่พบ
+    Tool นี้จะช่วยตัด Suffix ภาษาบาลีที่พบบ่อย และเดารากศัพท์ให้
+    
+    Args:
+        word: คำบาลีที่ต้องการวิเคราะห์ (เช่น "dukkhassa", "bhikkhūnaṁ")
+
+    Returns:
+        รากศัพท์ดั้งเดิมที่น่าจะเป็นไปได้ ซึ่งสามารถนำไปค้นใน get_word_definition ต่อได้
+    """
+    word = word.lower().strip()
+    
+    # Common Pali suffixes -> possible stem endings
+    suffixes = {
+        "ānaṁ": ["a", "ā", "i", "ī", "u", "ū"],
+        "naṁ": ["a", "ā", "i", "ī", "u", "ū"],
+        "āya": ["a", "ā"],
+        "assa": ["a"],
+        "ssa": ["a", "i", "u"],
+        "smā": ["a"],
+        "mhā": ["a"],
+        "smiṁ": ["a"],
+        "mhi": ["a"],
+        "ena": ["a"],
+        "ebhi": ["a"],
+        "ehi": ["a"],
+        "esu": ["a", "i", "u"],
+        "su": ["a", "ā", "i", "ī", "u", "ū"],
+        "aṁ": ["a", "ā"],
+        "ṁ": ["a", "i", "u"],
+        "āni": ["a"],
+        "ni": ["i", "u"],
+        "e": ["a"],
+        "ā": ["a"],
+        "o": ["a", "u"]
+    }
+    
+    possible_stems = set()
+    possible_stems.add(word)
+    matched_suffixes = []
+    
+    for suffix, replacements in suffixes.items():
+        if word.endswith(suffix) and len(word) > len(suffix) + 1:
+            base = word[:-len(suffix)]
+            matched_suffixes.append(suffix)
+            for r in replacements:
+                possible_stems.add(base + r)
+                
+    # Rule for long vowel shortening before some suffixes
+    if word.endswith("ūnaṁ") or word.endswith("īnaṁ"):
+        base = word[:-4]
+        vowel = "i" if word.endswith("īnaṁ") else "u"
+        possible_stems.add(base + vowel)
+        matched_suffixes.append(word[-4:])
+
+    return {
+        "original_word": word,
+        "matched_suffixes_removed": list(set(matched_suffixes)),
+        "possible_stems": list(possible_stems),
+        "guidance": "ลองนำคำใน possible_stems ไปค้นใน get_word_definition เพื่อหาความหมายที่แท้จริง"
+    }
 
 
 # =============================================================================

@@ -159,6 +159,27 @@ def create_tables() -> None:
             ON translation USING gin (text gin_trgm_ops);
         """)
 
+        # ------------------------------------------------------------------
+        # พจนานุกรม (Dictionary) — สำหรับ Pali Dictionary Bridge
+        # ------------------------------------------------------------------
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS dictionary (
+                id              SERIAL PRIMARY KEY,
+                word            TEXT NOT NULL,
+                language        VARCHAR(10) NOT NULL,   -- e.g. "en", "th"
+                text            TEXT NOT NULL,          -- คำแปล/คำอธิบาย
+                source          VARCHAR(50) NOT NULL,   -- e.g. "pts", "dppn", "dhammika"
+                created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # Indexes สำหรับ dictionary table
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_dictionary_word ON dictionary(word);")
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_dictionary_word_trgm
+            ON dictionary USING gin (word gin_trgm_ops);
+        """)
+
         conn.commit()
         print("✅ สร้างตารางทั้งหมดเรียบร้อย")
 
@@ -177,6 +198,8 @@ def drop_tables() -> None:
     try:
         cur = conn.cursor()
         cur.execute("""
+            DROP TABLE IF EXISTS dictionary CASCADE;
+            DROP TABLE IF EXISTS translation CASCADE;
             DROP TABLE IF EXISTS segment CASCADE;
             DROP TABLE IF EXISTS section CASCADE;
             DROP TABLE IF EXISTS book CASCADE;

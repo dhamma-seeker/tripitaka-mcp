@@ -1,0 +1,81 @@
+<html><head><title>ค้นคำว่า  ในพจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์</title>
+<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="TEXT/HTML"; CHARSET="tis-620">
+<meta name="description" content="พระพุทธศาสนา Buddhism Dhamma dictionary พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์">
+<meta name="keywords" content="Buddhism , Dhamma , Tipitaka, พจนานุกรม , พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์">
+<script type='text/javascript'>
+function copy2clipb(what){
+	what.select(); document.execCommand('copy');
+mycopy.select();
+alert('คัดลอกลิงค์เรียบร้อย\nCopy Completed');
+}
+function copy2clipb2(what, where){
+	what.select() ; document.execCommand('copy');
+where.select();
+alert( what.value + 'คัดลอกลิงค์เรียบร้อย Copy Completed' );
+}
+</script>
+<STYLE type=text/css>
+INPUT {FONT-SIZE: small; COLOR: blue; }
+SELECT {FONT-SIZE: small; color: darkblue; }
+SUP {COLOR: blue;}
+SMALL {FONT-SIZE: medium;  COLOR: darkmagenta;}
+BIG { FONT-SIZE: large; FONT-FAMILY: MS Sans Serif ; FONT-WEIGHT : bold; }
+pre {FONT-SIZE: medium; }
+p {FONT-SIZE: medium; ; FONT-WEIGHT : normal; }
+.x { font-size: 12pt; color: 4682B4 ; TEXT-DECORATION: none; }
+.y { font-size: 12pt; color: lightseagreen ; TEXT-DECORATION: none; }
+.head1 {  FONT-SIZE: large; color : darkblue ;}
+.c1 { COLOR: #0000ff ;FONT-WEIGHT : bold ; FONT-SIZE: large;}
+.pali { color:brown ; }
+.pali:visited { color:brown ; }
+.w11 { COLOR: #0000ff ; FONT-WEIGHT : bold ;}
+.w1t { COLOR: darkblue; FONT-WEIGHT : bold ;}
+.w1 { COLOR: darkblue; FONT-WEIGHT : bold ;}
+.w2 { COLOR: blue ;FONT-WEIGHT : bold ;}
+.w3 { COLOR: darkgreen ; }
+.wr21 { COLOR: #ff00ff ; }
+.wr1 { COLOR: darkgreen ; }
+TD { FONT-SIZE:  medium;  FONT-WEIGHT : normal; }
+.ref { background-color: whitesmoke ; }
+.remark {COLOR: darkmagenta; padding-cell: 0; spacing-cell: 0; padding: 0; spacing: 0; }
+.ref2 { valign: top ; }
+.casenumber{ COLOR: blue ; }
+.found{ COLOR: orangered; TEXT-DECORATION: underline ; FONT-WEIGHT : bold; }
+BODY { FONT-SIZE: medium;  FONT-WEIGHT : normal; }
+A { FONT-SIZE: medium; COLOR: blue;  TEXT-DECORATION: none; }
+A:visited { FONT-SIZE: medium; COLOR:blue;  TEXT-DECORATION: none; }
+A:hover { FONT-SIZE: medium; COLOR: blue;  TEXT-DECORATION: underline; }
+.e {  FONT-WEIGHT : normal ; PADDING-LEFT: 60px ; }
+.ee {PADDING-RIGHT: 50px ; }
+CENTER { FONT-SIZE: medium;  FONT-WEIGHT : normal ; COLOR: darkgreen ; }
+.n { FONT-SIZE: medium;  FONT-WEIGHT : normal ; COLOR: 000080; }
+.l { FONT-SIZE: medium;  FONT-WEIGHT : normal ; COLOR: 000080; }
+</STYLE></head>
+<body bgcolor=white topmargin=1 leftmargin=0 rightmargin=0 marginwidth=0 marginheight=0 link="royalblue" vlink="royalblue" alink="steelblue">
+<table width=100% height=50 cellpadding=0 cellspacing=0 border=0>
+<td valign=center Align=center VSpace=0 HSpace=0><img src=namo.gif height=50 border=0 alt="                   ขอนอบน้อมแด่&#10;พระผู้มีพระภาคอรหันตสัมมาสัมพุทธเจ้า&#10;                      พระองค์นั้น"></td>
+<tr><td width=100% valign=bottom vspace=0 align=center bgcolor="mistyrose"><a href=../ target=_top title='บทนำ'><font class=x>บทนำ</font></a>  <a href=../pitaka1 target=_top title='พระวินัยปิฎก ๘ เล่ม'><font class=x>พระวินัยปิฎก</font></a>  <a href=../pitaka2 target=_top title='พระสุตตันตปิฎก ๒๕ เล่ม'><font class=x>พระสุตตันตปิฎก</font></a>  <a href=../pitaka3 target=_top title='พระอภิธรรมปิฎก ๑๒ เล่ม'><font class=x>พระอภิธรรมปิฎก</font></a>  <a href=../pitaka_item target=_top title='ค้นพระไตรปิฎก ๔๕ เล่ม'><font class=y>ค้นพระไตรปิฎก</font></a>  <a href=../atita target=_top title='มหานิบาตชาดก พระเจ้าสิบชาติ&#10;เนื้อความจาก :-&#10; พระไตรปิฎก และอรรถกถา&#10;    ๑. เตมิยชาดก&#10;    ๒. มหาชนกชาดก&#10;    ๓. สุวรรณสามชาดก&#10;    ๔. เนมิราชชาดก&#10;    ๕. มโหสถชาดก&#10;    ๖. ภูริทัตชาดก&#10;    ๗. จันทกุมาร&#10;    ๘. มหานารทกัสสปชาดก&#10;    ๙. วิธุรชาดก&#10;   ๑๐. มหาเวสสันตรชาดก'><font class=x>ชาดก</font></a>  <a href=../book target=_top><font class=x>หนังสือธรรมะ</font></a>  </td></tr>
+<tr><td width=100% bgcolor=peachpuff height=1 hspace=0 vspace=0>
+<table cellpadding=0 cellspacing=0><td></table></td></table>
+<DIV class=e><pre><center><font STYLE='FONT-SIZE: large; color:saddlebrown;'>พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์</font>
+<font STYLE='FONT-SIZE: large; color:darkblue;'>สมเด็จพระพุทธโฆษาจารย์ (ป.อ. ปยุตฺโต)
+พระพรหมคุณาภรณ์ (ป.อ. ปยุตฺโต)
+พระธรรมปิฎก (ประยุทธ์ ปยุตฺโต)</font>
+</center>
+<table align=center border=0 cellpadding=0 cellspacing=0 bgcolor=sandybrown><form target=_blank><tr align=center bgcolor=deepskyblue><td colspan=2>  โปรแกรมค้นคำ หรือข้อความ : <font color=blue>[v_seek.php]</font>  </td><tr><td align=right>    ข้อความ</td><td align=left> <input name='text' size=25 MAXlength=55>  <input type='submit' value=' ค้นหา '> </td><tr><td align=right> </td><td align=left> <input type='checkbox' name='detail'> ค้นในส่วนความหมายด้วย<input type=hidden name='original' value='1'></td></tr></form></table></div>
+<table width=90% align=center border=0 background="" cellpadding=0 cellspacing=0>
+<tr><td><img height=11 width=1 src="space1.gif"></td>
+<tr><td width=100% bgcolor=darkblue vspace=0 hspace=0 ><img height=1 src="space1.gif"></td></table>
+<DIV class=e><TABLE width=650 align=center height=50 cellpadding=0 cellspacing=0 border=0>
+<tr><td><br></p></table>
+<pre><table width=90% align=center border=0 cellpadding=0 cellspacing=0>
+<tr><td align=right vspace=0 hspace=0><img height=1 width=40 src=space1.gif>
+<br><img height=2 src=space1.gif></td></tr>
+<tr><td width=100% bgcolor=goldenrod vspace=0 hspace=0><img height=1 width=1 src=space1.gif>
+<tr><td align=right width=100% vspace=0 hspace=0></td></tr></table><a name='note'></a><p align=right STYLE='FONT-SIZE: 11pt;'>บันทึก ๒, ๓๐ ตุลาคม พ.ศ. ๒๕๔๗    
+การแสดงผลนี้อ้างอิงข้อมูลจาก พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์    
+พิมพ์ครั้งที่ ๑๐ พ.ศ. ๒๕๔๖    
+บันทึก ๓ กรกฎาคม พ.ศ. ๒๕๖๘    
+พิมพ์ครั้งที่ ๓๕ พ.ศ. ๒๕๖๔    
+หากพบข้อผิดพลาด กรุณาแจ้งได้ที่ <a href="/cdn-cgi/l/email-protection#3b7f535a56565a6b5e495d5e584f7b425a53545415585456" title='แจ้งข้อผิดพลาด&#10ในการแสดงผล'><Font STYLE="FONT-SIZE: 11pt; FONT-FAMILY: MS Sans Serif; color: darkgreen ; FONT-WEIGHT : normal; TEXT-DECORATION: underline"><span class="__cf_email__" data-cfemail="d296bab3bfbfb382b7a0b4b7b1a692abb3babdbdfcb1bdbf">[email&#160;protected]</span></font></a> </script>   
+</p><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body></html>
