@@ -93,7 +93,7 @@
                     <!-- Thai Draft -->
                     <div class="col-span-5 py-3 px-4 border-l border-white/5">
                         <textarea 
-                            x-model="seg.text_thai_draft"
+                            x-model="seg.text_thai"
                             @input.debounce.1000ms="saveDraft()"
                             class="w-full h-full min-h-[60px] bg-transparent border border-transparent rounded p-2 text-sm leading-relaxed transition-all resize-none"
                             placeholder="Add translation..."
@@ -112,9 +112,40 @@
                 approving: false,
                 syncing: false,
                 lastSaved: '',
+                polling: null,
                 async init() {
                     const res = await fetch(`/batches/${this.batchId}`);
                     this.batch = await res.json();
+                    
+                    // Start polling if drafting
+                    if (this.batch.status === 'drafting') {
+                        this.startPolling();
+                    }
+                },
+                startPolling() {
+                    if (this.polling) return;
+                    this.polling = setInterval(async () => {
+                        const res = await fetch(`/batches/${this.batchId}`);
+                        const data = await res.json();
+                        
+                        // Smart update: only update text_thai to avoid flickering in focused textareas
+                        data.segments.forEach((newSeg, idx) => {
+                            if (this.batch.segments[idx] && !this.batch.segments[idx].text_thai) {
+                                this.batch.segments[idx].text_thai = newSeg.text_thai;
+                            }
+                        });
+                        
+                        this.batch.status = data.status;
+                        if (data.status !== 'drafting') {
+                            this.stopPolling();
+                        }
+                    }, 5000);
+                },
+                stopPolling() {
+                    if (this.polling) {
+                        clearInterval(this.polling);
+                        this.polling = null;
+                    }
                 },
                 async syncSource() {
                     this.syncing = true;
@@ -136,7 +167,7 @@
                     const payload = {
                         segments: this.batch.segments.map(s => ({
                             segment_id: s.segment_id,
-                            text_thai: s.text_thai_draft
+                            text_thai: s.text_thai
                         }))
                     };
                     try {

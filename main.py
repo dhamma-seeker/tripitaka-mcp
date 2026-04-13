@@ -19,6 +19,7 @@ Tools:
 
 import os
 from typing import Any
+import httpx
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP
@@ -63,6 +64,70 @@ def _build_context(row: tuple, columns: list[str]) -> dict[str, Any]:
     """แปลง database row เป็น dict ตาม columns ที่กำหนด"""
     # print(f"DEBUG BUILD: cols={len(columns)}, row={len(row)}")
     return dict(zip(columns, row))
+
+def fetch_sutta_from_sc(sutta_id: str) -> list[dict[str, Any]]:
+    """ดึงข้อมูลพระสูตรจาก SuttaCentral API (Bilara Data)"""
+    url = f"https://suttacentral.net/api/bilarasuttas/{sutta_id}/sujato"
+    print(f"🌐 Fetching {sutta_id} from SuttaCentral...")
+    
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            response = client.get(url)
+            if response.status_code != 200:
+                print(f"❌ SC API Error: {response.status_code}")
+                # Fallback: ลองดึงแค่ Pali
+                if response.status_code == 404:
+                    print(f"🔄 Trying root-only fallback for {sutta_id}...")
+                    response = client.get(f"https://suttacentral.net/api/bilarasuttas/{sutta_id}/ms")
+                    if response.status_code != 200: return []
+                else:
+                    return []
+            
+            data = response.json()
+            # Bilara Data structure can be:
+            # 1. Direct dict: {"root_text": {...}, "translation_text": {...}}
+            # 2. Wrapped in a list or another key
+            
+            root_text = data.get("root_text", {})
+            translation_text = data.get("translation_text", {})
+            keys_order = data.get("keys_order", [])
+            
+            # ถ้าข้อมูลมาเป็น empty หรือโครงสร้างอื่น ให้พยายามดึงจากก้อนใหญ่
+            if not root_text and "root" in data: # บางครั้งใช้ key 'root'
+                 root_text = data["root"].get("content", {})
+            
+            if not keys_order:
+                keys_order = list(root_text.keys())
+                # Sort keys to maintain order if possible
+                try:
+                    keys_order.sort()
+                except:
+                    pass
+                
+            segments = []
+            for key in keys_order:
+                pali = root_text.get(key, "")
+                eng = translation_text.get(key, "")
+                
+                # ถ้าเนื้อหาเป็น dict (กรณี nested) ให้ดึงเฉพาะค่าที่เป็น string
+                if isinstance(pali, dict): pali = next(iter(pali.values())) if pali else ""
+                if isinstance(eng, dict): eng = next(iter(eng.values())) if eng else ""
+                
+                if pali or eng:
+                    segments.append({
+                        "segment_id": key,
+                        "text_pali": str(pali),
+                        "text_english": str(eng),
+                        "text_thai": None
+                    })
+            
+            print(f"✅ Successfully prepared {len(segments)} segments from online source.")
+            return segments
+    except Exception as e:
+        print(f"❌ API Exception: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
 
 
 # =============================================================================
@@ -231,6 +296,27 @@ def get_sutta(
             return {"error": f"ไม่พบสูตร: {sutta_id}"}
 
         section_id = section_row[0]
+
+        # 2. ดึง segments
+        cur.execute(
+            "SELECT segment_id FROM segment WHERE section_id = %s LIMIT 1",
+            (section_id,)
+        )
+        if not cur.fetchone():
+            # 💡 ถ้ายังไม่มี segments ให้พยายามดึงจากออนไลน์
+            online_segments = fetch_sutta_from_sc(sutta_id)
+            if online_segments:
+                for seg in online_segments:
+                    cur.execute(
+                        """
+                        INSERT INTO segment (section_id, segment_id, text_pali, text_english)
+                        VALUES (%s, %s, %s, %s)
+                        ON CONFLICT (segment_id) DO NOTHING
+                        """,
+                        (section_id, seg["segment_id"], seg["text_pali"], seg["text_english"])
+                    )
+                conn.commit()
+                print(f"✅ Imported {len(online_segments)} segments for {sutta_id}")
 
         # ดึง segments พร้อม translation จาก edition ที่ระบุ (ถ้ามี)
         if edition and language in ("thai", "all"):

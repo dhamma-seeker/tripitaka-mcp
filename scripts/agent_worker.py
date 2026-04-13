@@ -127,6 +127,28 @@ def draft_translation(sutta_id, volume_number, batch_id):
         
         full_thai_draft += response_text + "\n"
 
+        # 🚀 NEW: Parse and Save each segment immediately for real-time progress
+        try:
+            conn_v = get_connection()
+            cur_v = conn_v.cursor()
+            for line in response_text.split("\n"):
+                if "|" in line and sutta_id in line: # Basic check for valid row
+                    parts = [p.strip() for p in line.split("|")]
+                    if len(parts) >= 3:
+                        seg_id = parts[1]
+                        thai_text = parts[2]
+                        if seg_id and thai_text:
+                            cur_v.execute("""
+                                UPDATE segment 
+                                SET text_thai = %s 
+                                WHERE segment_id = %s
+                            """, (thai_text, seg_id))
+            conn_v.commit()
+            cur_v.close()
+            conn_v.close()
+        except Exception as p_err:
+            print(f"      ⚠️ Warning: Failed to parse progress: {p_err}")
+
     return full_thai_draft, None
 
 def process_next_batch():

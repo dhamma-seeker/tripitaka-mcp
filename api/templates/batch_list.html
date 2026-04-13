@@ -28,6 +28,14 @@
             </div>
         </div>
         <div class="flex gap-4">
+            <button 
+                @click="registerVolume" 
+                class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-black text-xs font-bold rounded-lg transition-all shadow-lg shadow-amber-900/20 active:scale-95"
+                :disabled="isRegistering"
+            >
+                <span x-show="!isRegistering">ลงทะเบียนใหม่ (Initialize Metadata)</span>
+                <span x-show="isRegistering">กำลังลงทะเบียน...</span>
+            </button>
             <button @click="refresh()" class="px-4 py-2 rounded-lg glass text-sm hover:bg-white/5 transition-colors">Refresh</button>
         </div>
     </header>

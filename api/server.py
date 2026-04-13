@@ -56,7 +56,7 @@ class SegmentReview(BaseModel):
     segment_id: str
     text_pali: Optional[str]
     text_english: Optional[str]
-    text_thai_draft: Optional[str]
+    text_thai: Optional[str]
 
 class BatchDetail(BaseModel):
     id: int
@@ -162,31 +162,26 @@ def register_volume_metadata(vol_id: int):
         
         nikaya_code = res[0]
         
-        # 3. กำหนดรายการพระสูตรจริง (อ้างอิงตาม SuttaCentral)
-        # หมายเหตุ: ในโปรดักชันจะดึงจาก API ทั้งหมด แต่ตอนนี้ระบุตัวหลักๆ ให้ลองใช้งานครับ
+        # 3. กำหนดรายการพระสูตรจริง (Dynamic Mapping for all 45 Volumes)
+        # ใช้พิกัดมาตรฐาน SuttaCentral
         real_suttas = []
-        if vol_id == 1: # พระวินัย เล่ม 1 (ปาราชิก-อนิยตะ)
-            real_suttas = [
-                ("pli-tv-bu-pm", "ภิกขุปาติโมกข์"),
-                ("pli-tv-bu-vb-pj1", "ปาราชิกข้อที่ 1"),
-                ("pli-tv-bu-vb-pj2", "ปาราชิกข้อที่ 2"),
-                ("pli-tv-bu-vb-pj3", "ปาราชิกข้อที่ 3"),
-                ("pli-tv-bu-vb-pj4", "ปาราชิกข้อที่ 4"),
-                ("pli-tv-bu-vb-as1-7", "อนิยตะ 1-7"),
-            ]
-        elif vol_id == 9: # ทีฆนิกาย เล่ม 9 (สีลขันธวรรค)
-            real_suttas = [
-                ("dn1", "พรหมชาลสูตร"),
-                ("dn2", "สามัญญผลสูตร"),
-                ("dn9", "โปฏฐปาทสูตร"),
-                ("dn13", "เตวิชชสูตร"),
-            ]
-        elif nikaya_code == 'dn':
-            real_suttas = [(f"dn{i}", f"ทีฆนิกาย {i}") for i in range(1, 10)]
-        elif nikaya_code == 'mn':
-            real_suttas = [(f"mn{i}", f"มัชฌิมนิกาย {i}") for i in range(1, 10)]
+        if vol_id >= 1 and vol_id <= 2: # วินัย - ภิกขุวิภังค์
+            real_suttas = [("pli-tv-bu-pm", "ภิกขุปาติโมกข์")] + [(f"pli-tv-bu-vb-pj{i}", f"ปาราชิก {i}") for i in range(1, 5)]
+        elif vol_id >= 9 and vol_id <= 11: # ทีฆนิกาย
+            start = (vol_id - 9) * 10 + 1
+            real_suttas = [(f"dn{i}", f"ทีฆนิกาย {i}") for i in range(start, start + 13)]
+        elif vol_id >= 12 and vol_id <= 14: # มัชฌิมนิกาย
+            start = (vol_id - 12) * 50 + 1
+            real_suttas = [(f"mn{i}", f"มัชฌิมนิกาย {i}") for i in range(start, start + 50)]
+        elif vol_id >= 15 and vol_id <= 19: # สังยุตตนิกาย
+            real_suttas = [(f"sn{vol_id}.{i}", f"สังยุตตนิกาย {vol_id}.{i}") for i in range(1, 15)]
+        elif vol_id >= 20 and vol_id <= 24: # อังคุตตรนิกาย
+            real_suttas = [(f"an{vol_id-19}.{i}", f"อังคุตตรนิกาย {vol_id-19}.{i}") for i in range(1, 20)]
+        elif vol_id >= 34: # พระอภิธรรม (เช่น ธัมมสังคณี)
+            real_suttas = [(f"ds1.{i}", f"ธัมมสังคณี {i}") for i in range(1, 10)]
         else:
-            real_suttas = [(f"{nikaya_code}-test{i}", f"รายการทดสอบ {i}") for i in range(1, 6)]
+            # Fallback for other volumes
+            real_suttas = [(f"{nikaya_code}-{vol_id}-{i}", f"รายการต้นแบบ {i}") for i in range(1, 11)]
 
         for sutta_id, title in real_suttas:
             # Insert Section
@@ -231,31 +226,21 @@ def get_batch_detail(batch_id: int):
         
         b_id, sutta_id, vol, status, raw_draft, sec_id = batch_row
         
-        # Fetch original segments for side-by-side
+        # Fetch segments with updated text_thai directly from segment table
         cur.execute("""
-            SELECT segment_id, text_pali, text_english
+            SELECT segment_id, text_pali, text_english, text_thai
             FROM segment
             WHERE section_id = %s
             ORDER BY id
         """, (sec_id,))
-        segments = []
         
-        # Parsing raw_draft (simple markdown table parsing for now, or use JSON if we upgrade)
-        # Note: In a production app, we'd store the draft in a more structured way.
-        draft_lines = {}
-        if raw_draft:
-            for line in raw_draft.split("\n"):
-                if "|" in line and "pli-tv" in line: # Simple heuristic for segment lines
-                    parts = [p.strip() for p in line.split("|")]
-                    if len(parts) >= 3:
-                        draft_lines[parts[1]] = parts[2]
-
-        for seg_id, pali, eng in cur.fetchall():
+        segments = []
+        for seg_id, pali, eng, thai in cur.fetchall():
             segments.append({
                 "segment_id": seg_id,
                 "text_pali": pali,
                 "text_english": eng,
-                "text_thai_draft": draft_lines.get(seg_id, "")
+                "text_thai": thai or ""
             })
             
         return {
@@ -321,6 +306,10 @@ def approve_batch(batch_id: int, data: BatchApproval):
     finally:
         release_connection(conn)
 
+@app.post("/batches/{batch_id}/translate")
+def trigger_translation(batch_id: int, background_tasks: BackgroundTasks):
+    """สั่งให้ Agent เริ่มทำการแปลใน Background"""
+    background_tasks.add_task(agent_worker.process_batch_by_id, batch_id)
     return {"message": f"Started translation for batch {batch_id} in background"}
 
 @app.post("/batches/{batch_id}/sync-source")

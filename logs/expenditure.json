@@ -1,5 +1,5 @@
 {
-  "total_spent_usd": 5.988666000000001,
+  "total_spent_usd": 10.495662,
   "history": [
     {
       "timestamp": "2026-04-13T12:18:00.046166",
@@ -456,6 +456,326 @@
       "output_tokens": 210,
       "cost_usd": 0.0751,
       "cost_thb": 2.7
+    },
+    {
+      "timestamp": "2026-04-13T20:21:47.451215",
+      "batch_id": "2131_chk_0",
+      "input_tokens": 24830,
+      "output_tokens": 2589,
+      "cost_usd": 0.1133,
+      "cost_thb": 4.08
+    },
+    {
+      "timestamp": "2026-04-13T20:22:38.115812",
+      "batch_id": "2131_chk_25",
+      "input_tokens": 25057,
+      "output_tokens": 2738,
+      "cost_usd": 0.1162,
+      "cost_thb": 4.18
+    },
+    {
+      "timestamp": "2026-04-13T20:23:25.429346",
+      "batch_id": "2131_chk_50",
+      "input_tokens": 24261,
+      "output_tokens": 1866,
+      "cost_usd": 0.1008,
+      "cost_thb": 3.63
+    },
+    {
+      "timestamp": "2026-04-13T20:24:11.143567",
+      "batch_id": "2131_chk_75",
+      "input_tokens": 25148,
+      "output_tokens": 2407,
+      "cost_usd": 0.1115,
+      "cost_thb": 4.02
+    },
+    {
+      "timestamp": "2026-04-13T20:25:08.341711",
+      "batch_id": "2131_chk_100",
+      "input_tokens": 25542,
+      "output_tokens": 3081,
+      "cost_usd": 0.1228,
+      "cost_thb": 4.42
+    },
+    {
+      "timestamp": "2026-04-13T20:26:03.068559",
+      "batch_id": "2131_chk_125",
+      "input_tokens": 26376,
+      "output_tokens": 3322,
+      "cost_usd": 0.129,
+      "cost_thb": 4.64
+    },
+    {
+      "timestamp": "2026-04-13T20:26:58.253543",
+      "batch_id": "2131_chk_150",
+      "input_tokens": 25872,
+      "output_tokens": 4000,
+      "cost_usd": 0.1376,
+      "cost_thb": 4.95
+    },
+    {
+      "timestamp": "2026-04-13T20:27:52.439677",
+      "batch_id": "2131_chk_175",
+      "input_tokens": 25646,
+      "output_tokens": 4000,
+      "cost_usd": 0.1369,
+      "cost_thb": 4.93
+    },
+    {
+      "timestamp": "2026-04-13T20:28:44.149631",
+      "batch_id": "2131_chk_200",
+      "input_tokens": 24793,
+      "output_tokens": 2853,
+      "cost_usd": 0.1172,
+      "cost_thb": 4.22
+    },
+    {
+      "timestamp": "2026-04-13T20:29:30.724538",
+      "batch_id": "2131_chk_225",
+      "input_tokens": 24814,
+      "output_tokens": 2885,
+      "cost_usd": 0.1177,
+      "cost_thb": 4.24
+    },
+    {
+      "timestamp": "2026-04-13T20:30:23.924762",
+      "batch_id": "2131_chk_250",
+      "input_tokens": 25449,
+      "output_tokens": 3342,
+      "cost_usd": 0.1265,
+      "cost_thb": 4.55
+    },
+    {
+      "timestamp": "2026-04-13T20:30:59.712973",
+      "batch_id": "2131_chk_275",
+      "input_tokens": 24402,
+      "output_tokens": 2342,
+      "cost_usd": 0.1083,
+      "cost_thb": 3.9
+    },
+    {
+      "timestamp": "2026-04-13T20:31:33.393931",
+      "batch_id": "2131_chk_300",
+      "input_tokens": 24051,
+      "output_tokens": 2175,
+      "cost_usd": 0.1048,
+      "cost_thb": 3.77
+    },
+    {
+      "timestamp": "2026-04-13T20:32:17.982383",
+      "batch_id": "2131_chk_325",
+      "input_tokens": 24978,
+      "output_tokens": 2957,
+      "cost_usd": 0.1193,
+      "cost_thb": 4.29
+    },
+    {
+      "timestamp": "2026-04-13T20:32:58.059910",
+      "batch_id": "2131_chk_350",
+      "input_tokens": 24715,
+      "output_tokens": 2729,
+      "cost_usd": 0.1151,
+      "cost_thb": 4.14
+    },
+    {
+      "timestamp": "2026-04-13T20:33:31.618140",
+      "batch_id": "2131_chk_375",
+      "input_tokens": 24302,
+      "output_tokens": 2172,
+      "cost_usd": 0.1055,
+      "cost_thb": 3.8
+    },
+    {
+      "timestamp": "2026-04-13T20:34:19.745740",
+      "batch_id": "2131_chk_400",
+      "input_tokens": 24648,
+      "output_tokens": 2815,
+      "cost_usd": 0.1162,
+      "cost_thb": 4.18
+    },
+    {
+      "timestamp": "2026-04-13T20:34:46.505465",
+      "batch_id": "2131_chk_425",
+      "input_tokens": 23910,
+      "output_tokens": 1815,
+      "cost_usd": 0.099,
+      "cost_thb": 3.56
+    },
+    {
+      "timestamp": "2026-04-13T20:35:57.808365",
+      "batch_id": "2131_chk_450",
+      "input_tokens": 24039,
+      "output_tokens": 2054,
+      "cost_usd": 0.1029,
+      "cost_thb": 3.71
+    },
+    {
+      "timestamp": "2026-04-13T20:36:37.593677",
+      "batch_id": "2131_chk_475",
+      "input_tokens": 24257,
+      "output_tokens": 2324,
+      "cost_usd": 0.1076,
+      "cost_thb": 3.87
+    },
+    {
+      "timestamp": "2026-04-13T20:37:29.494761",
+      "batch_id": "2131_chk_500",
+      "input_tokens": 24169,
+      "output_tokens": 1996,
+      "cost_usd": 0.1024,
+      "cost_thb": 3.69
+    },
+    {
+      "timestamp": "2026-04-13T20:38:31.356734",
+      "batch_id": "2131_chk_525",
+      "input_tokens": 24450,
+      "output_tokens": 2342,
+      "cost_usd": 0.1085,
+      "cost_thb": 3.91
+    },
+    {
+      "timestamp": "2026-04-13T20:39:07.221758",
+      "batch_id": "2131_chk_550",
+      "input_tokens": 24463,
+      "output_tokens": 2277,
+      "cost_usd": 0.1075,
+      "cost_thb": 3.87
+    },
+    {
+      "timestamp": "2026-04-13T20:40:26.889084",
+      "batch_id": "2131_chk_575",
+      "input_tokens": 25801,
+      "output_tokens": 4000,
+      "cost_usd": 0.1374,
+      "cost_thb": 4.95
+    },
+    {
+      "timestamp": "2026-04-13T20:41:09.100060",
+      "batch_id": "2131_chk_600",
+      "input_tokens": 25413,
+      "output_tokens": 4000,
+      "cost_usd": 0.1362,
+      "cost_thb": 4.9
+    },
+    {
+      "timestamp": "2026-04-13T20:41:59.658003",
+      "batch_id": "2131_chk_625",
+      "input_tokens": 25075,
+      "output_tokens": 3929,
+      "cost_usd": 0.1342,
+      "cost_thb": 4.83
+    },
+    {
+      "timestamp": "2026-04-13T20:42:22.612107",
+      "batch_id": "2131_chk_650",
+      "input_tokens": 23334,
+      "output_tokens": 1085,
+      "cost_usd": 0.0863,
+      "cost_thb": 3.11
+    },
+    {
+      "timestamp": "2026-04-13T20:59:42.952592",
+      "batch_id": "2132_chk_0",
+      "input_tokens": 24974,
+      "output_tokens": 2345,
+      "cost_usd": 0.1101,
+      "cost_thb": 3.96
+    },
+    {
+      "timestamp": "2026-04-13T21:00:28.574693",
+      "batch_id": "2132_chk_25",
+      "input_tokens": 25057,
+      "output_tokens": 2809,
+      "cost_usd": 0.1173,
+      "cost_thb": 4.22
+    },
+    {
+      "timestamp": "2026-04-13T21:01:17.831735",
+      "batch_id": "2132_chk_50",
+      "input_tokens": 24840,
+      "output_tokens": 2097,
+      "cost_usd": 0.106,
+      "cost_thb": 3.82
+    },
+    {
+      "timestamp": "2026-04-13T21:02:22.570530",
+      "batch_id": "2132_chk_75",
+      "input_tokens": 25628,
+      "output_tokens": 3354,
+      "cost_usd": 0.1272,
+      "cost_thb": 4.58
+    },
+    {
+      "timestamp": "2026-04-13T21:03:23.763412",
+      "batch_id": "2132_chk_100",
+      "input_tokens": 25692,
+      "output_tokens": 2923,
+      "cost_usd": 0.1209,
+      "cost_thb": 4.35
+    },
+    {
+      "timestamp": "2026-04-13T21:04:15.566276",
+      "batch_id": "2132_chk_125",
+      "input_tokens": 25237,
+      "output_tokens": 2647,
+      "cost_usd": 0.1154,
+      "cost_thb": 4.15
+    },
+    {
+      "timestamp": "2026-04-13T21:05:00.161320",
+      "batch_id": "2132_chk_150",
+      "input_tokens": 25106,
+      "output_tokens": 2423,
+      "cost_usd": 0.1117,
+      "cost_thb": 4.02
+    },
+    {
+      "timestamp": "2026-04-13T21:05:40.281669",
+      "batch_id": "2132_chk_175",
+      "input_tokens": 25063,
+      "output_tokens": 2293,
+      "cost_usd": 0.1096,
+      "cost_thb": 3.95
+    },
+    {
+      "timestamp": "2026-04-13T21:06:08.357811",
+      "batch_id": "2132_chk_200",
+      "input_tokens": 24609,
+      "output_tokens": 2214,
+      "cost_usd": 0.107,
+      "cost_thb": 3.85
+    },
+    {
+      "timestamp": "2026-04-13T21:17:34.907961",
+      "batch_id": "2150_chk_0",
+      "input_tokens": 24259,
+      "output_tokens": 1299,
+      "cost_usd": 0.0923,
+      "cost_thb": 3.32
+    },
+    {
+      "timestamp": "2026-04-13T21:17:52.951802",
+      "batch_id": "2150_chk_25",
+      "input_tokens": 24273,
+      "output_tokens": 1301,
+      "cost_usd": 0.0923,
+      "cost_thb": 3.32
+    },
+    {
+      "timestamp": "2026-04-13T21:18:29.860790",
+      "batch_id": "2150_chk_50",
+      "input_tokens": 24214,
+      "output_tokens": 1397,
+      "cost_usd": 0.0936,
+      "cost_thb": 3.37
+    },
+    {
+      "timestamp": "2026-04-13T21:19:08.669340",
+      "batch_id": "2150_chk_75",
+      "input_tokens": 23970,
+      "output_tokens": 726,
+      "cost_usd": 0.0828,
+      "cost_thb": 2.98
     }
   ]
 }
