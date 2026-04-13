@@ -146,8 +146,6 @@ def create_tables() -> None:
                 edition         VARCHAR(50) NOT NULL,   -- e.g. "dhiranandi", "mbu", "royal"
                 translator      VARCHAR(100),           -- ชื่อผู้แปล (optional)
                 text            TEXT NOT NULL,
-                alignment_confidence REAL,              -- ความมั่นใจหากดึงข้อมูลมาด้วย AI (MBU Fuzzy Alignment)
-                alignment_status VARCHAR(50),           -- สถานะการดึงข้อมูล ('auto_verified', 'pending_review', 'rejected')
                 created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE (segment_id, language, edition)
             );

@@ -767,7 +767,7 @@ def compare_translations(
         # ดึงคำแปลจาก translation table ทุก edition
         cur.execute(
             """
-            SELECT edition, translator, language, text, alignment_confidence, alignment_status
+            SELECT edition, translator, language, text
             FROM translation
             WHERE segment_id = %s
             ORDER BY language, edition
@@ -780,8 +780,6 @@ def compare_translations(
                 "translator": r[1],
                 "language": r[2],
                 "text": r[3],
-                "alignment_confidence": r[4],
-                "alignment_status": r[5],
             }
             for r in cur.fetchall()
         ]
