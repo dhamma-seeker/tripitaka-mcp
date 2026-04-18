@@ -18,6 +18,7 @@ Tools:
 """
 
 import os
+import re
 from typing import Any
 
 from dotenv import load_dotenv
@@ -37,7 +38,18 @@ mcp = FastMCP(
         "MCP Server สำหรับค้นหาและอ้างอิงเนื้อหาจากพระไตรปิฎก (Tipiṭaka) "
         "รองรับ 3 ภาษา: บาลี (Pali), ไทย (Thai), อังกฤษ (English). "
         "ใช้สำหรับค้นหาพระสูตร, อ้างอิงคำสอนพระพุทธเจ้า, "
-        "และเปรียบเทียบคำแปลข้ามภาษา."
+        "และเปรียบเทียบคำแปลข้ามภาษา.\n\n"
+        "📚 แหล่งข้อมูล (Data Sources):\n"
+        "• พระไตรปิฎกบาลี + คำแปลอังกฤษ: SuttaCentral bilara-data (CC0)\n"
+        "• คำแปลไทย: พระธีรนันโท, พระอาจารย์ชยสาโร (CC0) / ฉบับ มจร., ฉบับหลวง\n"
+        "• พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์: "
+        "สมเด็จพระพุทธโฆษาจารย์ (ป. อ. ปยุตฺโต) — เผยแผ่เป็นธรรมทาน\n"
+        "• ต้นฉบับ: https://www.watnyanaves.net, https://84000.org, "
+        "https://suttacentral.net\n\n"
+        "⚠️ ข้อมูลจัดทำเพื่อการศึกษาและเผยแผ่ธรรมเท่านั้น "
+        "หากพบข้อผิดพลาดหรือต้องการอ้างอิงอย่างเป็นทางการ "
+        "โปรดตรวจสอบกับตัวเล่มหนังสือฉบับพิมพ์ล่าสุด.\n\n"
+        "🙏 โครงการนี้เผยแผ่เป็นธรรมทาน ห้ามใช้ในเชิงพาณิชย์."
     ),
 )
 
@@ -58,10 +70,79 @@ LANGUAGE_COLUMNS = {
     "english": "text_english",
 }
 
+# Attribution metadata สำหรับแต่ละ source ของพจนานุกรม
+# แสดงในทุก response เพื่อให้เป็นไปตามเงื่อนไขของผู้เรียบเรียง
+DICTIONARY_ATTRIBUTIONS = {
+    "payutto": {
+        "title": "พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์",
+        "author": "สมเด็จพระพุทธโฆษาจารย์ (ป. อ. ปยุตฺโต)",
+        "license": "ธรรมทาน (Dhamma Dāna) — ห้ามใช้เชิงพาณิชย์",
+        "source_url": "https://www.watnyanaves.net",
+        "note": "ควรตรวจสอบกับหนังสือฉบับพิมพ์ล่าสุดสำหรับการอ้างอิงทางการ",
+    },
+    "pts": {
+        "title": "The Pali Text Society's Pali-English Dictionary",
+        "author": "T. W. Rhys Davids & William Stede",
+        "license": "Public Domain",
+        "source_url": "https://www.palitextsociety.org",
+    },
+    "dppn": {
+        "title": "Dictionary of Pali Proper Names",
+        "author": "G. P. Malalasekera",
+        "license": "Public Domain",
+        "source_url": "https://www.palikanon.com/english/pali_names/dic_idx.html",
+    },
+    "dhammika": {
+        "title": "A Buddhist Dictionary",
+        "author": "Bhikkhu Dhammika",
+        "license": "Creative Commons",
+        "source_url": "https://www.bhantedhammika.net",
+    },
+}
+
+PROJECT_NOTICE = (
+    "โครงการนี้เผยแผ่เป็นธรรมทาน — "
+    "โปรดใช้เพื่อการศึกษาเท่านั้น และไม่ใช้ในเชิงพาณิชย์"
+)
+
+# Whitelists สำหรับ validate input ที่จะถูกใช้ใน SQL / filter
+VALID_LANGUAGES_SEARCH = frozenset({"pali", "thai", "english"})
+VALID_LANGUAGES_DISPLAY = frozenset({"pali", "thai", "english", "all"})
+VALID_PITAKAS = frozenset({"vinaya", "sutta", "abhidhamma"})
+VALID_EDITIONS = frozenset({"dhiranandi", "jayasaro", "mbu", "royal"})
+VALID_DICT_LANGUAGES = frozenset({"en", "thai", "th", "all"})
+
+# sutta_id format เช่น "mn1", "dn22", "sn56.11", "an4.5.6"
+SUTTA_ID_PATTERN = re.compile(r"^[a-z]{2,5}\d+(\.\d+){0,3}[a-z]?$")
+
+
+class ValidationError(ValueError):
+    """ข้อผิดพลาดจาก input validation — ใช้แยกจาก internal error"""
+
+
+def _validate_choice(value: str | None, allowed: frozenset[str], field: str) -> str | None:
+    """ตรวจว่า value อยู่ใน whitelist หรือไม่ — รับ None ได้ (optional filter)"""
+    if value is None:
+        return None
+    if value not in allowed:
+        raise ValidationError(
+            f"invalid {field!r}: {value!r} (allowed: {sorted(allowed)})"
+        )
+    return value
+
+
+def _validate_sutta_id(sutta_id: str) -> str:
+    """ตรวจรูปแบบ sutta_id ป้องกัน injection — lowercase, alphanumeric + dots"""
+    if not isinstance(sutta_id, str) or not SUTTA_ID_PATTERN.match(sutta_id):
+        raise ValidationError(
+            f"invalid sutta_id format: {sutta_id!r} "
+            "(expected e.g. 'mn1', 'dn22', 'sn56.11')"
+        )
+    return sutta_id
+
 
 def _build_context(row: tuple, columns: list[str]) -> dict[str, Any]:
     """แปลง database row เป็น dict ตาม columns ที่กำหนด"""
-    # print(f"DEBUG BUILD: cols={len(columns)}, row={len(row)}")
     return dict(zip(columns, row))
 
 
@@ -90,6 +171,13 @@ def search_by_keyword(
         pitaka: กรองตามปิฎก — "vinaya", "sutta", "abhidhamma" หรือ None (ค้นทั้งหมด)
         limit: จำนวนผลลัพธ์สูงสุด (default: 10, max: 50)
     """
+    try:
+        language = _validate_choice(language, VALID_LANGUAGES_SEARCH, "language")
+        edition = _validate_choice(edition, VALID_EDITIONS, "edition")
+        pitaka = _validate_choice(pitaka, VALID_PITAKAS, "pitaka")
+    except ValidationError as e:
+        return [{"error": str(e)}]
+
     limit = min(max(1, limit), 50)
     conn = get_connection()
     try:
@@ -130,8 +218,8 @@ def search_by_keyword(
             results = [dict(zip(cols, row)) for row in cur.fetchall()]
 
         else:
-            # ค้นหาภาษาอื่นจากตาราง segment
-            text_col = LANGUAGE_COLUMNS.get(language, "text_pali")
+            # ค้นหาภาษาอื่นจากตาราง segment — language ผ่าน whitelist validation แล้ว
+            text_col = LANGUAGE_COLUMNS[language]
             query = f"""
                 SELECT
                     seg.segment_id,
@@ -198,6 +286,13 @@ def get_sutta(
         - edition: ฉบับแปลที่ใช้ (ถ้าระบุ)
         - segments: เนื้อหาเรียงตาม segment
     """
+    try:
+        sutta_id = _validate_sutta_id(sutta_id)
+        language = _validate_choice(language, VALID_LANGUAGES_DISPLAY, "language")
+        edition = _validate_choice(edition, VALID_EDITIONS, "edition")
+    except ValidationError as e:
+        return {"error": str(e)}
+
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -594,6 +689,11 @@ def get_reference(
         - location: ตำแหน่งในพระไตรปิฎก
         - citation_format: รูปแบบการอ้างอิงสำเร็จรูป
     """
+    try:
+        sutta_id = _validate_sutta_id(sutta_id)
+    except ValidationError as e:
+        return {"error": str(e)}
+
     conn = get_connection()
     try:
         cur = conn.cursor()
@@ -845,7 +945,14 @@ def get_word_definition(word: str, language: str = "all", limit_context: int = 3
                 (word_search, language)
             )
             
-        definitions = [{"source": r[0], "text": r[1]} for r in cur.fetchall()]
+        definitions = [
+            {
+                "source": r[0],
+                "text": r[1],
+                "attribution": DICTIONARY_ATTRIBUTIONS.get(r[0], {}),
+            }
+            for r in cur.fetchall()
+        ]
         
         if not definitions:
             # Fallback fuzzy match just in case
@@ -959,7 +1066,8 @@ def get_word_definition(word: str, language: str = "all", limit_context: int = 3
             "word": word,
             "definitions": definitions,
             "related_words": related_words,
-            "appears_in_context": appears_in
+            "appears_in_context": appears_in,
+            "notice": PROJECT_NOTICE,
         }
         
     except Exception as e:

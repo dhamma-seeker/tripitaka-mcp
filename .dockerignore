@@ -1,0 +1,77 @@
+# =============================================================================
+# Tripitaka MCP Server — Docker ignore
+# =============================================================================
+# ป้องกันไฟล์ลับ / ข้อมูลขนาดใหญ่ / ของที่ไม่จำเป็น เข้า image
+
+# --- Secrets (สำคัญที่สุด) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# --- Version control ---
+.git
+.gitignore
+.gitattributes
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Database / Data ขนาดใหญ่ ---
+postgres_data/
+*.dump
+*.sql.gz
+*.sqlite
+*.db
+data/bilara-data/
+
+# --- Model cache (download ใน container) ---
+model_cache/
+.cache/
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+.cursor/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# --- Terraform (ไม่ควรอยู่ใน image ที่รัน app) ---
+infra/
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+!*.tfvars.example
+
+# --- Dev / Docs / CI ---
+README.md
+DEPLOYMENT.md
+*.md
+!requirements.txt
+postman_collection.json
+scratch/
+test_*.py
+debug_*.py
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# --- Logs ---
+*.log
+logs/

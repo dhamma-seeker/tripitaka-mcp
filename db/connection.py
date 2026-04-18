@@ -27,7 +27,12 @@ def get_pool() -> pool.ThreadedConnectionPool:
     """
     global _connection_pool
     if _connection_pool is None:
-        database_url = os.getenv("DATABASE_URL", "postgresql://admin:password123@localhost:5432/tripitaka_db")
+        database_url = os.getenv("DATABASE_URL")
+        if not database_url:
+            raise RuntimeError(
+                "DATABASE_URL environment variable is required. "
+                "Copy .env.example to .env and set a secure password."
+            )
         _connection_pool = pool.ThreadedConnectionPool(
             minconn=1,
             maxconn=10,

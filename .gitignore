@@ -12,6 +12,8 @@ env/
 
 # Environment variables
 .env
+.env.*
+!.env.example
 
 # Docker
 postgres_data/

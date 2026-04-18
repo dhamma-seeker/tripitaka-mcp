@@ -1,0 +1,100 @@
+# =============================================================================
+# Tripitaka MCP Server — Production Compose
+# =============================================================================
+# สำหรับ deploy บน production server เท่านั้น
+# - ไม่ expose DB port ออกนอก Docker network
+# - ไม่มี bind mount source (ใช้ code จาก image)
+# - มี resource limits, read-only filesystem, no-new-privileges
+# - อ่าน secret จาก .env (หรือ Docker secrets)
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# ก่อน deploy:
+#   1. สร้าง .env บน server ด้วย POSTGRES_PASSWORD ที่ random แข็งแรง
+#   2. chmod 600 .env
+#   3. วาง reverse proxy (Caddy/Traefik) หน้า mcp-server + TLS + auth
+
+services:
+  # --------------------------------------------------------------------------
+  # PostgreSQL + pgvector (internal only)
+  # --------------------------------------------------------------------------
+  db:
+    image: ankane/pgvector:latest
+    container_name: tripitaka-db
+    # ไม่มี ports: — คุยกันภายใน Docker network เท่านั้น
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # --------------------------------------------------------------------------
+  # MCP Server (production)
+  # --------------------------------------------------------------------------
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tripitaka-mcp:${APP_VERSION:-latest}
+    container_name: tripitaka-mcp-server
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-384}
+      MCP_TRANSPORT: ${MCP_TRANSPORT:-sse}
+      MCP_HOST: ${MCP_HOST:-127.0.0.1}
+      MCP_PORT: ${MCP_PORT:-8080}
+    # expose เฉพาะ internal — ให้ reverse proxy เข้าถึง
+    expose:
+      - "8080"
+    # ถ้าต้องให้ proxy บน host ถึง ใช้ 127.0.0.1 bind เท่านั้น
+    # ports:
+    #   - "127.0.0.1:8080:8080"
+    volumes:
+      - model_cache:/home/app/.cache
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+  model_cache:

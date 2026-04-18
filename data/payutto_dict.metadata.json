@@ -1,0 +1,43 @@
+{
+  "title": "พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์",
+  "title_en": "Dictionary of Buddhism (Glossary)",
+  "author": "สมเด็จพระพุทธโฆษาจารย์ (ป. อ. ปยุตฺโต)",
+  "author_en": "Somdet Phra Buddhaghosacariya (P. A. Payutto)",
+  "license": "Dhamma Dāna (ธรรมทาน)",
+  "license_note": "เผยแผ่เป็นธรรมทาน ห้ามใช้เชิงพาณิชย์ ต้องไม่ดัดแปลงเนื้อหา",
+  "source": {
+    "url": "https://tripitaka-online.blogspot.com",
+    "pattern": "https://tripitaka-online.blogspot.com/2016/08/bd{001..XXX}.html",
+    "scraper": "scripts/scrape_payutto.py",
+    "scraped_date": "2026-04 (approximate)",
+    "note": "Unofficial mirror — should be cross-checked with official sources"
+  },
+  "canonical_sources": [
+    {
+      "name": "วัดญาณเวศกวัน",
+      "url": "https://www.watnyanaves.net",
+      "note": "แหล่งเผยแผ่อย่างเป็นทางการของผู้เรียบเรียง"
+    },
+    {
+      "name": "84000.org",
+      "url": "https://84000.org",
+      "note": "แหล่งพระไตรปิฎกดิจิทัลทางการ"
+    }
+  ],
+  "print_edition_reference": "ปัจจุบัน (2026) พิมพ์ครั้งที่ 35",
+  "scraped_edition": "unknown — blogspot ไม่ระบุครั้งที่พิมพ์",
+  "entry_count": 4265,
+  "known_issues": [
+    "ไม่ทราบว่าเป็นฉบับพิมพ์ครั้งที่เท่าไหร่",
+    "มี entries ซ้ำ 2 คำ (ปณามคาถา, ประหาร)",
+    "~610 entries มีนิยามสั้นมาก (<20 chars) — ส่วนใหญ่เป็น abbreviation ถูกต้อง"
+  ],
+  "conditions_of_use": [
+    "ต้องใช้เป็นธรรมทาน ฟรี 100%",
+    "ต้องไม่ดัดแปลงเนื้อหา (ยกเว้น typo จากการ scrape)",
+    "ต้องระบุที่มาและผู้เรียบเรียง",
+    "ต้องลิงก์กลับไปยังแหล่งต้นฉบับ",
+    "ผู้จัดทำรับผิดชอบความถูกต้องในการ scrape เอง — ไม่เกี่ยวข้องกับวัดญาณเวศกวัน"
+  ],
+  "disclaimer": "ข้อมูลนี้จัดทำขึ้นเพื่อการศึกษาเท่านั้น หากพบข้อผิดพลาดหรือต้องการอ้างอิงอย่างเป็นทางการ โปรดตรวจสอบกับตัวเล่มหนังสือฉบับพิมพ์ล่าสุด"
+}

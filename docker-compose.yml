@@ -1,29 +1,38 @@
-version: '3.8'
+# =============================================================================
+# Tripitaka MCP Server — Development Compose
+# =============================================================================
+# ใช้สำหรับ local dev เท่านั้น — มี bind mount source + expose DB port ให้ดีบัก
+# สำหรับ production ให้ใช้ docker-compose.prod.yml
+#
+# Usage:
+#   cp .env.example .env   # แล้วแก้ POSTGRES_PASSWORD ให้ไม่ใช่ค่า default
+#   docker compose up -d
 
 services:
   # --------------------------------------------------------------------------
-  # PostgreSQL + pgvector — ฐานข้อมูลหลัก
+  # PostgreSQL + pgvector
   # --------------------------------------------------------------------------
   db:
     image: ankane/pgvector:latest
     container_name: tripitaka-db
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"    # bind localhost เท่านั้น (ไม่เปิด LAN)
     environment:
-      POSTGRES_DB: tripitaka_db
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: ${POSTGRES_DB:-tripitaka_db}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # เปิด pgvector extension อัตโนมัติ
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d tripitaka_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-tripitaka_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   # --------------------------------------------------------------------------
-  # MCP Server — Tripitaka MCP Server (Python)
+  # MCP Server (dev mode — hot reload via bind mount)
   # --------------------------------------------------------------------------
   mcp-server:
     build: .
@@ -32,14 +41,14 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://admin:password123@db:5432/tripitaka_db
-      EMBEDDING_MODEL: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-      EMBEDDING_DIMENSIONS: 384
-      MCP_TRANSPORT: stdio
+      DATABASE_URL: postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-tripitaka_db}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-384}
+      MCP_TRANSPORT: ${MCP_TRANSPORT:-stdio}
     volumes:
-      - .:/app                          # mount source สำหรับ development
-      - model_cache:/root/.cache        # cache embedding model
-    stdin_open: true                    # สำหรับ stdio transport
+      - .:/app                    # dev only — อย่าใช้บน prod
+      - model_cache:/home/app/.cache
+    stdin_open: true
     tty: true
 
 volumes:
