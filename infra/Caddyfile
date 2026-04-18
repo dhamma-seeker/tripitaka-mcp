@@ -1,0 +1,80 @@
+# =============================================================================
+# Tripitaka MCP — Caddy reverse proxy + rate limit
+# =============================================================================
+# ต้องการ caddy ที่ build มาพร้อมกับ plugin github.com/mholt/caddy-ratelimit
+# ดู infra/Dockerfile.caddy
+#
+# ตั้งค่า TRIPITAKA_DOMAIN ใน .env ก่อน up
+# เช่น TRIPITAKA_DOMAIN=mcp.example.org
+
+{
+    # ปิด admin API ออกจาก network — เปิดเฉพาะ localhost ภายใน container
+    admin off
+
+    # เก็บ log แบบ structured JSON
+    log {
+        output stdout
+        format json
+        level INFO
+    }
+
+    # เปิด rate_limit plugin (ต้อง build caddy พร้อม plugin นี้)
+    order rate_limit before reverse_proxy
+}
+
+{$TRIPITAKA_DOMAIN} {
+    encode zstd gzip
+
+    # --- security headers -----------------------------------------------------
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "no-referrer"
+        # ไม่ leak Caddy version
+        -Server
+    }
+
+    # --- rate limit (เน้น per-IP เพราะเป็น free public service) ---------------
+    # zone "sse_per_ip": 10 requests / 10 วินาที / ip → burst-friendly
+    # zone "sse_per_ip_slow": 60 requests / 1 นาที / ip → prevent sustained hammering
+    # ถ้าเกิน → HTTP 429
+    rate_limit {
+        distributed
+        zone sse_per_ip {
+            key {client_ip}
+            events 10
+            window 10s
+        }
+        zone sse_per_ip_slow {
+            key {client_ip}
+            events 60
+            window 1m
+        }
+    }
+
+    # --- healthcheck (เปิดไม่ rate limit) -----------------------------------
+    @health path /health /healthz
+    handle @health {
+        respond "ok" 200
+    }
+
+    # --- proxy → MCP server ---------------------------------------------------
+    reverse_proxy mcp-server:8080 {
+        # SSE ต้อง flush ทันที + keep connection นาน
+        flush_interval -1
+        transport http {
+            read_timeout 5m
+            write_timeout 5m
+        }
+
+        # limit request body (MCP เป็น JSON-RPC เล็กๆ ไม่ต้อง upload ไฟล์)
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+    }
+
+    # --- body size limit ------------------------------------------------------
+    request_body {
+        max_size 256KB
+    }
+}

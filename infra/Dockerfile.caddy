@@ -1,0 +1,15 @@
+# =============================================================================
+# Caddy + rate_limit plugin (สำหรับ tripitaka-mcp production)
+# =============================================================================
+# build ด้วย xcaddy เพื่อรวม github.com/mholt/caddy-ratelimit เข้าไปใน binary
+
+FROM caddy:2-builder-alpine AS builder
+RUN xcaddy build \
+    --with github.com/mholt/caddy-ratelimit
+
+FROM caddy:2-alpine
+COPY --from=builder /usr/bin/caddy /usr/bin/caddy
+
+# Caddy รันเป็น non-root อยู่แล้วใน image ทางการ
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD wget -qO- http://127.0.0.1/health || exit 1

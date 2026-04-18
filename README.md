@@ -27,21 +27,49 @@ MCP Server สำหรับค้นหาและอ้างอิงเน
 
 ## 🚀 Quick Start
 
-### 1. Clone & Setup
+### 🏎️ วิธีที่เร็วที่สุด — ใช้ installer (แนะนำสำหรับผู้ไม่ใช่สาย dev)
+
+```bash
+git clone https://github.com/Ipurak/tripitaka-mcp.git
+cd tripitaka-mcp
+./scripts/install.sh
+```
+
+ถ้ามี database dump (`tripitaka_production_data.dump`) วางไว้ในโฟลเดอร์ project
+installer จะ **restore ให้อัตโนมัติ** — ประหยัดเวลาจาก 2-4 ชม. (load + embeddings) เหลือ ~5 นาที
+
+ดาวน์โหลด dump ล่าสุดได้จาก:
+
+- [Hugging Face Datasets — Ipurak/tripitaka-mcp-dump](https://huggingface.co/datasets/Ipurak/tripitaka-mcp-dump) _(เร็วๆ นี้)_
+
+installer จะ:
+
+1. ตรวจว่ามี docker / compose / openssl
+2. สร้าง `.env` ด้วย password สุ่มให้ (ทั้ง admin และ readonly user)
+3. เปิด DB + restore dump (ถ้าเจอ)
+4. ตั้ง readonly role + timeout สำหรับ runtime
+5. แสดง config Claude Desktop ที่ copy ไปวางได้เลย
+
+---
+
+### 🔧 วิธี manual (สำหรับ dev)
+
+#### 1. Clone & Setup
 
 ```bash
 git clone https://github.com/Ipurak/tripitaka-mcp.git
 cd tripitaka-mcp
 cp .env.example .env
+# แก้ POSTGRES_PASSWORD ใน .env ให้เป็น random password
 ```
 
-### 2. Start Database
+#### 2. Start Database
 
 ```bash
 docker compose up db -d
 ```
 
-### 3. Install Dependencies
+#### 3. Install Dependencies
 
 ```bash
 python -m venv .venv
@@ -49,7 +77,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Initialize Database & Load Data
+#### 4. Initialize Database & Load Data
 
 ```bash
 # 1. Seed metadata (pitaka, nikaya)
@@ -68,7 +96,7 @@ python scripts/load_dictionary.py
 python scripts/generate_embeddings.py
 ```
 
-### 5. Run MCP Server
+#### 5. Run MCP Server
 
 ```bash
 python main.py
@@ -84,6 +112,18 @@ python main.py
 ## 🚢 Production Deployment
 
 หากต้องการ Deploy ขึ้น Production โดยไม่ต้องโหลดข้อมูลและรัน AI Model ใหม่ แนะนำให้ใช้การ Restore จาก Database Dump
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Production stack มี 3 services:
+
+- `db` — PostgreSQL + pgvector (internal only, ไม่ expose port)
+- `mcp-server` — FastMCP (รันด้วย readonly user, read-only FS, cap_drop ALL)
+- `caddy` — reverse proxy + Let's Encrypt + **rate limit** (10 req/10s และ 60 req/1 min per IP)
+
+แนะนำให้เสริมด้วย **Cloudflare** หน้า Caddy อีกชั้น (DNS proxy + rate limit rules + DDoS protection — free tier)
 
 👉 ดูรายละเอียดที่: **[DEPLOYMENT.md](./DEPLOYMENT.md)**
 

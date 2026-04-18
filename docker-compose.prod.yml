@@ -99,6 +99,49 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # --------------------------------------------------------------------------
+  # Caddy reverse proxy + TLS + rate limit
+  # --------------------------------------------------------------------------
+  # ผู้ใช้ที่มี Cloudflare อยู่หน้า: ตั้ง DNS proxy + Cloudflare rate limit
+  # rule (ชั้นแรก) ควบคู่กับ Caddy rate_limit (ชั้นสองในเครื่อง)
+  caddy:
+    build:
+      context: ./infra
+      dockerfile: Dockerfile.caddy
+    image: tripitaka-caddy:${APP_VERSION:-latest}
+    container_name: tripitaka-caddy
+    depends_on:
+      - mcp-server
+    environment:
+      TRIPITAKA_DOMAIN: ${TRIPITAKA_DOMAIN:?TRIPITAKA_DOMAIN must be set (eg. mcp.example.org)}
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   postgres_data:
   model_cache:
+  caddy_data:
+  caddy_config:
