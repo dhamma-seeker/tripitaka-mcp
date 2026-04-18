@@ -1,0 +1,142 @@
+#cloud-config
+# =============================================================================
+# Tripitaka MCP — Droplet bootstrap (Ubuntu 22.04)
+# =============================================================================
+# รันครั้งเดียวตอนสร้าง droplet (DigitalOcean user_data)
+#
+# ทำอะไรบ้าง:
+# 1. สร้าง deploy user (non-root, อยู่ใน docker group)
+# 2. ปิด root SSH login + password auth
+# 3. UFW firewall: allow 22/80/443 เท่านั้น
+# 4. fail2ban สำหรับ ssh brute-force
+# 5. unattended-upgrades อัตโนมัติ (security patches)
+# 6. Docker CE + compose plugin
+# 7. swapfile 2GB (กัน OOM ตอน build embeddings)
+# 8. logrotate config สำหรับ docker json-file
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  - ufw
+  - fail2ban
+  - unattended-upgrades
+  - apt-listchanges
+  - htop
+  - vim
+  - git
+
+users:
+  - name: deploy
+    groups: [sudo, docker]
+    shell: /bin/bash
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh_authorized_keys:
+      # จะถูกแทนที่โดย terraform template (${deploy_public_key})
+      - ${deploy_public_key}
+
+write_files:
+  # --- UFW rules (applied ด้านล่างใน runcmd) ---------------------------------
+  - path: /etc/ufw/applications.d/tripitaka
+    content: |
+      [Tripitaka-Web]
+      title=Tripitaka MCP (HTTP/HTTPS)
+      description=Caddy reverse proxy
+      ports=80,443/tcp
+
+  # --- fail2ban jail สำหรับ sshd --------------------------------------------
+  - path: /etc/fail2ban/jail.d/sshd.local
+    content: |
+      [sshd]
+      enabled = true
+      maxretry = 3
+      findtime = 10m
+      bantime = 1h
+
+  # --- SSH hardening --------------------------------------------------------
+  - path: /etc/ssh/sshd_config.d/99-hardening.conf
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      X11Forwarding no
+      AllowUsers deploy
+      MaxAuthTries 3
+      ClientAliveInterval 300
+      ClientAliveCountMax 2
+
+  # --- unattended-upgrades: security only -----------------------------------
+  - path: /etc/apt/apt.conf.d/50unattended-upgrades
+    content: |
+      Unattended-Upgrade::Allowed-Origins {
+          "$${distro_id}:$${distro_codename}-security";
+          "$${distro_id}ESMApps:$${distro_codename}-apps-security";
+          "$${distro_id}ESM:$${distro_codename}-infra-security";
+      };
+      Unattended-Upgrade::Automatic-Reboot "true";
+      Unattended-Upgrade::Automatic-Reboot-Time "04:30";
+      Unattended-Upgrade::Remove-Unused-Dependencies "true";
+
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7";
+
+  # --- Docker log rotation (กัน disk เต็ม) -----------------------------------
+  - path: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "10m",
+          "max-file": "3"
+        },
+        "live-restore": true
+      }
+
+runcmd:
+  # --- Docker CE install -----------------------------------------------------
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker
+  - systemctl restart docker
+
+  # --- UFW enable ------------------------------------------------------------
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp comment 'SSH'
+  - ufw allow 80/tcp comment 'HTTP (Caddy)'
+  - ufw allow 443/tcp comment 'HTTPS (Caddy)'
+  - ufw allow 443/udp comment 'HTTP/3 (Caddy)'
+  - ufw --force enable
+
+  # --- fail2ban --------------------------------------------------------------
+  - systemctl enable --now fail2ban
+
+  # --- SSH reload (apply hardening) -----------------------------------------
+  - systemctl reload ssh
+
+  # --- Swap 2GB (กัน OOM ตอน run embedding/build) ----------------------------
+  - fallocate -l 2G /swapfile
+  - chmod 600 /swapfile
+  - mkswap /swapfile
+  - swapon /swapfile
+  - echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  - sysctl vm.swappiness=10
+  - echo 'vm.swappiness=10' > /etc/sysctl.d/99-swap.conf
+
+  # --- Prep deploy directory -------------------------------------------------
+  - mkdir -p /opt/tripitaka
+  - chown deploy:deploy /opt/tripitaka
+
+  # --- Done ------------------------------------------------------------------
+  - echo "✓ Bootstrap complete at $(date -u +%FT%TZ)" > /var/log/tripitaka-bootstrap.log

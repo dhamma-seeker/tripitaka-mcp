@@ -33,3 +33,9 @@ variable "domain_name" {
   type        = string
   default     = "tipitaka-mcp.com"
 }
+
+variable "ssh_allowed_cidrs" {
+  description = "CIDR blocks ที่ได้รับอนุญาตให้ SSH เข้า droplet (แนะนำระบุ IP ของคุณ)"
+  type        = list(string)
+  default     = ["0.0.0.0/0", "::/0"]
+}
