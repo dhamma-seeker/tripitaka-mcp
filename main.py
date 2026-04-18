@@ -54,10 +54,13 @@ mcp = FastMCP(
 )
 
 # สร้างตารางตอน startup (ถ้ายังไม่มี)
-try:
-    create_tables()
-except Exception:
-    pass  # ถ้า DB ยังไม่พร้อม ให้ข้ามไปก่อน
+# Prod ที่ใช้ readonly user ให้ข้ามด้วย TRIPITAKA_SKIP_MIGRATIONS=true
+# เพราะ readonly role ไม่มีสิทธิ์ CREATE TABLE
+if os.getenv("TRIPITAKA_SKIP_MIGRATIONS", "").lower() not in ("1", "true", "yes"):
+    try:
+        create_tables()
+    except Exception as e:
+        print(f"⚠️  create_tables skipped: {e}")
 
 
 # =============================================================================

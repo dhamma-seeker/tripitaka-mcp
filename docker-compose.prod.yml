@@ -62,7 +62,11 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      # ใช้ readonly user (ตั้งค่าผ่าน scripts/setup_readonly_user.sql)
+      # TRIPITAKA_RO_PASSWORD ต้องมีใน .env — ไม่ fallback
+      DATABASE_URL: postgresql://tripitaka_ro:${TRIPITAKA_RO_PASSWORD:?TRIPITAKA_RO_PASSWORD must be set}@db:5432/${POSTGRES_DB}
+      # ข้าม create_tables() — runtime เป็น readonly ไม่มีสิทธิ์ DDL
+      TRIPITAKA_SKIP_MIGRATIONS: "true"
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-384}
       MCP_TRANSPORT: ${MCP_TRANSPORT:-sse}
