@@ -30,7 +30,7 @@ MCP Server สำหรับค้นหาและอ้างอิงเน
 ### 🏎️ วิธีที่เร็วที่สุด — ใช้ installer (แนะนำสำหรับผู้ไม่ใช่สาย dev)
 
 ```bash
-git clone https://github.com/Ipurak/tripitaka-mcp.git
+git clone https://github.com/dhamma-seeker/tripitaka-mcp.git
 cd tripitaka-mcp
 ./scripts/install.sh
 ```
@@ -63,7 +63,7 @@ Options:
 #### 1. Clone & Setup
 
 ```bash
-git clone https://github.com/Ipurak/tripitaka-mcp.git
+git clone https://github.com/dhamma-seeker/tripitaka-mcp.git
 cd tripitaka-mcp
 cp .env.example .env
 # แก้ POSTGRES_PASSWORD ใน .env ให้เป็น random password

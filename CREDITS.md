@@ -103,7 +103,7 @@
 
 หากท่านต้องการร่วมสนับสนุนโครงการนี้:
 
-- **Report bugs / errors**: [GitHub Issues](https://github.com/Ipurak/tripitaka-mcp/issues)
+- **Report bugs / errors**: [GitHub Issues](https://github.com/dhamma-seeker/tripitaka-mcp/issues)
 - **Improve translations**: Pull requests ยินดีต้อนรับ
 - **Add new dictionaries**: ช่วยเพิ่มแหล่งพจนานุกรมที่ license compatible
 - **Translate UI**: ช่วยแปลเอกสารเป็นภาษาอื่น

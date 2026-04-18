@@ -24,7 +24,7 @@ output "next_steps" {
 
   ขั้นตอนถัดไป:
     1. ssh deploy@${digitalocean_droplet.server.ipv4_address}
-    2. cd /opt/tripitaka && git clone https://github.com/Ipurak/tripitaka-mcp.git .
+    2. cd /opt/tripitaka && git clone https://github.com/dhamma-seeker/tripitaka-mcp.git .
     3. ./scripts/deploy.sh
     4. ตรวจ https://${var.domain_name}/health
 

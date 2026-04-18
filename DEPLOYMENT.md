@@ -51,7 +51,7 @@ Output จะแสดง droplet IP + คำสั่ง SSH
 ```bash
 ssh deploy@<DROPLET_IP>          # ใช้ user deploy ไม่ใช่ root
 cd /opt/tripitaka
-git clone https://github.com/Ipurak/tripitaka-mcp.git .
+git clone https://github.com/dhamma-seeker/tripitaka-mcp.git .
 ./scripts/deploy.sh --domain mcp.example.org
 ```
 
