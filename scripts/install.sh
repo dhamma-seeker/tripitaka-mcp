@@ -13,11 +13,17 @@
 #   6. พิมพ์ config สำหรับ Claude Desktop ให้ copy ใช้ได้เลย
 #
 # Usage:
-#   ./scripts/install.sh                 # interactive
+#   ./scripts/install.sh                 # interactive (auto-download จาก HF ถ้าไม่เจอ local)
 #   ./scripts/install.sh --dump PATH     # ใช้ dump ที่มีอยู่แล้ว
+#   ./scripts/install.sh --dump-url URL  # override ที่มาของ dump
 #   ./scripts/install.sh --no-dump       # ข้าม restore (โหลดข้อมูลเองทีหลัง)
 
 set -euo pipefail
+
+# --- defaults ---------------------------------------------------------------
+HF_REPO="Ipurak/tripitaka-mcp-dump"
+HF_FILE="tripitaka_production_data.dump"
+DEFAULT_DUMP_URL="https://huggingface.co/datasets/${HF_REPO}/resolve/main/${HF_FILE}"
 
 # --- paths -------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -39,10 +45,12 @@ die()  { echo "${C_RED}✗${C_RESET} $*" >&2; exit 1; }
 
 # --- parse args --------------------------------------------------------------
 DUMP_PATH=""
+DUMP_URL="${DEFAULT_DUMP_URL}"
 SKIP_DUMP=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --dump) DUMP_PATH="${2:-}"; shift 2 ;;
+        --dump-url) DUMP_URL="${2:-}"; shift 2 ;;
         --no-dump) SKIP_DUMP=1; shift ;;
         -h|--help)
             grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
@@ -60,8 +68,9 @@ log "ตรวจ prerequisites..."
 command -v docker >/dev/null 2>&1 || die "docker ไม่พบ — ติดตั้งจาก https://docs.docker.com/get-docker/"
 docker compose version >/dev/null 2>&1 || die "docker compose ไม่พบ (plugin v2) — อัปเดต Docker Desktop หรือติดตั้ง compose plugin"
 command -v openssl >/dev/null 2>&1 || die "openssl ไม่พบ (ใช้สร้าง password สุ่ม)"
+command -v curl >/dev/null 2>&1 || die "curl ไม่พบ (ใช้ดาวน์โหลด dump จาก Hugging Face)"
 docker info >/dev/null 2>&1 || die "docker daemon ไม่ทำงาน — เปิด Docker Desktop ก่อน"
-ok "docker + compose + openssl พร้อม"
+ok "docker + compose + openssl + curl พร้อม"
 
 # --- 2. .env -----------------------------------------------------------------
 if [[ -f .env ]]; then
@@ -84,6 +93,7 @@ fi
 
 # --- 3. dump -----------------------------------------------------------------
 if [[ ${SKIP_DUMP} -eq 0 && -z "${DUMP_PATH}" ]]; then
+    # 3a. หา dump ใน local ก่อน
     for candidate in tripitaka_production_data.dump ./data/tripitaka.dump; do
         if [[ -f "${candidate}" ]]; then
             DUMP_PATH="${candidate}"
@@ -91,6 +101,22 @@ if [[ ${SKIP_DUMP} -eq 0 && -z "${DUMP_PATH}" ]]; then
             break
         fi
     done
+
+    # 3b. ถ้า local ไม่มี → ดาวน์โหลดจาก Hugging Face (${HF_REPO})
+    if [[ -z "${DUMP_PATH}" ]]; then
+        DUMP_PATH="./tripitaka_production_data.dump"
+        log "ดาวน์โหลด dump จาก ${DUMP_URL}"
+        log "(ไฟล์ใหญ่ประมาณ ~500MB-1GB อาจใช้เวลาหลายนาทีขึ้นกับความเร็วเน็ต)"
+        if ! curl -fL --progress-bar --retry 3 --retry-delay 5 -o "${DUMP_PATH}.tmp" "${DUMP_URL}"; then
+            rm -f "${DUMP_PATH}.tmp"
+            warn "ดาวน์โหลดล้มเหลว — จะข้าม restore"
+            warn "ลองใหม่ด้วย: ./scripts/install.sh --dump PATH  หรือ  --dump-url URL"
+            DUMP_PATH=""
+        else
+            mv "${DUMP_PATH}.tmp" "${DUMP_PATH}"
+            ok "ดาวน์โหลดสำเร็จ: ${DUMP_PATH} ($(du -h "${DUMP_PATH}" | cut -f1))"
+        fi
+    fi
 fi
 
 # --- 4. boot DB --------------------------------------------------------------

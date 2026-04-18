@@ -35,20 +35,26 @@ cd tripitaka-mcp
 ./scripts/install.sh
 ```
 
-ถ้ามี database dump (`tripitaka_production_data.dump`) วางไว้ในโฟลเดอร์ project
-installer จะ **restore ให้อัตโนมัติ** — ประหยัดเวลาจาก 2-4 ชม. (load + embeddings) เหลือ ~5 นาที
-
-ดาวน์โหลด dump ล่าสุดได้จาก:
-
-- [Hugging Face Datasets — Ipurak/tripitaka-mcp-dump](https://huggingface.co/datasets/Ipurak/tripitaka-mcp-dump) _(เร็วๆ นี้)_
+Installer จะ **ดาวน์โหลด database dump จาก [Hugging Face — Ipurak/tripitaka-mcp-dump](https://huggingface.co/datasets/Ipurak/tripitaka-mcp-dump)
+แล้ว restore ให้อัตโนมัติ** — ประหยัดเวลาจาก 2-4 ชม. (load + embeddings) เหลือ ~5 นาที
+(ถ้ามีไฟล์ dump ใน local อยู่แล้ว จะใช้ของ local แทน)
 
 installer จะ:
 
-1. ตรวจว่ามี docker / compose / openssl
+1. ตรวจว่ามี docker / compose / openssl / curl
 2. สร้าง `.env` ด้วย password สุ่มให้ (ทั้ง admin และ readonly user)
-3. เปิด DB + restore dump (ถ้าเจอ)
-4. ตั้ง readonly role + timeout สำหรับ runtime
-5. แสดง config Claude Desktop ที่ copy ไปวางได้เลย
+3. ดาวน์โหลด dump จาก Hugging Face (ถ้าไม่มีใน local)
+4. เปิด DB + restore dump
+5. ตั้ง readonly role + timeout สำหรับ runtime
+6. แสดง config Claude Desktop ที่ copy ไปวางได้เลย
+
+Options:
+
+```bash
+./scripts/install.sh --dump PATH          # ใช้ไฟล์ dump ที่มีอยู่แล้ว
+./scripts/install.sh --dump-url URL       # override ที่มาของ dump
+./scripts/install.sh --no-dump            # ข้าม restore (โหลดข้อมูลเองทีหลัง)
+```
 
 ---
 
