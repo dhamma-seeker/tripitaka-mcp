@@ -37,7 +37,7 @@ die()  { echo "${C_RED}✗${C_RESET} $*" >&2; exit 1; }
 # --- parse args --------------------------------------------------------------
 DOMAIN=""
 DUMP_URL=""
-HF_REPO="Ipurak/tripitaka-mcp-dump"
+HF_REPO="dhamma-seeker/tripitaka-mcp-dump"
 HF_FILE="tripitaka_production_data.dump"
 DEFAULT_DUMP_URL="https://huggingface.co/datasets/${HF_REPO}/resolve/main/${HF_FILE}"
 

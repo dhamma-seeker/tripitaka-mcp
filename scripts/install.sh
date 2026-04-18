@@ -21,7 +21,7 @@
 set -euo pipefail
 
 # --- defaults ---------------------------------------------------------------
-HF_REPO="Ipurak/tripitaka-mcp-dump"
+HF_REPO="dhamma-seeker/tripitaka-mcp-dump"
 HF_FILE="tripitaka_production_data.dump"
 DEFAULT_DUMP_URL="https://huggingface.co/datasets/${HF_REPO}/resolve/main/${HF_FILE}"
 

@@ -35,7 +35,7 @@ cd tripitaka-mcp
 ./scripts/install.sh
 ```
 
-Installer จะ **ดาวน์โหลด database dump จาก [Hugging Face — Ipurak/tripitaka-mcp-dump](https://huggingface.co/datasets/Ipurak/tripitaka-mcp-dump)
+Installer จะ **ดาวน์โหลด database dump จาก [Hugging Face — dhamma-seeker/tripitaka-mcp-dump](https://huggingface.co/datasets/dhamma-seeker/tripitaka-mcp-dump)
 แล้ว restore ให้อัตโนมัติ** — ประหยัดเวลาจาก 2-4 ชม. (load + embeddings) เหลือ ~5 นาที
 (ถ้ามีไฟล์ dump ใน local อยู่แล้ว จะใช้ของ local แทน)
 
