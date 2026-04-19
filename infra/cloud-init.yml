@@ -1,18 +1,18 @@
 #cloud-config
 # =============================================================================
-# Tripitaka MCP — Droplet bootstrap (Ubuntu 22.04)
+# Tripitaka MCP -- Droplet bootstrap (Ubuntu 22.04)
 # =============================================================================
-# รันครั้งเดียวตอนสร้าง droplet (DigitalOcean user_data)
+# Runs once on droplet creation (DigitalOcean user_data).
 #
-# ทำอะไรบ้าง:
-# 1. สร้าง deploy user (non-root, อยู่ใน docker group)
-# 2. ปิด root SSH login + password auth
-# 3. UFW firewall: allow 22/80/443 เท่านั้น
-# 4. fail2ban สำหรับ ssh brute-force
-# 5. unattended-upgrades อัตโนมัติ (security patches)
+# What it does:
+# 1. Create deploy user (non-root, in docker group)
+# 2. Disable root SSH login + password auth
+# 3. UFW firewall: allow 22/80/443 only
+# 4. fail2ban for ssh brute-force
+# 5. unattended-upgrades (security patches)
 # 6. Docker CE + compose plugin
-# 7. swapfile 2GB (กัน OOM ตอน build embeddings)
-# 8. logrotate config สำหรับ docker json-file
+# 7. swapfile 2GB (prevent OOM during embedding build)
+# 8. logrotate config for docker json-file
 
 package_update: true
 package_upgrade: true
@@ -36,11 +36,10 @@ users:
     shell: /bin/bash
     sudo: ["ALL=(ALL) NOPASSWD:ALL"]
     ssh_authorized_keys:
-      # จะถูกแทนที่โดย terraform template (${deploy_public_key})
       - ${deploy_public_key}
 
 write_files:
-  # --- UFW rules (applied ด้านล่างใน runcmd) ---------------------------------
+  # --- UFW rules (applied in runcmd below) ----------------------------------
   - path: /etc/ufw/applications.d/tripitaka
     content: |
       [Tripitaka-Web]
@@ -48,7 +47,7 @@ write_files:
       description=Caddy reverse proxy
       ports=80,443/tcp
 
-  # --- fail2ban jail สำหรับ sshd --------------------------------------------
+  # --- fail2ban jail for sshd -----------------------------------------------
   - path: /etc/fail2ban/jail.d/sshd.local
     content: |
       [sshd]
@@ -87,7 +86,7 @@ write_files:
       APT::Periodic::Unattended-Upgrade "1";
       APT::Periodic::AutocleanInterval "7";
 
-  # --- Docker log rotation (กัน disk เต็ม) -----------------------------------
+  # --- Docker log rotation (prevent disk fill) ------------------------------
   - path: /etc/docker/daemon.json
     content: |
       {
@@ -100,7 +99,7 @@ write_files:
       }
 
 runcmd:
-  # --- Docker CE install -----------------------------------------------------
+  # --- Docker CE install ----------------------------------------------------
   - install -m 0755 -d /etc/apt/keyrings
   - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
   - chmod a+r /etc/apt/keyrings/docker.asc
@@ -110,7 +109,7 @@ runcmd:
   - systemctl enable --now docker
   - systemctl restart docker
 
-  # --- UFW enable ------------------------------------------------------------
+  # --- UFW enable -----------------------------------------------------------
   - ufw default deny incoming
   - ufw default allow outgoing
   - ufw allow 22/tcp comment 'SSH'
@@ -119,13 +118,13 @@ runcmd:
   - ufw allow 443/udp comment 'HTTP/3 (Caddy)'
   - ufw --force enable
 
-  # --- fail2ban --------------------------------------------------------------
+  # --- fail2ban -------------------------------------------------------------
   - systemctl enable --now fail2ban
 
   # --- SSH reload (apply hardening) -----------------------------------------
   - systemctl reload ssh
 
-  # --- Swap 2GB (กัน OOM ตอน run embedding/build) ----------------------------
+  # --- Swap 2GB (prevent OOM) -----------------------------------------------
   - fallocate -l 2G /swapfile
   - chmod 600 /swapfile
   - mkswap /swapfile
@@ -134,9 +133,9 @@ runcmd:
   - sysctl vm.swappiness=10
   - echo 'vm.swappiness=10' > /etc/sysctl.d/99-swap.conf
 
-  # --- Prep deploy directory -------------------------------------------------
+  # --- Prep deploy directory ------------------------------------------------
   - mkdir -p /opt/tripitaka
   - chown deploy:deploy /opt/tripitaka
 
-  # --- Done ------------------------------------------------------------------
-  - echo "✓ Bootstrap complete at $(date -u +%FT%TZ)" > /var/log/tripitaka-bootstrap.log
+  # --- Done -----------------------------------------------------------------
+  - echo "[OK] Bootstrap complete at $(date -u +%FT%TZ)" > /var/log/tripitaka-bootstrap.log

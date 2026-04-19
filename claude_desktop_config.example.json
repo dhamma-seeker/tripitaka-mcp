@@ -1,0 +1,38 @@
+{
+  "_comment": "ตัวอย่าง claude_desktop_config.json — คัดลอกส่วนที่ต้องใช้ไปวางที่ ~/Library/Application Support/Claude/claude_desktop_config.json (macOS) หรือ %APPDATA%\\Claude\\claude_desktop_config.json (Windows) แล้วแก้ path/URL",
+
+  "mcpServers": {
+    "_comment_local": "--- Local stdio — รัน Python MCP server บนเครื่องเดียวกับ Claude ---",
+    "tripitaka-local": {
+      "command": "/absolute/path/to/tripitaka-mcp/.venv/bin/python",
+      "args": ["/absolute/path/to/tripitaka-mcp/main.py"],
+      "env": {
+        "DATABASE_URL": "postgresql://admin:CHANGE_ME@localhost:5432/tripitaka_db",
+        "MCP_TRANSPORT": "stdio"
+      }
+    },
+
+    "_comment_remote": "--- Remote SSE — ต่อไป server ที่ self-host บน VPS ผ่าน mcp-remote bridge ---",
+    "tripitaka-remote": {
+      "command": "/Users/YOU/.nvm/versions/node/v22.x/bin/npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.example.org/sse",
+        "--transport",
+        "sse-only"
+      ],
+      "env": {
+        "PATH": "/Users/YOU/.nvm/versions/node/v22.x/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  },
+
+  "_notes": [
+    "1. Claude Desktop ยังไม่รองรับ remote SSE โดยตรง — ต้องใช้ mcp-remote bridge SSE → stdio",
+    "2. command ต้องเป็น absolute path (Claude Desktop ไม่อ่าน shell PATH) — หา path: `which npx`, `which python`",
+    "3. env.PATH จำเป็นสำหรับ nvm user: ไม่งั้น npx จะเรียก node เก่าที่ไม่มี `node:path` module",
+    "4. --transport sse-only จำเป็น: mcp-remote default พยายาม Streamable HTTP ก่อน ซึ่ง Tripitaka MCP ไม่รองรับ → 502",
+    "5. ลบ _comment / _notes ออกก่อนใช้จริง (JSON parser ของ Claude ไม่สนใจ field ที่ไม่รู้จัก แต่เอาออกเพื่อความสะอาด)"
+  ]
+}

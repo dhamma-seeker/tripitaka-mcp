@@ -135,6 +135,8 @@ Production stack มี 3 services:
 
 ## 🔧 เชื่อมต่อกับ Claude Desktop
 
+### แบบ local (stdio)
+
 เพิ่มใน `claude_desktop_config.json`:
 
 ```json
@@ -150,6 +152,27 @@ Production stack มี 3 services:
   }
 }
 ```
+
+### แบบ remote (self-host บน server)
+
+ถ้าคุณ deploy MCP server ขึ้น VPS แล้ว ใช้ [`mcp-remote`](https://www.npmjs.com/package/mcp-remote)
+เพื่อ bridge SSE → stdio:
+
+```json
+{
+  "mcpServers": {
+    "tripitaka-remote": {
+      "command": "/Users/YOU/.nvm/versions/node/v22.x/bin/npx",
+      "args": ["-y", "mcp-remote", "https://mcp.example.org/sse", "--transport", "sse-only"],
+      "env": {
+        "PATH": "/Users/YOU/.nvm/versions/node/v22.x/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  }
+}
+```
+
+ดูตัวอย่างเต็ม + คำอธิบายแต่ละ field: [`claude_desktop_config.example.json`](./claude_desktop_config.example.json)
 
 ## 📦 MCP Tools
 

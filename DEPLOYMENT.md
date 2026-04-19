@@ -83,17 +83,37 @@ git clone https://github.com/dhamma-seeker/tripitaka-mcp.git .
 
 ### 5. ทดสอบ MCP tools จริง
 
-ใน Claude Desktop `claude_desktop_config.json`:
+Claude Desktop ปัจจุบัน **ไม่รองรับ remote SSE โดยตรง** ต้องใช้ [`mcp-remote`](https://www.npmjs.com/package/mcp-remote)
+bridge SSE → stdio ให้
+
+เพิ่มใน `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
-    "tripitaka": {
-      "url": "https://mcp.example.org/sse"
+    "tripitaka-staging": {
+      "command": "/Users/YOU/.nvm/versions/node/v22.x/bin/npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.example.org/sse",
+        "--transport",
+        "sse-only"
+      ],
+      "env": {
+        "PATH": "/Users/YOU/.nvm/versions/node/v22.x/bin:/usr/local/bin:/usr/bin:/bin"
+      }
     }
   }
 }
 ```
+
+**ข้อควรรู้:**
+
+- `command` ต้อง**ระบุ path เต็ม**ของ `npx` (Claude Desktop ไม่เห็น `PATH` ของ shell) — หา path ด้วย `which npx`
+- `env.PATH` จำเป็นเมื่อใช้ **nvm**: ไม่งั้น `node` อาจ resolve ไปเวอร์ชันอื่นที่ไม่มี `node:path` module (เวอร์ชันเก่า)
+- `--transport sse-only` บังคับใช้ SSE — ถ้าไม่ใส่ mcp-remote จะลอง Streamable HTTP ก่อนแล้วได้ 502
+- ดูตัวอย่างเต็มที่: [`claude_desktop_config.example.json`](./claude_desktop_config.example.json)
 
 Restart Claude แล้วลอง:
 
@@ -193,9 +213,39 @@ docker logs tripitaka-caddy 2>&1 | jq -r '.request.remote_ip' | sort | uniq -c |
 
 ---
 
+## 🩺 Troubleshooting
+
+### `/sse` คืน 502 จาก Caddy
+
+สาเหตุที่พบบ่อย:
+
+1. **mcp-server bind `127.0.0.1`** — ใน `.env` ต้อง `MCP_HOST=0.0.0.0` ไม่งั้น Caddy container อื่นเชื่อมไม่ได้
+   - เช็ค: `docker logs tripitaka-mcp-server | grep 'Uvicorn running'` ต้องเห็น `http://0.0.0.0:8080`
+2. **MCP_TRANSPORT=stdio** — ต้องเป็น `sse` (ไม่งั้นไม่มี HTTP port เปิดเลย)
+3. **Port mismatch** — Caddy proxy ไป `:8080` แต่ server ฟัง `:8000` (default ถ้าไม่ตั้ง `MCP_PORT`)
+
+### SSH เชื่อมไม่ได้ (Connection refused) หลังจากที่เคยเข้าได้
+
+IP สาธารณะของคุณเปลี่ยน (VPN / มือถือ / ISP) → DO firewall `ssh_allowed_cidrs` บล็อก
+แก้: อัปเดต IP ใหม่ใน [infra/terraform.tfvars](infra/terraform.tfvars) แล้ว
+`terraform apply -target=digitalocean_firewall.main`
+
+### Claude Desktop: `Cannot find module 'node:path'`
+
+Claude Desktop เรียก `node` เวอร์ชันเก่า (< 16) ซึ่งไม่มี `node:` protocol
+แก้: ระบุ `PATH` เต็มใน `env` ที่ชี้ไป node ≥ 18 และ/หรือ `nvm alias default 22`
+
+### Claude Desktop: `Streamable HTTP error: Non-200 status code (502)`
+
+`mcp-remote` พยายามใช้ Streamable HTTP ก่อน แต่ server เราให้ SSE เท่านั้น
+แก้: เพิ่ม `--transport sse-only` ใน args
+
+---
+
 ## ⚠️ ข้อควรระวัง
 
 1. **ทรัพยากร**: RAM 4GB แนะนำ (swap 2GB ช่วยเสริม — cloud-init ตั้งไว้แล้ว)
+   ดูประเมินความจุและแนวทาง scale: [docs/CAPACITY.md](./docs/CAPACITY.md)
 2. **ห้าม commit `.env`**: `chmod 600` + เก็บสำรองใน password manager
 3. **Dump file**: ~500MB-1GB — ลบออกหลัง restore เสร็จ (`rm tripitaka_production_data.dump`) ประหยัด disk
 4. **Let's Encrypt rate limit**: ถ้า deploy ผิดซ้ำๆ อาจโดน ban 1 สัปดาห์ — ทดสอบด้วย `--staging` ก่อนถ้าไม่แน่ใจ
