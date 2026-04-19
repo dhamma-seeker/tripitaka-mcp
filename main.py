@@ -115,8 +115,8 @@ VALID_PITAKAS = frozenset({"vinaya", "sutta", "abhidhamma"})
 VALID_EDITIONS = frozenset({"dhiranandi", "jayasaro", "mbu", "royal"})
 VALID_DICT_LANGUAGES = frozenset({"en", "thai", "th", "all"})
 
-# sutta_id format เช่น "mn1", "dn22", "sn56.11", "an4.5.6"
-SUTTA_ID_PATTERN = re.compile(r"^[a-z]{2,5}\d+(\.\d+){0,3}[a-z]?$")
+# sutta_id format เช่น "mn1", "dn22", "sn56.11", "an4.5.6", "dhp1-20", "tha-ap411", "mil3.1.1"
+SUTTA_ID_PATTERN = re.compile(r"^[a-z]{2,6}(-[a-z]+)?\d+(-\d+)?(\.\d+(-\d+)?){0,4}[a-z]?$")
 
 
 class ValidationError(ValueError):

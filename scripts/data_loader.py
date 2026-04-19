@@ -39,6 +39,18 @@ BILARA_REPO_URL = "https://github.com/suttacentral/bilara-data.git"
 # นิกายที่จะ load (เริ่มจาก Sutta Pitaka)
 SUTTA_NIKAYAS = ["dn", "mn", "sn", "an"]
 
+# KN sub-books — แต่ละตัวเป็น standalone work ใน Khuddaka Nikāya
+# ลำดับตาม SC canonical order (ตรงกับ BOOKS_KN ใน seed_metadata.py)
+KN_SUBBOOKS = [
+    "kp", "dhp", "ud", "iti", "snp", "vv", "pv", "thag", "thig",
+    "tha-ap", "thi-ap", "bv", "cp", "ja", "mnd", "cnd", "ps",
+    "ne", "pe", "mil",
+]
+
+# ลำดับ translator ภาษาอังกฤษที่จะ fallback หากไม่เจอตัวแรก
+# sujato ครอบคลุมส่วนใหญ่, kelly มีเฉพาะ mil, อื่นๆเสริม
+EN_TRANSLATORS_KN = ["sujato", "kelly", "soma", "suddhaso", "kovilo", "anandajoti", "brahmali", "patton"]
+
 
 def download_bilara_data() -> None:
     """Clone bilara-data repo จาก SuttaCentral (ถ้ายังไม่มี)"""
@@ -329,6 +341,111 @@ def load_nikaya(nikaya_code: str) -> dict[str, int]:
         release_connection(conn)
 
 
+def find_root_files_subbook(subbook_code: str) -> list[Path]:
+    """หาไฟล์ root ใน KN sub-book (เช่น dhp, ja, tha-ap)"""
+    root_dir = BILARA_DATA_PATH / "root" / "pli" / "ms" / "sutta" / "kn" / subbook_code
+    if not root_dir.exists():
+        print(f"⚠️ ไม่พบ directory: {root_dir}")
+        return []
+    return sorted(root_dir.rglob("*_root-pli-ms.json"))
+
+
+def find_english_translation_fallback(
+    root_path: Path, translators: list[str]
+) -> tuple[Path | None, str | None]:
+    """ไล่หา English translation ตามลำดับ translator — ตัวแรกที่เจอชนะ"""
+    for tr in translators:
+        p = find_translation_file(root_path, "en", tr)
+        if p is not None:
+            return p, tr
+    return None, None
+
+
+def get_book_by_code(cur, book_code: str) -> int:
+    """Lookup pre-seeded book id; raise ถ้าไม่มี (ต้อง run seed_metadata ก่อน)"""
+    cur.execute("SELECT id FROM book WHERE code = %s", (book_code,))
+    row = cur.fetchone()
+    if not row:
+        raise RuntimeError(
+            f"Book '{book_code}' ไม่พบใน DB — ต้องรัน `python scripts/seed_metadata.py` ก่อน"
+        )
+    return row[0]
+
+
+def load_kn_subbook(subbook_code: str) -> dict[str, int]:
+    """โหลด KN sub-book หนึ่งตัว (dhp, ja, mil, ...)
+
+    Args:
+        subbook_code: เช่น "dhp", "ja", "tha-ap"
+
+    Returns:
+        dict {"suttas": int, "segments": int}
+    """
+    book_code = f"kn-{subbook_code}"
+    conn = get_connection()
+    translators_used: dict[str, int] = {}
+    try:
+        cur = conn.cursor()
+        book_id = get_book_by_code(cur, book_code)
+
+        root_files = find_root_files_subbook(subbook_code)
+        if not root_files:
+            print(f"⚠️ ไม่พบไฟล์ root สำหรับ kn/{subbook_code}")
+            return {"suttas": 0, "segments": 0}
+
+        total_suttas = 0
+        total_segments = 0
+
+        for i, root_path in enumerate(tqdm(root_files, desc=f"📖 KN/{subbook_code}")):
+            sutta_id = extract_sutta_id(root_path)
+            pali_data = parse_json_file(root_path)
+
+            en_path, en_translator = find_english_translation_fallback(
+                root_path, EN_TRANSLATORS_KN
+            )
+            en_data = parse_json_file(en_path) if en_path else None
+            if en_translator:
+                translators_used[en_translator] = translators_used.get(en_translator, 0) + 1
+
+            # KN ไม่มี Thai translation ใน bilara-data — skip เลย
+            segments = merge_segments(pali_data, en_data, None)
+
+            if segments:
+                count = insert_sutta_data(cur, book_id, sutta_id, segments, sort_order=i + 1)
+                total_suttas += 1
+                total_segments += count
+
+        conn.commit()
+
+        if translators_used:
+            summary = ", ".join(f"{t}={c}" for t, c in translators_used.items())
+            print(f"   ℹ️ EN translators: {summary}")
+        else:
+            print(f"   ℹ️ EN: ไม่มี translator ที่ครอบคลุม (text_english=NULL)")
+
+        return {"suttas": total_suttas, "segments": total_segments}
+
+    except Exception as e:
+        conn.rollback()
+        print(f"❌ เกิดข้อผิดพลาดในการ load kn/{subbook_code}: {e}")
+        raise
+    finally:
+        cur.close()
+        release_connection(conn)
+
+
+def load_kn() -> dict[str, int]:
+    """โหลด KN ทั้ง 20 sub-books"""
+    grand = {"suttas": 0, "segments": 0}
+    for sub in KN_SUBBOOKS:
+        print(f"\n📚 KN/{sub}...")
+        r = load_kn_subbook(sub)
+        grand["suttas"] += r["suttas"]
+        grand["segments"] += r["segments"]
+        print(f"   ✅ {r['suttas']} สูตร, {r['segments']} segments")
+    return grand
+
+
 def load_all() -> None:
     """โหลดข้อมูลทุกนิกาย (Sutta Pitaka)"""
     print("=" * 60)
@@ -349,6 +466,13 @@ def load_all() -> None:
         grand_total["suttas"] += result["suttas"]
         grand_total["segments"] += result["segments"]
         print(f"   ✅ {result['suttas']} สูตร, {result['segments']} segments")
+
+    # Step 4: โหลด KN (20 sub-books)
+    print(f"\n📚 กำลังโหลด KN (Khuddaka Nikāya) — 20 sub-books...")
+    kn_result = load_kn()
+    grand_total["suttas"] += kn_result["suttas"]
+    grand_total["segments"] += kn_result["segments"]
+    print(f"   ✅ KN รวม: {kn_result['suttas']} สูตร, {kn_result['segments']} segments")
 
     print("\n" + "=" * 60)
     print(f"✅ โหลดข้อมูลเสร็จสมบูรณ์!")
