@@ -59,6 +59,17 @@
         respond "ok" 200
     }
 
+    # --- webhooks → alert bridge (Telegram forwarder) -----------------------
+    # secret อยู่ใน URL path (เช่น /webhooks/uptime/<token>)
+    # body size เล็ก (alert payload ไม่ใหญ่) + global rate_limit ด้านบนคุม burst อยู่แล้ว
+    @webhooks path /webhooks/*
+    handle @webhooks {
+        request_body {
+            max_size 16KB
+        }
+        reverse_proxy alert-bridge:9090
+    }
+
     # --- proxy → MCP server ---------------------------------------------------
     reverse_proxy mcp-server:8080 {
         # SSE ต้อง flush ทันที + keep connection นาน
