@@ -85,6 +85,43 @@ async def health():
     return {"ok": True}
 
 
+def _parse_uptime_payload(data: dict) -> tuple[str, str, str, str, str]:
+    """Return (source, name, url, status, details).
+
+    status ∈ {"down", "up", "unknown"}
+
+    Supports:
+    - UptimeRobot: {monitorFriendlyName, monitorURL, alertType, alertDetails}
+    - BetterStack: {data: {attributes: {name, url, cause, resolved_at, ...}}}
+    """
+    # UptimeRobot
+    if "monitorFriendlyName" in data or "alertType" in data or "monitor_friendly_name" in data:
+        alert_type = str(_get(data, "alertType", "alert_type"))
+        status = {"1": "down", "2": "up"}.get(alert_type, "unknown")
+        return (
+            "UptimeRobot",
+            _get(data, "monitorFriendlyName", "monitor_friendly_name", default="Unknown"),
+            _get(data, "monitorURL", "monitor_url"),
+            status,
+            _get(data, "alertDetails", "alert_details"),
+        )
+
+    # BetterStack: {data: {attributes: {...}}}
+    if isinstance(data.get("data"), dict) and isinstance(data["data"].get("attributes"), dict):
+        attrs = data["data"]["attributes"]
+        status = "up" if attrs.get("resolved_at") else "down"
+        return (
+            "BetterStack",
+            attrs.get("pronounceable_name") or attrs.get("name") or "Unknown",
+            attrs.get("url") or "",
+            status,
+            attrs.get("cause") or attrs.get("response_content") or "",
+        )
+
+    # Fallback — unknown shape
+    return ("Webhook", "Unknown", "", "unknown", str(data)[:200])
+
+
 @app.post("/webhooks/uptime/{secret}")
 async def uptime_webhook(secret: str, req: Request):
     verify_secret(secret, req.client.host if req.client else "?")
@@ -93,18 +130,14 @@ async def uptime_webhook(secret: str, req: Request):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON")
 
-    name = _get(data, "monitorFriendlyName", "monitor_friendly_name", default="Unknown")
-    url = _get(data, "monitorURL", "monitor_url")
-    alert_type = str(_get(data, "alertType", "alert_type"))
-    details = _get(data, "alertDetails", "alert_details")
+    source, name, url, status, details = _parse_uptime_payload(data)
 
-    # UptimeRobot alertType: 1=down, 2=up
-    if alert_type == "1":
-        header = "🔴 <b>UptimeRobot — เว็บล่ม</b>"
-    elif alert_type == "2":
-        header = "🟢 <b>UptimeRobot — เว็บกลับมาแล้ว</b>"
+    if status == "down":
+        header = f"🔴 <b>{escape(source)} — เว็บล่ม</b>"
+    elif status == "up":
+        header = f"🟢 <b>{escape(source)} — เว็บกลับมาแล้ว</b>"
     else:
-        header = f"⚠️ <b>UptimeRobot — เหตุการณ์ ({escape(alert_type) or 'unknown'})</b>"
+        header = f"⚠️ <b>{escape(source)} — เหตุการณ์</b>"
 
     lines = [header, ""]
     lines.append(f"<b>Monitor:</b> {escape(str(name))}")

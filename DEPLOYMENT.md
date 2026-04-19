@@ -171,13 +171,23 @@ curl -X POST "https://mcp.example.org/webhooks/uptime/<SECRET>" \
 
 ควรเห็นข้อความใน Telegram group ภายใน 1-2 วินาที
 
-#### 5. ตั้งค่า UptimeRobot
+#### 5. ตั้งค่า uptime monitor
 
-- Dashboard → Monitors → New Monitor → `HTTPS`, URL = `https://mcp.example.org/health`
-- Interval 5 min
+alert-bridge รองรับ 2 providers (detect payload อัตโนมัติ):
+
+**BetterStack (แนะนำ — free tier มี webhook):**
+
+- [betterstack.com](https://betterstack.com) → Uptime → Monitors → Create
+- URL: `https://mcp.example.org/health`, frequency 3 min
+- Integrations → Webhook → URL: `https://mcp.example.org/webhooks/uptime/<SECRET>`
+- Default payload format ของ BetterStack (`data.attributes.*`) — bridge parse ได้เอง
+
+**UptimeRobot (paid plan):**
+
+- Dashboard → Monitors → New Monitor → HTTPS, URL = `https://mcp.example.org/health`
 - Alert Contacts → Add → Type **Webhook**
   - URL: `https://mcp.example.org/webhooks/uptime/<SECRET>`
-  - POST Value (JSON): ใช้ macros ของ UptimeRobot
+  - POST Value (JSON), ติ๊ก "Send as JSON":
 
     ```json
     {
@@ -187,8 +197,6 @@ curl -X POST "https://mcp.example.org/webhooks/uptime/<SECRET>" \
       "alertDetails": "*alertDetails*"
     }
     ```
-
-  - ติ๊ก "Send as JSON"
 
 #### 6. ตั้งค่า DigitalOcean Alert Policy
 
