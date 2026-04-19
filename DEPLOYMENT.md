@@ -137,6 +137,72 @@ DNS → Proxied (orange cloud):
 - **SSL/TLS → Edge Certificates → Always Use HTTPS**: On
 - **SSL/TLS → Edge Certificates → Minimum TLS Version**: 1.2
 
+### Telegram Alert Bridge (monitoring)
+
+รับ webhook จาก UptimeRobot + DigitalOcean → forward เข้า Telegram group
+
+#### 1. สร้าง Telegram bot + หา chat id
+
+- แชทกับ [@BotFather](https://t.me/botfather) → `/newbot` → ได้ **bot token**
+- สร้าง group, invite bot เข้ามา, ส่งข้อความสักข้อความ
+- เปิด `https://api.telegram.org/bot<TOKEN>/getUpdates` → หา `"chat":{"id":...}` (group จะเป็นเลขติดลบ)
+
+#### 2. เพิ่มตัวแปรใน `.env`
+
+```bash
+TG_BOT_TOKEN=123456:ABCxxxx
+TG_CHAT_ID=-1001234567890
+WEBHOOK_SECRET=$(openssl rand -hex 32)   # random 32-byte hex
+```
+
+#### 3. Deploy (จะขึ้น service `alert-bridge` เพิ่มมา)
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+#### 4. ทดสอบจาก laptop
+
+```bash
+curl -X POST "https://mcp.example.org/webhooks/uptime/<SECRET>" \
+  -H "Content-Type: application/json" \
+  -d '{"monitorFriendlyName":"test","alertType":"1","alertDetails":"manual test"}'
+```
+
+ควรเห็นข้อความใน Telegram group ภายใน 1-2 วินาที
+
+#### 5. ตั้งค่า UptimeRobot
+
+- Dashboard → Monitors → New Monitor → `HTTPS`, URL = `https://mcp.example.org/health`
+- Interval 5 min
+- Alert Contacts → Add → Type **Webhook**
+  - URL: `https://mcp.example.org/webhooks/uptime/<SECRET>`
+  - POST Value (JSON): ใช้ macros ของ UptimeRobot
+
+    ```json
+    {
+      "monitorFriendlyName": "*monitorFriendlyName*",
+      "monitorURL": "*monitorURL*",
+      "alertType": "*alertType*",
+      "alertDetails": "*alertDetails*"
+    }
+    ```
+
+  - ติ๊ก "Send as JSON"
+
+#### 6. ตั้งค่า DigitalOcean Alert Policy
+
+- Monitoring → Alert Policies → Create → เลือก metric (CPU 80% / Memory 90% / Disk 85%)
+- Notification → Slack (**ไม่ใช่ native Telegram**) — DO เรียก Slack webhook format
+  - URL: `https://mcp.example.org/webhooks/do/<SECRET>`
+  - (alert-bridge parse payload ที่ได้มา defensive จะ render ข้อความภาษาไทยเอง)
+
+#### Troubleshooting
+
+- `docker logs tripitaka-alert-bridge` — ดู log ว่า webhook เข้ามาหรือยัง
+- ถ้าเห็น `secret mismatch` → SECRET ใน URL ไม่ตรงกับ `.env`
+- ถ้า Telegram ไม่ส่ง → ตรวจ TG_BOT_TOKEN/TG_CHAT_ID ด้วย curl test ใน step 4
+
 ### Backup automation (ยังไม่ได้ทำ — ดู todo)
 
 Cron บน droplet: `pg_dump` → DO Spaces ทุกวัน เก็บ 7 วัน
