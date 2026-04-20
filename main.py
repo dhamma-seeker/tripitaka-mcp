@@ -536,22 +536,38 @@ def search_hybrid(
         semantic_ranks = {row[0]: rank + 1 for rank, row in enumerate(semantic_results)}
 
         # 2. Keyword Search (Top 50)
-        # Using word_similarity for better matching and searching translations table
-        cur.execute(
-            """
-            SELECT seg_id FROM (
-                SELECT id as seg_id FROM segment 
-                WHERE text_pali ILIKE %s OR text_thai ILIKE %s OR text_english ILIKE %s
-                UNION
-                SELECT segment_id as seg_id FROM translation 
-                WHERE language = 'th' AND text ILIKE %s
-            ) AS combined_search
-            LIMIT 50
-            """,
-            (f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%")
-        )
-        keyword_results = cur.fetchall()
-        keyword_ranks = {row[0]: rank + 1 for rank, row in enumerate(keyword_results)}
+        # Tokenize query: multi-word phrases rarely appear verbatim in any column,
+        # so split and OR-match each token across text columns + translation table.
+        tokens = [t for t in re.split(r"[\s\-]+", query.strip()) if len(t) >= 3]
+        if not tokens:
+            tokens = [query.strip()] if query.strip() else []
+
+        keyword_ranks: dict[int, int] = {}
+        if tokens:
+            seg_conds = " OR ".join(
+                ["text_pali ILIKE %s OR text_thai ILIKE %s OR text_english ILIKE %s"] * len(tokens)
+            )
+            trans_conds = " OR ".join(["text ILIKE %s"] * len(tokens))
+            seg_params: list[str] = []
+            for t in tokens:
+                seg_params.extend([f"%{t}%", f"%{t}%", f"%{t}%"])
+            trans_params = [f"%{t}%" for t in tokens]
+
+            cur.execute(
+                f"""
+                SELECT seg_id FROM (
+                    SELECT id as seg_id FROM segment
+                    WHERE {seg_conds}
+                    UNION
+                    SELECT segment_id as seg_id FROM translation
+                    WHERE language = 'th' AND ({trans_conds})
+                ) AS combined_search
+                LIMIT 50
+                """,
+                tuple(seg_params + trans_params)
+            )
+            keyword_results = cur.fetchall()
+            keyword_ranks = {row[0]: rank + 1 for rank, row in enumerate(keyword_results)}
 
         # 3. Reciprocal Rank Fusion (RRF) Scoring
         k = 60
