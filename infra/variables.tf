@@ -31,7 +31,7 @@ variable "public_key_path" {
 variable "domain_name" {
   description = "Root domain name"
   type        = string
-  default     = "tipitaka-mcp.com"
+  default     = "tripitaka-mcp.com"
 }
 
 variable "ssh_allowed_cidrs" {

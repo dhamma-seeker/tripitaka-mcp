@@ -24,7 +24,7 @@ region = "sgp1"
 
 # --- Domain ----------------------------------------------------------------
 # โดเมนที่เพิ่มใน DigitalOcean DNS แล้ว — ถ้าใช้ Cloudflare ค่อยย้าย NS
-domain_name = "tipitaka-mcp.com"
+domain_name = "tripitaka-mcp.com"
 
 # --- SSH allowlist (แนะนำจำกัด IP ของคุณเท่านั้น) ---------------------------
 # ดู IP ตัวเอง: curl ifconfig.me
