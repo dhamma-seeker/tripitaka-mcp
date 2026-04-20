@@ -137,88 +137,40 @@ DNS → Proxied (orange cloud):
 - **SSL/TLS → Edge Certificates → Always Use HTTPS**: On
 - **SSL/TLS → Edge Certificates → Minimum TLS Version**: 1.2
 
-### Telegram Alert Bridge (monitoring)
+### Monitoring + Alerts (DigitalOcean → Slack)
 
-รับ webhook จาก UptimeRobot + DigitalOcean → forward เข้า Telegram group
+ใช้ DO native ทั้งหมด → ส่งเข้า Slack workspace (ไม่มีตัวกลาง self-hosted)
 
-#### 1. สร้าง Telegram bot + หา chat id
+#### 1. เชื่อม Slack เข้ากับ DO
 
-- แชทกับ [@BotFather](https://t.me/botfather) → `/newbot` → ได้ **bot token**
-- สร้าง group, invite bot เข้ามา, ส่งข้อความสักข้อความ
-- เปิด `https://api.telegram.org/bot<TOKEN>/getUpdates` → หา `"chat":{"id":...}` (group จะเป็นเลขติดลบ)
+- สร้าง/เปิด Slack workspace ที่ต้องการรับ alert → สร้าง channel เช่น `#tripitaka-alerts`
+- DO Control Panel → **Settings → Notifications → Slack** → Connect → authorize → เลือก channel
+- ได้ Slack integration ที่ reuse ได้ทั้ง Uptime Checks และ Alert Policies
 
-#### 2. เพิ่มตัวแปรใน `.env`
+#### 2. Uptime Check (HTTPS /health)
 
-```bash
-TG_BOT_TOKEN=123456:ABCxxxx
-TG_CHAT_ID=-1001234567890
-WEBHOOK_SECRET=$(openssl rand -hex 32)   # random 32-byte hex
-```
+- Monitoring → **Uptime** → Create check
+  - Type: HTTPS, URL: `https://mcp.example.org/health`
+  - Regions: เลือก 3 region (default พอ)
+  - Alert policy: Down / SSL expiry → Notification: Slack channel ที่ผูกไว้
 
-#### 3. Deploy (จะขึ้น service `alert-bridge` เพิ่มมา)
+#### 3. Alert Policies (droplet metrics)
 
-```bash
-docker compose -f docker-compose.prod.yml up -d --build
-```
+Monitoring → **Alerts** → Create alert policy — สร้าง 3 นโยบาย (ทุกอันส่งเข้า Slack):
 
-#### 4. ทดสอบจาก laptop
+| Metric         | Threshold | Window |
+| -------------- | --------- | ------ |
+| CPU            | > 80%     | 5 min  |
+| Memory         | > 85%     | 5 min  |
+| Disk usage (/) | > 80%     | 5 min  |
 
-```bash
-curl -X POST "https://mcp.example.org/webhooks/uptime/<SECRET>" \
-  -H "Content-Type: application/json" \
-  -d '{"monitorFriendlyName":"test","alertType":"1","alertDetails":"manual test"}'
-```
+#### 4. Billing alert
 
-ควรเห็นข้อความใน Telegram group ภายใน 1-2 วินาที
-
-#### 5. ตั้งค่า uptime monitor
-
-alert-bridge รองรับ 2 providers (detect payload อัตโนมัติ):
-
-**BetterStack (แนะนำ — free tier มี webhook):**
-
-- [betterstack.com](https://betterstack.com) → Uptime → Monitors → Create
-- URL: `https://mcp.example.org/health`, frequency 3 min
-- Integrations → Webhook → URL: `https://mcp.example.org/webhooks/uptime/<SECRET>`
-- Default payload format ของ BetterStack (`data.attributes.*`) — bridge parse ได้เอง
-
-**UptimeRobot (paid plan):**
-
-- Dashboard → Monitors → New Monitor → HTTPS, URL = `https://mcp.example.org/health`
-- Alert Contacts → Add → Type **Webhook**
-  - URL: `https://mcp.example.org/webhooks/uptime/<SECRET>`
-  - POST Value (JSON), ติ๊ก "Send as JSON":
-
-    ```json
-    {
-      "monitorFriendlyName": "*monitorFriendlyName*",
-      "monitorURL": "*monitorURL*",
-      "alertType": "*alertType*",
-      "alertDetails": "*alertDetails*"
-    }
-    ```
-
-#### 6. ตั้งค่า DigitalOcean Alert Policy
-
-- Monitoring → Alert Policies → Create → เลือก metric (CPU 80% / Memory 90% / Disk 85%)
-- Notification → Slack (**ไม่ใช่ native Telegram**) — DO เรียก Slack webhook format
-  - URL: `https://mcp.example.org/webhooks/do/<SECRET>`
-  - (alert-bridge parse payload ที่ได้มา defensive จะ render ข้อความภาษาไทยเอง)
-
-#### Troubleshooting
-
-- `docker logs tripitaka-alert-bridge` — ดู log ว่า webhook เข้ามาหรือยัง
-- ถ้าเห็น `secret mismatch` → SECRET ใน URL ไม่ตรงกับ `.env`
-- ถ้า Telegram ไม่ส่ง → ตรวจ TG_BOT_TOKEN/TG_CHAT_ID ด้วย curl test ใน step 4
+- Billing → **Billing alerts** → set $25/month → email (DO ยังไม่รองรับ Slack สำหรับ billing)
 
 ### Backup automation (ยังไม่ได้ทำ — ดู todo)
 
 Cron บน droplet: `pg_dump` → DO Spaces ทุกวัน เก็บ 7 วัน
-
-### Monitoring
-
-- **UptimeRobot** free: HTTPS ping `/health` ทุก 5 นาที → alert email/Discord
-- **DigitalOcean billing alert**: ตั้งที่ $25/mo
 
 ---
 

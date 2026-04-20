@@ -102,42 +102,6 @@ services:
         max-file: "3"
 
   # --------------------------------------------------------------------------
-  # Alert Bridge — webhook → Telegram forwarder
-  # --------------------------------------------------------------------------
-  # รับ webhook จาก UptimeRobot + DigitalOcean แล้ว forward เข้า Telegram
-  # Internal only — เข้าถึงผ่าน Caddy ที่ path /webhooks/* เท่านั้น
-  alert-bridge:
-    build:
-      context: ./alert_bridge
-      dockerfile: Dockerfile
-    image: tripitaka-alert-bridge:${APP_VERSION:-latest}
-    container_name: tripitaka-alert-bridge
-    environment:
-      TG_BOT_TOKEN: ${TG_BOT_TOKEN:?TG_BOT_TOKEN must be set}
-      TG_CHAT_ID: ${TG_CHAT_ID:?TG_CHAT_ID must be set}
-      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET must be set}
-    expose:
-      - "9090"
-    restart: unless-stopped
-    read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 128M
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # --------------------------------------------------------------------------
   # Caddy reverse proxy + TLS + rate limit
   # --------------------------------------------------------------------------
   # ผู้ใช้ที่มี Cloudflare อยู่หน้า: ตั้ง DNS proxy + Cloudflare rate limit
@@ -150,7 +114,6 @@ services:
     container_name: tripitaka-caddy
     depends_on:
       - mcp-server
-      - alert-bridge
     environment:
       TRIPITAKA_DOMAIN: ${TRIPITAKA_DOMAIN:?TRIPITAKA_DOMAIN must be set (eg. mcp.example.org)}
     volumes:
