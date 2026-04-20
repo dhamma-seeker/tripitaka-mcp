@@ -49,6 +49,13 @@ COPY --chown=app:app . .
 
 USER app
 
+# สร้าง cache dir ให้ app user เป็นเจ้าของ ก่อน volume mount
+# (Docker volume init copy-up จะรักษา ownership นี้ตอน volume ว่างถูก mount ครั้งแรก)
+# HF_HOME บังคับ path ชัดเจนไม่ต้องพึ่ง HOME env
+RUN mkdir -p /app/.cache/huggingface
+ENV HF_HOME=/app/.cache/huggingface \
+    TRANSFORMERS_CACHE=/app/.cache/huggingface
+
 # Health check — ตรวจว่า Python import ได้
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
     CMD python -c "import fastmcp" || exit 1
