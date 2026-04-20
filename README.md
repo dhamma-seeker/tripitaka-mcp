@@ -180,12 +180,24 @@ Production stack มี 3 services:
 |---|---|
 | `search_hybrid` | **(แนะนำ)** ค้นหาผสมผสาน (Hybrid Search) ด้วยเทคนิค RRF เพื่อความแม่นยำสูงสุด |
 | `search_by_keyword` | ค้นหาด้วย keyword (trigram fuzzy match) |
-| `search_semantic` | ค้นหาแบบ semantic (vector similarity) |
+| `search_semantic` | ค้นหาแบบ semantic (vector similarity) — ⚠️ แนะนำ query เป็น **บาลี/อังกฤษ** (ดูหมายเหตุด้านล่าง) |
 | `get_sutta` | ดึงเนื้อหาสูตรตาม ID พร้อมดึงคำแปลทั้งหมดที่เกี่ยวข้อง |
 | `compare_translations`| เปรียบเทียบสำนวนการแปลข้ามฉบับ (Edition) ในแต่ละ Segment |
 | `get_word_definition` | ค้นหาพจนานุกรมข้ามภาษา (PTS, DPPN, และพจนานุกรม ป.อ. ปยุตฺโต) |
 | `list_structure` | แสดงโครงสร้างคัมภีร์พระไตรปิฎก |
 | `get_reference` | สร้างข้อมูลอ้างอิงที่ถูกต้องตามรูปแบบวิชาการ |
+
+### ⚠️ หมายเหตุเรื่อง `search_semantic`
+
+Vector index สร้างบน `text_pali` เท่านั้น (SuttaCentral bilara-data ยังไม่มี Thai translation)
+และใช้ multilingual MiniLM model ที่**ไม่ได้ train บนบาลีโดยเฉพาะ** ทำให้:
+
+- **Query ภาษาบาลี/อังกฤษ** → ผลแม่น (cross-lingual alignment ดี)
+- **Query ภาษาไทย** → ผลหลวม ไม่แนะนำ
+- สำหรับ keyword ตรง ๆ เช่น `appamāda` ใช้ `search_by_keyword` แม่นกว่า
+- ค้นทั่วไป ใช้ `search_hybrid` รวม keyword + semantic (ทนต่อข้อจำกัดนี้ได้ดีกว่า)
+
+การอัปเกรดเป็น embedding model ที่ฝึก Pali (เช่น bge-m3) + embed Thai edition วางแผนไว้ใน roadmap อนาคต
 
 ## 📁 โครงสร้างโปรเจค
 

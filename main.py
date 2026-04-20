@@ -415,12 +415,18 @@ def search_semantic(
 ) -> list[dict[str, Any]]:
     """ค้นหาแบบ semantic — ค้นหาตามความหมาย ไม่จำเป็นต้องตรงคำ
 
-    ใช้ vector similarity search (cosine distance) เพื่อหาเนื้อหา
-    ที่มีความหมายใกล้เคียงกับ query
-    รองรับการค้นหาข้ามภาษา (เช่น ถามเป็นไทย ค้นเจอบาลี)
+    ใช้ vector similarity search (cosine distance) บน `text_pali`
+    ซึ่ง embed ด้วย multilingual MiniLM model
+
+    ⚠️ ข้อจำกัดสำคัญ:
+    - Index สร้างบนบาลีเท่านั้น (SuttaCentral ยังไม่มี Thai translation ใน bilara)
+    - Model เป็น multilingual ทั่วไป ไม่ได้ fine-tune บน Pali
+    - **แนะนำ query เป็นบาลีหรืออังกฤษ** — ผลลัพธ์จะตรงกว่าภาษาไทยมาก
+    - สำหรับ keyword ตรง ๆ (เช่น "appamāda") ใช้ `search_by_keyword` จะแม่นกว่า
+    - สำหรับค้นทั่วไป ใช้ `search_hybrid` ซึ่งรวม keyword + semantic
 
     Args:
-        query: ข้อความที่ต้องการค้นหา (ภาษาอะไรก็ได้)
+        query: ข้อความที่ต้องการค้นหา (**แนะนำบาลี/อังกฤษ** — ไทยใช้ได้แต่ผลหลวม)
         language: ภาษาที่ต้องการแสดงผล — "pali", "thai", "english", หรือ "all"
         limit: จำนวนผลลัพธ์สูงสุด (default: 5, max: 20)
         threshold: ระยะห่างความหมาย (ยิ่งน้อยยิ่งตรงเผง, default: 0.7)
