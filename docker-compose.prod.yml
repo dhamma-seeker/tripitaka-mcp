@@ -79,7 +79,9 @@ services:
     # ports:
     #   - "127.0.0.1:8080:8080"
     volumes:
-      - model_cache:/home/app/.cache
+      # HOME ของ user app = /app (ดู Dockerfile: --home /app)
+      # volume mount override read_only:true เฉพาะ path นี้ ให้ HF download cache ได้
+      - model_cache:/app/.cache
     restart: unless-stopped
     read_only: true
     tmpfs:
