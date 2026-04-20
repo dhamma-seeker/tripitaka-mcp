@@ -47,12 +47,14 @@ WORKDIR /app
 # Copy source code ด้วย ownership ของ user app
 COPY --chown=app:app . .
 
-USER app
-
 # สร้าง cache dir ให้ app user เป็นเจ้าของ ก่อน volume mount
 # (Docker volume init copy-up จะรักษา ownership นี้ตอน volume ว่างถูก mount ครั้งแรก)
+# ต้องรันเป็น root เพราะ /app dir เอง (สร้างโดย WORKDIR) ถูก root ครอง
+RUN mkdir -p /app/.cache/huggingface && chown -R app:app /app/.cache
+
+USER app
+
 # HF_HOME บังคับ path ชัดเจนไม่ต้องพึ่ง HOME env
-RUN mkdir -p /app/.cache/huggingface
 ENV HF_HOME=/app/.cache/huggingface \
     TRANSFORMERS_CACHE=/app/.cache/huggingface
 
