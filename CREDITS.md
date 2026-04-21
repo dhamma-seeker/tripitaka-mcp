@@ -84,8 +84,8 @@
 
 ## 🌐 Infrastructure
 
-- **[DigitalOcean](https://www.digitalocean.com)** — Cloud hosting สำหรับ public instance
-- **[Cloudflare](https://www.cloudflare.com)** — CDN & DDoS protection
+- **Cloud VPS provider** — Hosting สำหรับ public instance
+- **CDN / reverse proxy provider** — TLS, caching, DDoS protection
 - **[GitHub](https://github.com)** — Code hosting
 - **[Hugging Face Datasets](https://huggingface.co/datasets)** — Data distribution
 

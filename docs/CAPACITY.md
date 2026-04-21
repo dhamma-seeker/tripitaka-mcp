@@ -3,12 +3,12 @@
 ประเมินความสามารถในการรับโหลดของแต่ละสเปก VPS
 สำหรับ self-hoster วางแผนงบและ scale ได้ถูกตัว
 
-> ตัวเลขนี้วัดจากการทดสอบจริงบน DigitalOcean `s-2vcpu-4gb` (SGP1)
+> ตัวเลขนี้วัดจากการทดสอบจริงบน VPS สเปก **2 vCPU / 4GB RAM** (Asia region, SSD)
 > ช่วง staging phase — embedding model = `paraphrase-multilingual-MiniLM-L12-v2` (384 dim)
 
 ---
 
-## 📈 Baseline — `s-2vcpu-4gb` ($24/mo)
+## 📈 Baseline — 2 vCPU / 4 GB RAM (~$24/mo)
 
 | Resource | Idle | Peak (1 query) | เพดานทาง theory |
 |---|---|---|---|
@@ -48,14 +48,14 @@
 - ลด CPU origin ได้ ~20-40% (ตามสัดส่วน repeat queries)
 - ไม่ต้องเปลี่ยน spec
 
-### ขั้น 2 — อัพ RAM ($36/mo — `s-2vcpu-8gb`)
+### ขั้น 2 — อัพ RAM (~$36/mo, 2 vCPU / 8 GB)
 
 - แก้ memory pressure ก่อน CPU
 - Postgres cache พอดีขึ้น → query เร็ว
 - CPU ยังเท่าเดิม → ไม่เพิ่ม concurrent มาก
 - **เหมาะเมื่อ**: memory > 70% แต่ CPU ยังว่าง
 
-### ขั้น 3 — อัพ CPU ($48/mo — `s-4vcpu-8gb`)
+### ขั้น 3 — อัพ CPU (~$48/mo, 4 vCPU / 8 GB)
 
 - Concurrent queries ~2 เท่า (8-12 พร้อมกัน)
 - รองรับ ~500-1000 คน/วัน
@@ -93,10 +93,12 @@ docker exec tripitaka-db psql -U admin -d tripitaka_db \
   -c "SELECT state, count(*) FROM pg_stat_activity GROUP BY state;"
 ```
 
-### DigitalOcean Monitoring
+### Cloud provider monitoring
 
-- Droplet → **Insights** tab → ดู graph CPU / Memory / Load 1h–7d
-- ตั้ง alert ที่ **Monitoring** → CPU > 80% for 5 min → email
+Cloud provider ส่วนใหญ่มี built-in monitoring (graph CPU / Memory / Load)
+และ alert policies (email/Slack) — ใช้ native tool ของ provider ที่คุณเลือก
+
+แนะนำ: ตั้ง alert CPU > 80% / Memory > 85% / Disk > 80% (window 5 นาที)
 
 ### Synthetic load test
 
@@ -114,13 +116,15 @@ wait
 
 ## 💰 สรุปตารางต้นทุน
 
-| Spec | ราคา | Concurrent | Daily users (est) | เหมาะกับ |
+ราคาอ้างอิงจาก VPS provider ทั่วไป (DigitalOcean / Linode / Vultr / Hetzner — สเปกใกล้เคียงกัน)
+
+| Spec | ราคา (ประมาณ) | Concurrent | Daily users (est) | เหมาะกับ |
 |---|---|---|---|---|
-| `s-1vcpu-2gb` | $12/mo | 1-2 | 50-100 | PoC, ส่วนตัว |
-| `s-2vcpu-2gb` | $18/mo | 2-3 | 100-200 | เสี่ยง OOM |
-| **`s-2vcpu-4gb`** | **$24/mo** | **4-6** | **200-500** | **แนะนำเริ่มต้น** |
-| `s-2vcpu-8gb` | $36/mo | 5-7 | 400-700 | RAM pressure |
-| `s-4vcpu-8gb` | $48/mo | 8-12 | 500-1000 | เติบโตแล้ว |
-| `c-4` (CPU-opt) | $84/mo | 15-20 | 1500-3000 | เน้น embedding |
+| 1 vCPU / 2 GB | ~$12/mo | 1-2 | 50-100 | PoC, ส่วนตัว |
+| 2 vCPU / 2 GB | ~$18/mo | 2-3 | 100-200 | เสี่ยง OOM |
+| **2 vCPU / 4 GB** | **~$24/mo** | **4-6** | **200-500** | **แนะนำเริ่มต้น** |
+| 2 vCPU / 8 GB | ~$36/mo | 5-7 | 400-700 | RAM pressure |
+| 4 vCPU / 8 GB | ~$48/mo | 8-12 | 500-1000 | เติบโตแล้ว |
+| CPU-optimized 4-core | ~$84/mo | 15-20 | 1500-3000 | เน้น embedding |
 
 > ตัวเลขเป็นการประเมิน conservative — workload จริงอาจต่างจากนี้ได้ 2-3 เท่า ขึ้นกับ cache hit rate และ query complexity

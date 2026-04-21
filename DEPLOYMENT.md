@@ -1,7 +1,12 @@
 # 🚢 Tripitaka MCP — Deployment Runbook
 
-คู่มือการ deploy ขึ้น staging → production บน DigitalOcean
+คู่มือการ deploy ขึ้น staging → production บน VPS ใดก็ได้ที่รัน Docker
 (Caddy reverse proxy + readonly DB + rate limit + Cloudflare)
+
+> ไฟล์นี้เป็น **generic runbook** สำหรับคนที่ต้องการ fork/deploy instance ของตัวเอง
+> ตัวอย่างที่ให้ใช้ `example.org` — แทนด้วยโดเมนจริงของคุณ
+> Infra reference ใน [`infra/`](infra/) เขียนเป็น Terraform สำหรับ DigitalOcean —
+> ปรับให้เข้ากับ cloud provider ที่คุณใช้ได้ (AWS, GCP, Linode, ฯลฯ)
 
 ---
 
@@ -16,8 +21,8 @@
   ssh-keygen -t ed25519 -f ~/.ssh/tripitaka_prod -C "tripitaka-deploy"
   ```
 
-- [ ] DigitalOcean API token: [cloud.digitalocean.com/account/api/tokens](https://cloud.digitalocean.com/account/api/tokens)
-- [ ] Domain ที่เพิ่มใน DO DNS หรือ Cloudflare แล้ว
+- [ ] Cloud provider API token (ถ้าใช้ Terraform ใน repo นี้ — provider = DigitalOcean; เปลี่ยน provider ได้)
+- [ ] Domain ที่ชี้ NS มาที่ DNS provider ที่รองรับ (Cloudflare / cloud-provider DNS / etc.)
 
 ### 1. Provision droplet ด้วย Terraform
 
@@ -39,19 +44,19 @@ Output จะแสดง droplet IP + คำสั่ง SSH
 
 ### 2. ตั้ง DNS
 
-ชี้ `A record` ของโดเมน (เช่น `mcp.example.org`) → droplet IP
+ชี้ `A record` ของโดเมน (เช่น `mcp.example.org`) → VPS IP
 
 - ถ้าใช้ **Cloudflare**: เปิด proxy (icon ส้ม) เพื่อซ่อน origin IP
-- ถ้าใช้ **DO DNS**: terraform สร้าง A record ให้แล้ว
+- ถ้าใช้ **cloud provider DNS** ในตัว: Terraform ใน repo นี้สร้าง A record ให้แล้ว (สำหรับ DO)
 
-ตรวจด้วย: `dig mcp.example.org` ต้องคืน droplet IP
+ตรวจด้วย: `dig mcp.example.org` ต้องคืน VPS IP
 
-### 3. SSH เข้า droplet แล้ว deploy
+### 3. SSH เข้า VPS แล้ว deploy
 
 ```bash
-ssh deploy@<DROPLET_IP>          # ใช้ user deploy ไม่ใช่ root
+ssh deploy@<VPS_IP>              # ใช้ user deploy ไม่ใช่ root
 cd /opt/tripitaka
-git clone https://github.com/dhamma-seeker/tripitaka-mcp.git .
+git clone <REPO_URL> .
 ./scripts/deploy.sh --domain mcp.example.org
 ```
 
@@ -137,40 +142,21 @@ DNS → Proxied (orange cloud):
 - **SSL/TLS → Edge Certificates → Always Use HTTPS**: On
 - **SSL/TLS → Edge Certificates → Minimum TLS Version**: 1.2
 
-### Monitoring + Alerts (DigitalOcean → Slack)
+### Monitoring + Alerts
 
-ใช้ DO native ทั้งหมด → ส่งเข้า Slack workspace (ไม่มีตัวกลาง self-hosted)
+แนะนำตั้ง **3 ระดับ** (ทุก cloud provider มีให้ใน native tools):
 
-#### 1. เชื่อม Slack เข้ากับ DO
+1. **Uptime check** — HTTPS `GET /health` ทุก 1-5 นาที จาก ≥2 regions → alert เมื่อ fail
+2. **VPS metrics** — CPU >80%, Memory >85%, Disk >80% (window 5 นาที) → alert
+3. **Billing alert** — ตั้ง threshold monthly spend → email
 
-- สร้าง/เปิด Slack workspace ที่ต้องการรับ alert → สร้าง channel เช่น `#tripitaka-alerts`
-- DO Control Panel → **Settings → Notifications → Slack** → Connect → authorize → เลือก channel
-- ได้ Slack integration ที่ reuse ได้ทั้ง Uptime Checks และ Alert Policies
+ส่ง alert เข้าช่องทางที่สะดวก: Slack / email / PagerDuty / Discord
+(cloud provider ส่วนใหญ่มี native integration ให้เลือก)
 
-#### 2. Uptime Check (HTTPS /health)
+### Backup automation
 
-- Monitoring → **Uptime** → Create check
-  - Type: HTTPS, URL: `https://mcp.example.org/health`
-  - Regions: เลือก 3 region (default พอ)
-  - Alert policy: Down / SSL expiry → Notification: Slack channel ที่ผูกไว้
-
-#### 3. Alert Policies (droplet metrics)
-
-Monitoring → **Alerts** → Create alert policy — สร้าง 3 นโยบาย (ทุกอันส่งเข้า Slack):
-
-| Metric         | Threshold | Window |
-| -------------- | --------- | ------ |
-| CPU            | > 80%     | 5 min  |
-| Memory         | > 85%     | 5 min  |
-| Disk usage (/) | > 80%     | 5 min  |
-
-#### 4. Billing alert
-
-- Billing → **Billing alerts** → set $25/month → email (DO ยังไม่รองรับ Slack สำหรับ billing)
-
-### Backup automation (ยังไม่ได้ทำ — ดู todo)
-
-Cron บน droplet: `pg_dump` → DO Spaces ทุกวัน เก็บ 7 วัน
+Cron บน VPS: `pg_dump` → **S3-compatible object storage** ทุกวัน เก็บ N วัน
+ดูสคริปต์: [`scripts/backup.sh`](scripts/backup.sh) (รองรับ S3 ทุกเจ้า: AWS S3, DO Spaces, Cloudflare R2, MinIO, ฯลฯ — ตั้งผ่าน env vars)
 
 ---
 
@@ -252,9 +238,9 @@ docker logs tripitaka-caddy 2>&1 | jq -r '.request.remote_ip' | sort | uniq -c |
 
 ### SSH เชื่อมไม่ได้ (Connection refused) หลังจากที่เคยเข้าได้
 
-IP สาธารณะของคุณเปลี่ยน (VPN / มือถือ / ISP) → DO firewall `ssh_allowed_cidrs` บล็อก
+IP สาธารณะของคุณเปลี่ยน (VPN / มือถือ / ISP) → cloud firewall `ssh_allowed_cidrs` บล็อก
 แก้: อัปเดต IP ใหม่ใน [infra/terraform.tfvars](infra/terraform.tfvars) แล้ว
-`terraform apply -target=digitalocean_firewall.main`
+`terraform apply -target=<firewall_resource>` (ดูชื่อ resource ใน `infra/main.tf`)
 
 ### Claude Desktop: `Cannot find module 'node:path'`
 

@@ -29,9 +29,9 @@ variable "public_key_path" {
 }
 
 variable "domain_name" {
-  description = "Root domain name"
+  description = "Root domain name — override ใน terraform.tfvars"
   type        = string
-  default     = "tripitaka-mcp.com"
+  default     = "example.com"
 }
 
 variable "ssh_allowed_cidrs" {

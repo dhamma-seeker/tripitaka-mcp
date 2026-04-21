@@ -23,8 +23,8 @@ droplet_size = "s-2vcpu-4gb"
 region = "sgp1"
 
 # --- Domain ----------------------------------------------------------------
-# โดเมนที่เพิ่มใน DigitalOcean DNS แล้ว — ถ้าใช้ Cloudflare ค่อยย้าย NS
-domain_name = "tripitaka-mcp.com"
+# โดเมนของคุณที่ชี้ NS มาที่ DNS provider ที่รองรับ (DO DNS / Cloudflare / etc.)
+domain_name = "example.com"
 
 # --- SSH allowlist (แนะนำจำกัด IP ของคุณเท่านั้น) ---------------------------
 # ดู IP ตัวเอง: curl ifconfig.me

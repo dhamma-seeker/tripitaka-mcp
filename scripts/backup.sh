@@ -1,23 +1,27 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Tripitaka MCP — Daily DB backup → DO Spaces
+# Tripitaka MCP — Daily DB backup → S3-compatible object storage
 # =============================================================================
-# รันจาก cron บน droplet (user: deploy, cwd: /opt/tripitaka)
+# รันจาก cron บน VPS (user: deploy, cwd: /opt/tripitaka)
+# รองรับ S3-compatible provider ทุกเจ้า: AWS S3, DO Spaces, Cloudflare R2,
+# Backblaze B2, MinIO, Wasabi, ฯลฯ — กำหนดผ่าน env vars
 #
 # ทำอะไรบ้าง:
 # 1. pg_dump ฐาน production (custom format) → /tmp
-# 2. อัปโหลดขึ้น DO Spaces ผ่าน AWS CLI (S3-compatible)
+# 2. อัปโหลดขึ้น S3 bucket ผ่าน AWS CLI
 # 3. ลบ object ที่เก่ากว่า BACKUP_RETENTION_DAYS วัน
 # 4. ลบไฟล์ temp
 #
 # ต้องตั้งค่าใน .env (หรือ environment) ก่อน:
 #   POSTGRES_USER, POSTGRES_DB                 (มีอยู่แล้ว)
-#   DO_SPACES_BUCKET=tripitaka-backups
-#   DO_SPACES_REGION=sgp1
-#   DO_SPACES_ENDPOINT=https://sgp1.digitaloceanspaces.com
+#   DO_SPACES_BUCKET=<your-bucket-name>
+#   DO_SPACES_REGION=<region>                  (เช่น us-east-1, sgp1, auto)
+#   DO_SPACES_ENDPOINT=<s3-endpoint-url>       (เช่น https://s3.amazonaws.com)
 #   DO_SPACES_KEY=...
 #   DO_SPACES_SECRET=...
 #   BACKUP_RETENTION_DAYS=7                    (optional, default 7)
+#
+# Note: ชื่อ var ขึ้นต้น DO_SPACES_ เพราะ legacy — ใช้ได้กับทุก S3 provider
 #
 # Crontab (ติดตั้งด้วย `crontab -e` ภายใต้ user deploy):
 #   0 3 * * * /opt/tripitaka/scripts/backup.sh >> /var/log/tripitaka-backup.log 2>&1
@@ -58,7 +62,7 @@ docker exec -i tripitaka-db pg_dump -U "${POSTGRES_USER}" -Fc "${POSTGRES_DB}" >
 SIZE=$(du -h "${DUMP_FILE}" | cut -f1)
 log "dump size: ${SIZE}"
 
-# --- 2. upload to DO Spaces --------------------------------------------------
+# --- 2. upload to S3 bucket --------------------------------------------------
 export AWS_ACCESS_KEY_ID="${DO_SPACES_KEY}"
 export AWS_SECRET_ACCESS_KEY="${DO_SPACES_SECRET}"
 export AWS_DEFAULT_REGION="${DO_SPACES_REGION}"

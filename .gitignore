@@ -28,8 +28,10 @@ postgres_data/
 .DS_Store
 Thumbs.db
 
-# Local-only progress tracker (Claude + user; never push)
+# Local-only working docs (Claude + user; never push)
 PROGRESS.md
+CLAUDE.md
+.claude/
 
 # Data files (large files — manage separately if needed)
 # data/*.json
