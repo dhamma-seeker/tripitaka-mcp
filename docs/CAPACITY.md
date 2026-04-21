@@ -1,91 +1,91 @@
 # 📊 Capacity Planning — Tripitaka MCP
 
-ประเมินความสามารถในการรับโหลดของแต่ละสเปก VPS
-สำหรับ self-hoster วางแผนงบและ scale ได้ถูกตัว
+Estimates of how much load each VPS spec can handle,
+so self-hosters can plan budget and scale to the right size.
 
-> ตัวเลขนี้วัดจากการทดสอบจริงบน VPS สเปก **2 vCPU / 4GB RAM** (Asia region, SSD)
-> ช่วง staging phase — embedding model = `paraphrase-multilingual-MiniLM-L12-v2` (384 dim)
+> Numbers come from real-world testing on a VPS with **2 vCPU / 4 GB RAM** (Asia region, SSD)
+> during the staging phase — embedding model = `paraphrase-multilingual-MiniLM-L12-v2` (384 dim)
 
 ---
 
 ## 📈 Baseline — 2 vCPU / 4 GB RAM (~$24/mo)
 
-| Resource | Idle | Peak (1 query) | เพดานทาง theory |
+| Resource | Idle | Peak (1 query) | Theoretical ceiling |
 |---|---|---|---|
 | CPU | 5-8% | 20-26% | 200% (2 vCPU) |
-| Memory | 23% (~920MB) | 37% (~1.5GB) | 100% (4GB + swap 2GB) |
-| Load (1m avg) | 0.1 | 0.75 | 2.0 (เกินแล้ว queue) |
+| Memory | 23% (~920MB) | 37% (~1.5GB) | 100% (4GB + 2GB swap) |
+| Load (1m avg) | 0.1 | 0.75 | 2.0 (above → queued) |
 | Disk I/O | 0 | 7.5 MB/s burst | NVMe SSD |
-| Bandwidth | ~5 kb/s | ~10 kb/s | ไม่ใช่คอขวด |
+| Bandwidth | ~5 kb/s | ~10 kb/s | not a bottleneck |
 
-**คอขวดหลัก = CPU** (embedding inference รันบน CPU ไม่มี GPU)
+**Primary bottleneck = CPU** (embedding inference runs on CPU, no GPU)
 
-### ประเมินความจุ
+### Capacity estimate
 
-| Pattern | จำนวน |
+| Pattern | Count |
 |---|---|
-| Concurrent active queries (ไม่หน่วง) | **4-6 พร้อมกัน** |
+| Concurrent active queries (no lag) | **4-6 at once** |
 | Active SSE connections (idle) | **50-100** |
-| Daily users (ถามเป็นครั้งคราว, ไม่ต่อเนื่อง) | **200-500 คน/วัน** |
-| Queries ต่อวินาที sustained | **~1-2 qps** |
+| Daily users (occasional, not continuous) | **200-500 users/day** |
+| Sustained queries per second | **~1-2 qps** |
 
-### สัญญาณเตือน (ถึงเวลาอัพเกรด)
+### Warning signs (time to upgrade)
 
-- Memory > 80% ต่อเนื่อง → swap ทำงาน → latency พุ่ง
-- Load (1m) > 2.0 ค้างเกิน 5 นาที → queue ยาว
-- `/health` ตอบช้า > 1s
-- Error rate > 1% จาก timeout
+- Memory > 80% sustained → swap kicks in → latency spikes
+- Load (1m) > 2.0 for more than 5 minutes → long queue
+- `/health` responds slower than 1s
+- Error rate > 1% due to timeouts
 
 ---
 
-## 🚀 แนวทาง scale
+## 🚀 Scaling path
 
-เมื่อ traffic เติบโต แนะนำลำดับนี้:
+As traffic grows, this is the recommended order:
 
-### ขั้น 1 — เปิด Cloudflare orange proxy (ฟรี)
+### Step 1 — Enable Cloudflare orange proxy (free)
 
 - Cache static responses + block bot traffic
-- ลด CPU origin ได้ ~20-40% (ตามสัดส่วน repeat queries)
-- ไม่ต้องเปลี่ยน spec
+- Reduces origin CPU by ~20-40% (depending on share of repeat queries)
+- No spec change needed
 
-### ขั้น 2 — อัพ RAM (~$36/mo, 2 vCPU / 8 GB)
+### Step 2 — Bump RAM (~$36/mo, 2 vCPU / 8 GB)
 
-- แก้ memory pressure ก่อน CPU
-- Postgres cache พอดีขึ้น → query เร็ว
-- CPU ยังเท่าเดิม → ไม่เพิ่ม concurrent มาก
-- **เหมาะเมื่อ**: memory > 70% แต่ CPU ยังว่าง
+- Addresses memory pressure before CPU
+- Postgres cache fits better → faster queries
+- CPU stays the same → doesn't raise concurrency much
+- **Good when**: memory > 70% but CPU still has headroom
 
-### ขั้น 3 — อัพ CPU (~$48/mo, 4 vCPU / 8 GB)
+### Step 3 — Bump CPU (~$48/mo, 4 vCPU / 8 GB)
 
-- Concurrent queries ~2 เท่า (8-12 พร้อมกัน)
-- รองรับ ~500-1000 คน/วัน
-- **เหมาะเมื่อ**: load avg ค้างสูง, queue ยาว
+- Concurrent queries ~2x (8-12 at once)
+- Supports ~500-1000 users/day
+- **Good when**: load avg stays high, queue is long
 
-### ขั้น 4 — Offload embedding ไป API ภายนอก
+### Step 4 — Offload embedding to an external API
 
-- ใช้ [Jina Embeddings API](https://jina.ai/embeddings/) / OpenAI / Cohere แทน sentence-transformers local
-- CPU origin ลดเหลือแค่ Postgres + Caddy → รับ traffic ได้หลายเท่า
-- **ข้อแลก**: ต้องจ่าย per-call, ไม่ self-contained, privacy ของ query ขึ้นกับ provider
-- **เหมาะเมื่อ**: traffic > 1000 คน/วัน หรือ response time สำคัญกว่าต้นทุน
+- Use [Jina Embeddings API](https://jina.ai/embeddings/) / OpenAI / Cohere instead of local sentence-transformers
+- Origin CPU drops to just Postgres + Caddy → handles several times more traffic
+- **Tradeoff**: per-call cost, no longer self-contained, query privacy depends on the provider
+- **Good when**: traffic > 1000 users/day, or response time matters more than cost
 
-### ขั้น 5 — Horizontal scaling
+### Step 5 — Horizontal scaling
 
-- แยก mcp-server ออกจาก DB
-- DB: Managed Postgres (DO/AWS RDS) พร้อม read replica
-- mcp-server: หลาย instance หลัง load balancer
-- **เหมาะเมื่อ**: traffic > 10k คน/วัน
+- Separate mcp-server from the DB
+- DB: Managed Postgres (RDS / equivalent) with a read replica
+- mcp-server: multiple instances behind a load balancer
+- **Good when**: traffic > 10k users/day
 
 ---
 
-## 🧪 วิธีวัดโหลดของตัวเอง
+## 🧪 How to measure your own load
 
-### Quick check (บน droplet)
+### Quick check (on the VPS)
 
 ```bash
 # CPU/memory snapshot
 htop
 
-# Docker resource per container
+# Docker resource usage per container
 docker stats --no-stream
 
 # Postgres connection count + long queries
@@ -95,36 +95,36 @@ docker exec tripitaka-db psql -U admin -d tripitaka_db \
 
 ### Cloud provider monitoring
 
-Cloud provider ส่วนใหญ่มี built-in monitoring (graph CPU / Memory / Load)
-และ alert policies (email/Slack) — ใช้ native tool ของ provider ที่คุณเลือก
+Most cloud providers ship built-in monitoring (CPU / Memory / Load graphs)
+and alert policies (email/Slack) — use whatever native tool your provider offers.
 
-แนะนำ: ตั้ง alert CPU > 80% / Memory > 85% / Disk > 80% (window 5 นาที)
+Recommended alert thresholds: CPU > 80% / Memory > 85% / Disk > 80% (5-minute window).
 
 ### Synthetic load test
 
 ```bash
-# ใน local — ยิง 10 concurrent queries
+# From your laptop — fire 10 concurrent queries
 for i in {1..10}; do
   curl -sS https://mcp.example.org/sse > /dev/null &
 done
 wait
 ```
 
-ดู CPU spike ระหว่างนี้จาก DO Insights — ถ้า < 80% แสดงว่าสเปกปัจจุบันยังเหลือ headroom
+Watch the CPU spike during this in your provider's dashboard — if it stays < 80% the current spec still has headroom.
 
 ---
 
-## 💰 สรุปตารางต้นทุน
+## 💰 Cost summary
 
-ราคาอ้างอิงจาก VPS provider ทั่วไป (DigitalOcean / Linode / Vultr / Hetzner — สเปกใกล้เคียงกัน)
+Pricing references typical VPS providers (DigitalOcean / Linode / Vultr / Hetzner — comparable specs).
 
-| Spec | ราคา (ประมาณ) | Concurrent | Daily users (est) | เหมาะกับ |
+| Spec | Price (approx) | Concurrent | Daily users (est) | Best for |
 |---|---|---|---|---|
-| 1 vCPU / 2 GB | ~$12/mo | 1-2 | 50-100 | PoC, ส่วนตัว |
-| 2 vCPU / 2 GB | ~$18/mo | 2-3 | 100-200 | เสี่ยง OOM |
-| **2 vCPU / 4 GB** | **~$24/mo** | **4-6** | **200-500** | **แนะนำเริ่มต้น** |
+| 1 vCPU / 2 GB | ~$12/mo | 1-2 | 50-100 | PoC, personal |
+| 2 vCPU / 2 GB | ~$18/mo | 2-3 | 100-200 | risky (OOM) |
+| **2 vCPU / 4 GB** | **~$24/mo** | **4-6** | **200-500** | **recommended starting point** |
 | 2 vCPU / 8 GB | ~$36/mo | 5-7 | 400-700 | RAM pressure |
-| 4 vCPU / 8 GB | ~$48/mo | 8-12 | 500-1000 | เติบโตแล้ว |
-| CPU-optimized 4-core | ~$84/mo | 15-20 | 1500-3000 | เน้น embedding |
+| 4 vCPU / 8 GB | ~$48/mo | 8-12 | 500-1000 | growing traffic |
+| CPU-optimized 4-core | ~$84/mo | 15-20 | 1500-3000 | embedding-heavy |
 
-> ตัวเลขเป็นการประเมิน conservative — workload จริงอาจต่างจากนี้ได้ 2-3 เท่า ขึ้นกับ cache hit rate และ query complexity
+> Numbers are conservative estimates — real workloads can vary by 2-3x depending on cache hit rate and query complexity.

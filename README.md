@@ -1,33 +1,33 @@
 # 🛕 Tripitaka MCP Server
 
-MCP Server สำหรับค้นหาและอ้างอิงเนื้อหาจากพระไตรปิฎก (Tipiṭaka)
-ให้ AI Agent (เช่น Claude, Cursor) สามารถค้นหาพระสูตร อ้างอิงคำสอน และเปรียบเทียบคำแปลข้ามภาษาได้
+An MCP Server for searching and citing content from the Pāli Tipiṭaka.
+Gives AI agents (such as Claude or Cursor) the ability to look up suttas, quote the teachings, and compare translations across languages.
 
-> 🙏 **โครงการนี้เผยแผ่เป็นธรรมทาน (Dhamma Dāna)** — ฟรี 100%, ห้ามใช้เชิงพาณิชย์
-> ดูรายละเอียด license: [LICENSE](./LICENSE) (code) + [NOTICE.md](./NOTICE.md) (data)
+> 🙏 **This project is offered as Dhamma Dāna** — 100% free, non-commercial only.
+> License details: [LICENSE](./LICENSE) (code) + [NOTICE.md](./NOTICE.md) (data)
 
 ## ✨ Features
 
-- ⚖️ **Hybrid Search** — ขีดสุดของความแม่นยำด้วยการนำ Keyword และ Semantic Search มารวมกันผ่านอัลกอริทึม Reciprocal Rank Fusion (RRF) (พร้อมใช้งานแล้ว!)
-- 🔍 **Keyword Search** — ค้นหาด้วยคำสำคัญ รองรับ 3 ภาษา (บาลี, ไทย, อังกฤษ) แบบ Trigram Fuzzy Match ซิงก์ข้ามภาษา
-- 🧠 **Semantic Search** — ค้นหาตามความหมาย สัมผัสถึงแก่นเจตนาด้วย Vector similarity (pgvector)
-- 📖 **Translation Comparison** — เรียกดูและเทียบสำนวนการแปลข้ามฉบับ (Edition) โยงตรงตาม Segment บรรทัดต่อบรรทัด
-- 📚 **Dictionary Bridge** — ระบบพจนานุกรมในตัวกว่า 20,000+ คำ (ป.อ. ปยุตฺโต, PTS, DPPN)
-- 📖 **Get Sutta & Reference** — ดึงเนื้อหาสูตรตาม ID (เช่น mn1) และสร้างข้อความอ้างอิงวิชาการมาตรฐาน
-- 📮 **Postman Ready** — มีคอลเลกชันสำหรับทดสอบ API ในโหมด sse เข้ากับโมเดลพัฒนาได้ทันที
+- ⚖️ **Hybrid Search** — highest precision by combining keyword and semantic search through Reciprocal Rank Fusion (RRF). Ready to use.
+- 🔍 **Keyword Search** — keyword lookup across three languages (Pāli, Thai, English) with trigram fuzzy matching and cross-language alignment.
+- 🧠 **Semantic Search** — meaning-based search that captures the intent of a passage via vector similarity (pgvector).
+- 📖 **Translation Comparison** — view and compare renderings across different editions, aligned line-by-line at the segment level.
+- 📚 **Dictionary Bridge** — built-in dictionary of 20,000+ entries (P. A. Payutto, PTS, DPPN).
+- 📖 **Get Sutta & Reference** — fetch sutta content by ID (e.g. `mn1`) and generate properly formatted academic citations.
+- 📮 **Postman Ready** — ships with a Postman collection for testing the API in SSE mode so you can wire it up to your dev workflow immediately.
 
 ## 🏗️ Tech Stack
 
-| เทคโนโลยี | หน้าที่ |
+| Technology | Role |
 |---|---|
 | Python + FastMCP | MCP Server |
-| PostgreSQL + pgvector | ฐานข้อมูล + Vector Search |
-| sentence-transformers | Embedding สำหรับ Semantic Search |
+| PostgreSQL + pgvector | Database + Vector Search |
+| sentence-transformers | Embeddings for semantic search |
 | Docker Compose | Infrastructure |
 
 ## 🚀 Quick Start
 
-### 🏎️ วิธีที่เร็วที่สุด — ใช้ installer (แนะนำสำหรับผู้ไม่ใช่สาย dev)
+### 🏎️ Fastest path — use the installer (recommended for non-developers)
 
 ```bash
 git clone https://github.com/dhamma-seeker/tripitaka-mcp.git
@@ -35,30 +35,29 @@ cd tripitaka-mcp
 ./scripts/install.sh
 ```
 
-Installer จะ **ดาวน์โหลด database dump จาก [Hugging Face — dhamma-seeker/tripitaka-mcp-dump](https://huggingface.co/datasets/dhamma-seeker/tripitaka-mcp-dump)
-แล้ว restore ให้อัตโนมัติ** — ประหยัดเวลาจาก 2-4 ชม. (load + embeddings) เหลือ ~5 นาที
-(ถ้ามีไฟล์ dump ใน local อยู่แล้ว จะใช้ของ local แทน)
+The installer **downloads a prepared database dump from [Hugging Face — dhamma-seeker/tripitaka-mcp-dump](https://huggingface.co/datasets/dhamma-seeker/tripitaka-mcp-dump) and restores it automatically** — cutting setup time from 2–4 hours (loading data + generating embeddings) down to ~5 minutes.
+(If a local dump file already exists, the local copy is used instead.)
 
-installer จะ:
+The installer will:
 
-1. ตรวจว่ามี docker / compose / openssl / curl
-2. สร้าง `.env` ด้วย password สุ่มให้ (ทั้ง admin และ readonly user)
-3. ดาวน์โหลด dump จาก Hugging Face (ถ้าไม่มีใน local)
-4. เปิด DB + restore dump
-5. ตั้ง readonly role + timeout สำหรับ runtime
-6. แสดง config Claude Desktop ที่ copy ไปวางได้เลย
+1. Verify that `docker`, `compose`, `openssl`, and `curl` are installed
+2. Generate `.env` with random passwords (for both the admin and the readonly user)
+3. Download the dump from Hugging Face (if not already local)
+4. Start the DB and restore the dump
+5. Set up the readonly role and runtime timeouts
+6. Print a ready-to-paste Claude Desktop config
 
 Options:
 
 ```bash
-./scripts/install.sh --dump PATH          # ใช้ไฟล์ dump ที่มีอยู่แล้ว
-./scripts/install.sh --dump-url URL       # override ที่มาของ dump
-./scripts/install.sh --no-dump            # ข้าม restore (โหลดข้อมูลเองทีหลัง)
+./scripts/install.sh --dump PATH          # use an existing dump file
+./scripts/install.sh --dump-url URL       # override the dump source
+./scripts/install.sh --no-dump            # skip restore (load data yourself later)
 ```
 
 ---
 
-### 🔧 วิธี manual (สำหรับ dev)
+### 🔧 Manual setup (for developers)
 
 #### 1. Clone & Setup
 
@@ -66,7 +65,7 @@ Options:
 git clone https://github.com/dhamma-seeker/tripitaka-mcp.git
 cd tripitaka-mcp
 cp .env.example .env
-# แก้ POSTGRES_PASSWORD ใน .env ให้เป็น random password
+# Set POSTGRES_PASSWORD in .env to a random password
 ```
 
 #### 2. Start Database
@@ -86,19 +85,19 @@ pip install -r requirements.txt
 #### 4. Initialize Database & Load Data
 
 ```bash
-# 1. Seed metadata (pitaka, nikaya)
+# 1. Seed metadata (pitaka, nikāya)
 python scripts/seed_metadata.py
 
-# 2. Download & load Sutta Pitaka data จาก SuttaCentral
+# 2. Download & load Sutta Piṭaka data from SuttaCentral
 python scripts/data_loader.py
 
-# 3. Load Thai CC0 Translations (Dhiranandi & Jayasaro)
+# 3. Load Thai CC0 translations (Dhīranando & Jayasāro)
 python scripts/load_thai_cc0.py
 
-# 4. Load Dictionary (DPD, PTS, DPPN และพจนานุกรม ป.อ. ปยุตฺโต)
+# 4. Load dictionaries (DPD, PTS, DPPN, and the Payutto dictionary)
 python scripts/load_dictionary.py
 
-# 5. Generate embeddings สำหรับ semantic/hybrid search
+# 5. Generate embeddings for semantic / hybrid search
 python scripts/generate_embeddings.py
 ```
 
@@ -108,36 +107,37 @@ python scripts/generate_embeddings.py
 python main.py
 ```
 
-### 🧪 การทดสอบด้วย Postman
+### 🧪 Testing with Postman
 
-โปรเจคนี้รองรับการทดสอบผ่าน Postman ในโหมด SSE:
-1. รันเซิร์ฟเวอร์ด้วย: `MCP_TRANSPORT=sse python main.py`
-2. Import ไฟล์ [postman_collection.json](./postman_collection.json) เข้าสู่ Postman
-3. เรียกใช้ Tool ต่างๆ ได้ทันที
+The project supports Postman testing in SSE mode:
+
+1. Run the server with: `MCP_TRANSPORT=sse python main.py`
+2. Import [postman_collection.json](./postman_collection.json) into Postman
+3. Invoke the tools directly
 
 ## 🚢 Production Deployment
 
-หากต้องการ Deploy ขึ้น Production โดยไม่ต้องโหลดข้อมูลและรัน AI Model ใหม่ แนะนำให้ใช้การ Restore จาก Database Dump
+To deploy to production without re-loading the data and re-running the embedding model, restoring from a database dump is the recommended path.
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Production stack มี 3 services:
+The production stack runs 3 services:
 
-- `db` — PostgreSQL + pgvector (internal only, ไม่ expose port)
-- `mcp-server` — FastMCP (รันด้วย readonly user, read-only FS, cap_drop ALL)
-- `caddy` — reverse proxy + Let's Encrypt + **rate limit** (10 req/10s และ 60 req/1 min per IP)
+- `db` — PostgreSQL + pgvector (internal only, no exposed port)
+- `mcp-server` — FastMCP (runs as a readonly user, read-only FS, `cap_drop: ALL`)
+- `caddy` — reverse proxy + Let's Encrypt + **rate limit** (10 req/10s and 60 req/1 min per IP)
 
-แนะนำให้เสริมด้วย **Cloudflare** หน้า Caddy อีกชั้น (DNS proxy + rate limit rules + DDoS protection — free tier)
+For an extra hardening layer, front Caddy with **Cloudflare** (DNS proxy + rate-limit rules + DDoS protection on the free tier).
 
-👉 ดูรายละเอียดที่: **[DEPLOYMENT.md](./DEPLOYMENT.md)**
+👉 Full details: **[DEPLOYMENT.md](./DEPLOYMENT.md)**
 
-## 🔧 เชื่อมต่อกับ Claude Desktop
+## 🔧 Connecting to Claude Desktop
 
-### แบบ local (stdio)
+### Local (stdio)
 
-เพิ่มใน `claude_desktop_config.json`:
+Add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -153,10 +153,9 @@ Production stack มี 3 services:
 }
 ```
 
-### แบบ remote (self-host บน server)
+### Remote (self-hosted on a server)
 
-ถ้าคุณ deploy MCP server ขึ้น VPS แล้ว ใช้ [`mcp-remote`](https://www.npmjs.com/package/mcp-remote)
-เพื่อ bridge SSE → stdio:
+If you've deployed the MCP server to a VPS, use [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) to bridge SSE → stdio:
 
 ```json
 {
@@ -172,90 +171,88 @@ Production stack มี 3 services:
 }
 ```
 
-ดูตัวอย่างเต็ม + คำอธิบายแต่ละ field: [`claude_desktop_config.example.json`](./claude_desktop_config.example.json)
+A fully annotated example is in [`claude_desktop_config.example.json`](./claude_desktop_config.example.json).
 
 ## 📦 MCP Tools
 
-| Tool | คำอธิบาย |
+| Tool | Description |
 |---|---|
-| `search_hybrid` | **(แนะนำ)** ค้นหาผสมผสาน (Hybrid Search) ด้วยเทคนิค RRF เพื่อความแม่นยำสูงสุด |
-| `search_by_keyword` | ค้นหาด้วย keyword (trigram fuzzy match) |
-| `search_semantic` | ค้นหาแบบ semantic (vector similarity) — ⚠️ แนะนำ query เป็น **บาลี/อังกฤษ** (ดูหมายเหตุด้านล่าง) |
-| `get_sutta` | ดึงเนื้อหาสูตรตาม ID พร้อมดึงคำแปลทั้งหมดที่เกี่ยวข้อง |
-| `compare_translations`| เปรียบเทียบสำนวนการแปลข้ามฉบับ (Edition) ในแต่ละ Segment |
-| `get_word_definition` | ค้นหาพจนานุกรมข้ามภาษา (PTS, DPPN, และพจนานุกรม ป.อ. ปยุตฺโต) |
-| `list_structure` | แสดงโครงสร้างคัมภีร์พระไตรปิฎก |
-| `get_reference` | สร้างข้อมูลอ้างอิงที่ถูกต้องตามรูปแบบวิชาการ |
+| `search_hybrid` | **(Recommended)** Combined search using RRF for maximum precision. |
+| `search_by_keyword` | Keyword search (trigram fuzzy match). |
+| `search_semantic` | Semantic search (vector similarity) — ⚠️ best with **Pāli / English** queries (see note below). |
+| `get_sutta` | Fetch sutta content by ID along with all available translations. |
+| `compare_translations`| Compare renderings across editions at the segment level. |
+| `get_word_definition` | Cross-language dictionary lookup (PTS, DPPN, and the Payutto dictionary). |
+| `list_structure` | Display the structure of the Tipiṭaka canon. |
+| `get_reference` | Generate a properly formatted academic citation. |
 
-### ⚠️ หมายเหตุเรื่อง `search_semantic`
+### ⚠️ Note on `search_semantic`
 
-Vector index สร้างบน `text_pali` เท่านั้น (SuttaCentral bilara-data ยังไม่มี Thai translation)
-และใช้ multilingual MiniLM model ที่**ไม่ได้ train บนบาลีโดยเฉพาะ** ทำให้:
+The vector index is built only on `text_pali` (SuttaCentral's bilara-data does not yet include Thai translations) using a multilingual MiniLM model that is **not specifically trained on Pāli**. As a result:
 
-- **Query ภาษาบาลี/อังกฤษ** → ผลแม่น (cross-lingual alignment ดี)
-- **Query ภาษาไทย** → ผลหลวม ไม่แนะนำ
-- สำหรับ keyword ตรง ๆ เช่น `appamāda` ใช้ `search_by_keyword` แม่นกว่า
-- ค้นทั่วไป ใช้ `search_hybrid` รวม keyword + semantic (ทนต่อข้อจำกัดนี้ได้ดีกว่า)
+- **Pāli / English queries** → accurate (good cross-lingual alignment)
+- **Thai queries** → loose matches, not recommended
+- For exact keywords like `appamāda`, `search_by_keyword` is more precise
+- For general-purpose search, `search_hybrid` (keyword + semantic) tolerates this limitation best
 
-การอัปเกรดเป็น embedding model ที่ฝึก Pali (เช่น bge-m3) + embed Thai edition วางแผนไว้ใน roadmap อนาคต
+Upgrading to a Pāli-trained embedding model (e.g. bge-m3) plus embedding the Thai edition is on the roadmap.
 
-## 📁 โครงสร้างโปรเจค
+## 📁 Project Structure
 
 ```text
 tripitaka-mcp/
-├── main.py                 # MCP Server หลัก (Tools ทั้งหมด)
+├── main.py                 # Main MCP Server (all tools)
 ├── db/
 │   ├── connection.py       # Database connection pool
-│   └── schema.py           # Database schema (รองรับ translation table)
+│   └── schema.py           # Database schema (supports translation table)
 ├── embedding/
 │   └── model.py            # SentenceTransformer wrapper
 ├── scripts/
-│   ├── seed_metadata.py    # Seed pitaka/nikaya metadata
-│   ├── data_loader.py      # Load Pali/English จาก SuttaCentral
-│   ├── load_thai_cc0.py    # สคริปต์โหลดคำแปลภาษาไทยประโยคต่อประโยค
-│   ├── load_dictionary.py  # โหลดฐานข้อมูลพจนานุกรมเข้าสู่ระบบ
-│   ├── scrape_payutto.py   # Web Scraper พจนานุกรม ป.อ. ปยุตฺโต
-│   └── generate_embeddings.py  # สร้าง vector embeddings
+│   ├── seed_metadata.py    # Seed pitaka/nikāya metadata
+│   ├── data_loader.py      # Load Pāli/English from SuttaCentral
+│   ├── load_thai_cc0.py    # Sentence-by-sentence Thai translation loader
+│   ├── load_dictionary.py  # Load dictionary data into the system
+│   ├── scrape_payutto.py   # Web scraper for the Payutto dictionary
+│   └── generate_embeddings.py  # Generate vector embeddings
 ├── data/
-│   └── payutto_dict.json   # ฐานข้อมูลศัพท์ภาษาไทยที่ขูดมาจากเว็บ
+│   └── payutto_dict.json   # Thai dictionary dataset scraped from the web
 ├── docker-compose.yml
 ├── Dockerfile
 └── requirements.txt
 ```
 
-## 📜 แหล่งข้อมูลและ License
+## 📜 Data Sources & License
 
-โครงการนี้รวมข้อมูลจากหลายแหล่งที่อยู่ภายใต้ license ต่างกัน
-**โปรดอ่าน [NOTICE.md](./NOTICE.md) ให้ครบถ้วนก่อนนำไปใช้**
+This project aggregates data from multiple sources under different licenses.
+**Please read [NOTICE.md](./NOTICE.md) in full before redistributing.**
 
-| แหล่งข้อมูล | License | หมายเหตุ |
+| Source | License | Note |
 | --- | --- | --- |
-| Source code | **MIT** | ใช้ / fork / แก้ไขได้เสรี |
+| Source code | **MIT** | Free to use, fork, modify |
 | [SuttaCentral bilara-data](https://github.com/suttacentral/bilara-data) | **CC0** | Public domain |
-| คำแปลไทย (ธีรนันโท, ชยสาโร) | **CC0** | ผ่าน SuttaCentral |
-| [พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์](https://www.watnyanaves.net) โดย สมเด็จพระพุทธโฆษาจารย์ (ป. อ. ปยุตฺโต) | **ธรรมทาน** | ⚠️ ห้ามใช้เชิงพาณิชย์ |
+| Thai translations (Dhīranando, Jayasāro) | **CC0** | Via SuttaCentral |
+| [Dictionary of Buddhism](https://www.watnyanaves.net) by Somdet Phra Buddhaghosacariya (P. A. Payutto) | **Dhamma Dāna** | ⚠️ Non-commercial use only |
 | PTS / DPPN / Dhammika Dictionaries | Public Domain / CC | — |
 
-### ⚠️ หากคุณจะ fork หรือนำไปใช้ต่อ
+### ⚠️ If you plan to fork or redistribute
 
-- ✅ ใช้ในโปรเจกต์ **ฟรี / ธรรมทาน / การศึกษา** ได้
-- ✅ รันในเครื่องตัวเอง / ใช้ส่วนตัว ได้
-- ❌ **ห้ามใช้ในสินค้า/บริการที่เรียกเก็บเงิน** (เพราะพจนานุกรม ป.อ. ปยุตฺโต)
-- ❌ **ห้ามดัดแปลงเนื้อหาพจนานุกรม**
+- ✅ Use in **free / dhamma-dāna / educational** projects — allowed
+- ✅ Run on your own machine / personal use — allowed
+- ❌ **Do not use in any paid product or service** (because of the Payutto dictionary)
+- ❌ **Do not modify the dictionary content**
 
-ถ้าต้องการใช้เชิงพาณิชย์: เอาส่วนพจนานุกรมออก หรือติดต่อวัดญาณเวศกวันขออนุญาต
+For commercial use: remove the dictionary component, or contact Wat Nyanavesakavan for permission.
 
 ### 🙏 Credits & Attribution
 
-ดู [CREDITS.md](./CREDITS.md) สำหรับรายละเอียดผู้มีส่วนร่วม
-และ [NOTICE.md](./NOTICE.md) สำหรับเงื่อนไข license
+See [CREDITS.md](./CREDITS.md) for contributor details and [NOTICE.md](./NOTICE.md) for license terms.
 
-**ขออนุโมทนาบุญต่อ:**
+**Gratitude to:**
 
-- สมเด็จพระพุทธโฆษาจารย์ (ป. อ. ปยุตฺโต) + วัดญาณเวศกวัน
-- SuttaCentral + ผู้แปลภาษาไทยและภาษาอังกฤษ
+- Somdet Phra Buddhaghosacariya (P. A. Payutto) + Wat Nyanavesakavan
+- SuttaCentral and the Thai & English translators
 - 84000.org
 
 ---
 
-**สาธุ 🙏** ขอให้การเผยแผ่ธรรมนี้ เป็นไปเพื่อประโยชน์และความสุขของสรรพสัตว์
+**Sādhu 🙏** — May the sharing of this Dhamma bring benefit and happiness to all beings.

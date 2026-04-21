@@ -1,97 +1,96 @@
 # 🚢 Tripitaka MCP — Deployment Runbook
 
-คู่มือการ deploy ขึ้น staging → production บน VPS ใดก็ได้ที่รัน Docker
-(Caddy reverse proxy + readonly DB + rate limit + Cloudflare)
+Guide for deploying to staging → production on any VPS that runs Docker
+(Caddy reverse proxy + readonly DB + rate limit + Cloudflare).
 
-> ไฟล์นี้เป็น **generic runbook** สำหรับคนที่ต้องการ fork/deploy instance ของตัวเอง
-> ตัวอย่างที่ให้ใช้ `example.org` — แทนด้วยโดเมนจริงของคุณ
-> Infra reference ใน [`infra/`](infra/) เขียนเป็น Terraform สำหรับ DigitalOcean —
-> ปรับให้เข้ากับ cloud provider ที่คุณใช้ได้ (AWS, GCP, Linode, ฯลฯ)
+> This file is a **generic runbook** for anyone forking to deploy their own instance.
+> Examples use `example.org` — replace with your real domain.
+> The infra reference in [`infra/`](infra/) is written as Terraform for DigitalOcean —
+> adapt to whichever cloud provider you use (AWS, GCP, Linode, etc.).
 
 ---
 
 ## 📋 Gate 1 — Staging Deploy Checklist
 
-### 0. Prerequisites (บน laptop)
+### 0. Prerequisites (on your laptop)
 
 - [ ] [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.5
-- [ ] SSH key ใหม่สำหรับ production (แยกจาก personal):
+- [ ] A new SSH key for production (separate from your personal key):
 
   ```bash
   ssh-keygen -t ed25519 -f ~/.ssh/tripitaka_prod -C "tripitaka-deploy"
   ```
 
-- [ ] Cloud provider API token (ถ้าใช้ Terraform ใน repo นี้ — provider = DigitalOcean; เปลี่ยน provider ได้)
-- [ ] Domain ที่ชี้ NS มาที่ DNS provider ที่รองรับ (Cloudflare / cloud-provider DNS / etc.)
+- [ ] Cloud provider API token (if using the Terraform in this repo — default provider is DigitalOcean; you can switch)
+- [ ] A domain whose NS points to a supported DNS provider (Cloudflare / cloud-provider DNS / etc.)
 
-### 1. Provision droplet ด้วย Terraform
+### 1. Provision the VPS with Terraform
 
 ```bash
 cd infra
 cp terraform.tfvars.example terraform.tfvars
-# แก้ do_token, public_key_path, domain_name
+# Fill in do_token, public_key_path, domain_name
 
-# ดู IP ตัวเองเพื่อจำกัด SSH:
+# Find your own IP to lock down SSH:
 curl ifconfig.me
-# เพิ่มใน tfvars: ssh_allowed_cidrs = ["YOUR.IP/32"]
+# Add to tfvars: ssh_allowed_cidrs = ["YOUR.IP/32"]
 
 terraform init
-terraform plan      # ตรวจก่อน apply
-terraform apply     # ยืนยันด้วย yes — รอประมาณ 3-5 นาที
+terraform plan      # Review before applying
+terraform apply     # Confirm with `yes` — takes about 3–5 minutes
 ```
 
-Output จะแสดง droplet IP + คำสั่ง SSH
+The output shows the VPS IP + SSH command.
 
-### 2. ตั้ง DNS
+### 2. Configure DNS
 
-ชี้ `A record` ของโดเมน (เช่น `mcp.example.org`) → VPS IP
+Point an `A record` for your domain (e.g. `mcp.example.org`) → VPS IP.
 
-- ถ้าใช้ **Cloudflare**: เปิด proxy (icon ส้ม) เพื่อซ่อน origin IP
-- ถ้าใช้ **cloud provider DNS** ในตัว: Terraform ใน repo นี้สร้าง A record ให้แล้ว (สำหรับ DO)
+- If using **Cloudflare**: enable the proxy (orange icon) to hide the origin IP
+- If using your **cloud provider's DNS**: the Terraform in this repo creates the A record for you (DO case)
 
-ตรวจด้วย: `dig mcp.example.org` ต้องคืน VPS IP
+Verify with: `dig mcp.example.org` — should return the VPS IP.
 
-### 3. SSH เข้า VPS แล้ว deploy
+### 3. SSH in and deploy
 
 ```bash
-ssh deploy@<VPS_IP>              # ใช้ user deploy ไม่ใช่ root
+ssh deploy@<VPS_IP>              # Use the `deploy` user, not root
 cd /opt/tripitaka
 git clone <REPO_URL> .
 ./scripts/deploy.sh --domain mcp.example.org
 ```
 
-สคริปต์จะ:
+The script will:
 
-1. สร้าง `.env` ด้วย password สุ่ม
-2. ดาวน์โหลด dump จาก Hugging Face
-3. Restore DB
-4. ตั้ง `tripitaka_ro` readonly user
+1. Generate `.env` with random passwords
+2. Download the dump from Hugging Face
+3. Restore the DB
+4. Set up the `tripitaka_ro` readonly user
 5. Build + start docker-compose.prod.yml
-6. รอ Caddy ขอ Let's Encrypt cert
+6. Wait for Caddy to obtain the Let's Encrypt certificate
 
-### 4. Verify จาก laptop
+### 4. Verify from your laptop
 
 ```bash
-# จาก laptop
+# From your laptop
 ./scripts/smoke_test.sh https://mcp.example.org
 ```
 
-ต้องผ่านทุก check:
+All checks should pass:
 
 - ✓ DNS resolves
 - ✓ TLS cert valid
 - ✓ /health → ok
 - ✓ security headers (HSTS, X-Content-Type-Options, etc.)
-- ✓ Server header ถูกซ่อน
-- ✓ rate limit ทำงาน (มี 429 เมื่อ burst)
+- ✓ Server header hidden
+- ✓ rate limit works (returns 429 on burst)
 - ✓ /sse → text/event-stream
 
-### 5. ทดสอบ MCP tools จริง
+### 5. Test real MCP tools
 
-Claude Desktop ปัจจุบัน **ไม่รองรับ remote SSE โดยตรง** ต้องใช้ [`mcp-remote`](https://www.npmjs.com/package/mcp-remote)
-bridge SSE → stdio ให้
+Claude Desktop currently **does not support remote SSE directly** — you need [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) to bridge SSE → stdio.
 
-เพิ่มใน `claude_desktop_config.json`:
+Add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -113,18 +112,18 @@ bridge SSE → stdio ให้
 }
 ```
 
-**ข้อควรรู้:**
+**Things to know:**
 
-- `command` ต้อง**ระบุ path เต็ม**ของ `npx` (Claude Desktop ไม่เห็น `PATH` ของ shell) — หา path ด้วย `which npx`
-- `env.PATH` จำเป็นเมื่อใช้ **nvm**: ไม่งั้น `node` อาจ resolve ไปเวอร์ชันอื่นที่ไม่มี `node:path` module (เวอร์ชันเก่า)
-- `--transport sse-only` บังคับใช้ SSE — ถ้าไม่ใส่ mcp-remote จะลอง Streamable HTTP ก่อนแล้วได้ 502
-- ดูตัวอย่างเต็มที่: [`claude_desktop_config.example.json`](./claude_desktop_config.example.json)
+- `command` must be the **full path** to `npx` (Claude Desktop doesn't see your shell's `PATH`) — find it with `which npx`
+- `env.PATH` is required when using **nvm**: otherwise `node` may resolve to an older version that lacks the `node:path` module
+- `--transport sse-only` forces SSE — without it, mcp-remote tries Streamable HTTP first and gets 502
+- Full annotated example: [`claude_desktop_config.example.json`](./claude_desktop_config.example.json)
 
-Restart Claude แล้วลอง:
+Restart Claude and try:
 
-- `search_hybrid("metta")` — ต้องคืนผลลัพธ์
-- `get_word_definition("sati")` — ต้องมี attribution
-- `get_sutta("mn1")` — ต้องคืนเนื้อหา
+- `search_hybrid("metta")` — should return results
+- `get_word_definition("sati")` — should include attribution
+- `get_sutta("mn1")` — should return content
 
 ---
 
@@ -134,7 +133,7 @@ Restart Claude แล้วลอง:
 
 DNS → Proxied (orange cloud):
 
-- **Security → WAF → Rate limiting rules**: เพิ่ม rule `50 req / 10min / IP → Challenge`
+- **Security → WAF → Rate limiting rules**: add rule `50 req / 10min / IP → Challenge`
 - **Security → Bots → Bot Fight Mode**: On
 - **Security → Settings → Security Level**: Medium
 - **Speed → Optimization → Caching**: Standard
@@ -144,43 +143,43 @@ DNS → Proxied (orange cloud):
 
 ### Monitoring + Alerts
 
-แนะนำตั้ง **3 ระดับ** (ทุก cloud provider มีให้ใน native tools):
+Set up **three layers** (every cloud provider has native tools for these):
 
-1. **Uptime check** — HTTPS `GET /health` ทุก 1-5 นาที จาก ≥2 regions → alert เมื่อ fail
-2. **VPS metrics** — CPU >80%, Memory >85%, Disk >80% (window 5 นาที) → alert
-3. **Billing alert** — ตั้ง threshold monthly spend → email
+1. **Uptime check** — HTTPS `GET /health` every 1–5 minutes from ≥2 regions → alert on failure
+2. **VPS metrics** — CPU >80%, Memory >85%, Disk >80% (5-minute window) → alert
+3. **Billing alert** — set a monthly spend threshold → email
 
-ส่ง alert เข้าช่องทางที่สะดวก: Slack / email / PagerDuty / Discord
-(cloud provider ส่วนใหญ่มี native integration ให้เลือก)
+Route alerts to wherever is convenient: Slack / email / PagerDuty / Discord
+(most cloud providers offer native integrations).
 
 ### Backup automation
 
-Cron บน VPS: `pg_dump` → **S3-compatible object storage** ทุกวัน เก็บ N วัน
-ดูสคริปต์: [`scripts/backup.sh`](scripts/backup.sh) (รองรับ S3 ทุกเจ้า: AWS S3, DO Spaces, Cloudflare R2, MinIO, ฯลฯ — ตั้งผ่าน env vars)
+Cron on the VPS: `pg_dump` → **S3-compatible object storage** daily, keep N days.
+See the script: [`scripts/backup.sh`](scripts/backup.sh) (works with any S3 provider: AWS S3, DO Spaces, Cloudflare R2, MinIO, etc. — configured via env vars).
 
 ---
 
 ## 🔄 Operations
 
-### ดู logs
+### View logs
 
 ```bash
 docker compose -f docker-compose.prod.yml logs -f              # all
-docker compose -f docker-compose.prod.yml logs -f mcp-server   # เฉพาะ server
+docker compose -f docker-compose.prod.yml logs -f mcp-server   # server only
 docker compose -f docker-compose.prod.yml logs -f caddy        # access logs + TLS
 ```
 
 ### Restart
 
 ```bash
-# restart ทั้ง stack
+# restart the whole stack
 docker compose -f docker-compose.prod.yml restart
 
-# restart เฉพาะ service
+# restart a single service
 docker compose -f docker-compose.prod.yml restart mcp-server
 ```
 
-### Update (pull code ใหม่)
+### Update (pull latest code)
 
 ```bash
 cd /opt/tripitaka
@@ -197,29 +196,29 @@ git checkout <commit-sha>
 ./scripts/deploy.sh
 ```
 
-### Restore จาก backup
+### Restore from backup
 
 ```bash
-# stop mcp-server ก่อน (กัน read ขณะ restore)
+# Stop mcp-server first (prevent reads during restore)
 docker compose -f docker-compose.prod.yml stop mcp-server
 
-# drop + restore
+# Drop + restore
 docker exec tripitaka-db psql -U admin -d tripitaka_db -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 docker exec -i tripitaka-db pg_restore -U admin -d tripitaka_db --no-owner --no-acl < backup.dump
 
-# ตั้ง readonly user ใหม่ (dump อาจมี role เก่า)
+# Re-create the readonly user (dump may carry an old role)
 docker exec -i tripitaka-db psql -U admin -d tripitaka_db < scripts/setup_readonly_user.sql
 docker exec tripitaka-db psql -U admin -d tripitaka_db \
     -c "ALTER ROLE tripitaka_ro PASSWORD '$(grep TRIPITAKA_RO_PASSWORD .env | cut -d= -f2)'"
 
-# restart
+# Restart
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-### ดู abuse patterns
+### Watch for abuse patterns
 
 ```bash
-# top IPs ใน access log
+# Top IPs in access log
 docker logs tripitaka-caddy 2>&1 | jq -r '.request.remote_ip' | sort | uniq -c | sort -rn | head
 ```
 
@@ -227,37 +226,37 @@ docker logs tripitaka-caddy 2>&1 | jq -r '.request.remote_ip' | sort | uniq -c |
 
 ## 🩺 Troubleshooting
 
-### `/sse` คืน 502 จาก Caddy
+### `/sse` returns 502 from Caddy
 
-สาเหตุที่พบบ่อย:
+Common causes:
 
-1. **mcp-server bind `127.0.0.1`** — ใน `.env` ต้อง `MCP_HOST=0.0.0.0` ไม่งั้น Caddy container อื่นเชื่อมไม่ได้
-   - เช็ค: `docker logs tripitaka-mcp-server | grep 'Uvicorn running'` ต้องเห็น `http://0.0.0.0:8080`
-2. **MCP_TRANSPORT=stdio** — ต้องเป็น `sse` (ไม่งั้นไม่มี HTTP port เปิดเลย)
-3. **Port mismatch** — Caddy proxy ไป `:8080` แต่ server ฟัง `:8000` (default ถ้าไม่ตั้ง `MCP_PORT`)
+1. **mcp-server bound to `127.0.0.1`** — `.env` must set `MCP_HOST=0.0.0.0`, otherwise the Caddy container can't connect
+   - Check: `docker logs tripitaka-mcp-server | grep 'Uvicorn running'` — should show `http://0.0.0.0:8080`
+2. **`MCP_TRANSPORT=stdio`** — must be `sse` (otherwise there's no HTTP port open at all)
+3. **Port mismatch** — Caddy proxies to `:8080` but the server listens on `:8000` (the default when `MCP_PORT` isn't set)
 
-### SSH เชื่อมไม่ได้ (Connection refused) หลังจากที่เคยเข้าได้
+### SSH refused (Connection refused) after previously working
 
-IP สาธารณะของคุณเปลี่ยน (VPN / มือถือ / ISP) → cloud firewall `ssh_allowed_cidrs` บล็อก
-แก้: อัปเดต IP ใหม่ใน [infra/terraform.tfvars](infra/terraform.tfvars) แล้ว
-`terraform apply -target=<firewall_resource>` (ดูชื่อ resource ใน `infra/main.tf`)
+Your public IP changed (VPN / mobile / ISP) → the cloud firewall `ssh_allowed_cidrs` blocks you.
+Fix: update the new IP in [infra/terraform.tfvars](infra/terraform.tfvars), then run
+`terraform apply -target=<firewall_resource>` (find the resource name in `infra/main.tf`).
 
 ### Claude Desktop: `Cannot find module 'node:path'`
 
-Claude Desktop เรียก `node` เวอร์ชันเก่า (< 16) ซึ่งไม่มี `node:` protocol
-แก้: ระบุ `PATH` เต็มใน `env` ที่ชี้ไป node ≥ 18 และ/หรือ `nvm alias default 22`
+Claude Desktop is running an older `node` (< 16) that lacks the `node:` protocol.
+Fix: set the full `PATH` in `env` to point at node ≥ 18, and/or run `nvm alias default 22`.
 
 ### Claude Desktop: `Streamable HTTP error: Non-200 status code (502)`
 
-`mcp-remote` พยายามใช้ Streamable HTTP ก่อน แต่ server เราให้ SSE เท่านั้น
-แก้: เพิ่ม `--transport sse-only` ใน args
+`mcp-remote` tries Streamable HTTP first, but our server only offers SSE.
+Fix: add `--transport sse-only` to args.
 
 ---
 
-## ⚠️ ข้อควรระวัง
+## ⚠️ Things to Watch
 
-1. **ทรัพยากร**: RAM 4GB แนะนำ (swap 2GB ช่วยเสริม — cloud-init ตั้งไว้แล้ว)
-   ดูประเมินความจุและแนวทาง scale: [docs/CAPACITY.md](./docs/CAPACITY.md)
-2. **ห้าม commit `.env`**: `chmod 600` + เก็บสำรองใน password manager
-3. **Dump file**: ~500MB-1GB — ลบออกหลัง restore เสร็จ (`rm tripitaka_production_data.dump`) ประหยัด disk
-4. **Let's Encrypt rate limit**: ถ้า deploy ผิดซ้ำๆ อาจโดน ban 1 สัปดาห์ — ทดสอบด้วย `--staging` ก่อนถ้าไม่แน่ใจ
+1. **Resources**: 4 GB RAM recommended (with 2 GB swap as a safety net — already set by cloud-init).
+   For capacity estimates and scaling guidance: [docs/CAPACITY.md](./docs/CAPACITY.md)
+2. **Never commit `.env`**: `chmod 600` and keep a backup in a password manager
+3. **Dump file**: ~500 MB–1 GB — remove after restoring (`rm tripitaka_production_data.dump`) to save disk
+4. **Let's Encrypt rate limit**: repeated failed deploys can get you banned for a week — test with `--staging` first if unsure

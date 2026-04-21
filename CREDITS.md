@@ -1,130 +1,128 @@
 # 🙏 Credits & Acknowledgments
 
-โครงการ **Tripitaka MCP** ไม่อาจเกิดขึ้นได้หากปราศจากความกรุณาและวิริยะของครูบาอาจารย์
-ผู้รวบรวม ผู้แปล และชุมชนต่างๆ ที่ได้เมตตาจัดทำข้อมูลพระไตรปิฎกและธรรมะให้ผู้ใฝ่ศึกษาได้เข้าถึง
+The **Tripitaka MCP** project could not exist without the kindness and diligence of the teachers, compilers, translators, and communities who have lovingly prepared the Tipiṭaka and Dhamma materials for anyone wishing to study them.
 
-ขอแสดงความเคารพและอนุโมทนาบุญต่อทุกท่านและทุกแหล่งที่ระบุไว้ด้านล่างนี้
+With respect and anumodanā to everyone and every source listed below.
 
 ---
 
-## 📚 แหล่งข้อมูลหลัก
+## 📚 Primary Data Sources
 
-### 1. พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์
+### 1. Dictionary of Buddhism (พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์)
 
-**เรียบเรียงโดย**: สมเด็จพระพุทธโฆษาจารย์ (ป. อ. ปยุตฺโต)
-**เผยแผ่โดย**: วัดญาณเวศกวัน
-**License**: ธรรมทาน (Dhamma Dāna) — ห้ามใช้เชิงพาณิชย์
+**Compiled by**: Somdet Phra Buddhaghosacariya (P. A. Payutto)
+**Published by**: Wat Nyanavesakavan
+**License**: Dhamma Dāna — non-commercial only
 
-- ต้นฉบับทางการ: [watnyanaves.net](https://www.watnyanaves.net)
-- ฉบับออนไลน์: [84000.org](https://84000.org)
-- ข้อมูลใน repo นี้ scrape จาก: `tripitaka-online.blogspot.com`
+- Official source: [watnyanaves.net](https://www.watnyanaves.net)
+- Online edition: [84000.org](https://84000.org)
+- The data in this repo was scraped from: `tripitaka-online.blogspot.com`
 
-โครงการนี้ได้รับประโยชน์จากผลงานของท่านเจ้าประคุณสมเด็จฯ
-ด้วยความเคารพอย่างสูงและเพียรรักษาเนื้อหาให้ถูกตรงตามต้นฉบับที่สุด
-ตามเจตนารมณ์แห่งธรรมทาน
+This project is deeply indebted to the work of Somdet Phra Buddhaghosacariya,
+and carries it forward with the utmost respect, striving to preserve the content
+as faithfully as possible in the spirit of Dhamma Dāna.
 
-**สำหรับผู้ต้องการอ้างอิงอย่างเป็นทางการ**: กรุณาใช้หนังสือฉบับพิมพ์ล่าสุด
-(ปัจจุบันปี พ.ศ. 2569 พิมพ์ครั้งที่ 35)
+**For formal citation**, please use the latest printed edition
+(as of 2026, the 35th printing).
 
 ### 2. SuttaCentral bilara-data
 
-**ผู้จัดทำ**: ชุมชน SuttaCentral
+**Maintained by**: the SuttaCentral community
 **License**: [CC0 1.0 Universal (Public Domain Dedication)](https://creativecommons.org/publicdomain/zero/1.0/)
 
 - Repository: [github.com/suttacentral/bilara-data](https://github.com/suttacentral/bilara-data)
-- เว็บไซต์: [suttacentral.net](https://suttacentral.net)
+- Website: [suttacentral.net](https://suttacentral.net)
 
-ขอขอบคุณชุมชน SuttaCentral สำหรับการจัดทำพระไตรปิฎกดิจิทัล
-ที่มีโครงสร้าง segment-level alignment ระหว่างบาลีและคำแปล
-ทำให้งาน Dictionary Bridge และ Translation Comparison เป็นไปได้
+Thanks to the SuttaCentral community for producing the digital Tipiṭaka
+with segment-level alignment between the Pāli and its translations —
+this is what makes Dictionary Bridge and Translation Comparison possible.
 
-### 3. คำแปลไทย (CC0)
+### 3. Thai Translations (CC0)
 
-**ผู้แปล**:
-- **พระธีรนันโท (Dhiranandi)** — คำแปลภาษาไทยบางส่วน
-- **พระอาจารย์ชยสาโร (Ajahn Jayasaro)** — คำแปลภาษาไทยบางส่วน
+**Translators**:
+- **Ven. Dhīranando (Dhiranandi)** — portions of the Thai translation
+- **Ajahn Jayasāro** — portions of the Thai translation
 
-**License**: CC0 1.0 (ผ่านโครงการ SuttaCentral)
+**License**: CC0 1.0 (via the SuttaCentral project)
 
-ขออนุโมทนาต่อพระเถระทั้งสองรูปที่ได้แปลพระสูตรเป็นภาษาไทยที่เข้าใจง่าย
-และเปิดให้ใช้ได้อย่างเสรี
+With anumodanā to both venerables for rendering the suttas into accessible Thai and releasing them freely.
 
-### 4. พจนานุกรมภาษาอังกฤษ
+### 4. English Dictionaries
 
 #### Pali Text Society Dictionary (PTS)
-**เรียบเรียงโดย**: T. W. Rhys Davids & William Stede
+**Compiled by**: T. W. Rhys Davids & William Stede
 **License**: Public Domain
-**ที่มา**: [palitextsociety.org](https://www.palitextsociety.org)
+**Source**: [palitextsociety.org](https://www.palitextsociety.org)
 
 #### Dictionary of Pali Proper Names (DPPN)
-**เรียบเรียงโดย**: G. P. Malalasekera
+**Compiled by**: G. P. Malalasekera
 **License**: Public Domain
-**ที่มา**: [palikanon.com](https://www.palikanon.com/english/pali_names/dic_idx.html)
+**Source**: [palikanon.com](https://www.palikanon.com/english/pali_names/dic_idx.html)
 
 #### A Buddhist Dictionary
-**เรียบเรียงโดย**: Bhikkhu Dhammika
+**Compiled by**: Bhikkhu Dhammika
 **License**: Creative Commons
-**ที่มา**: [bhantedhammika.net](https://www.bhantedhammika.net)
+**Source**: [bhantedhammika.net](https://www.bhantedhammika.net)
 
 ---
 
 ## 🛠️ Software & Libraries
 
-โครงการนี้พึ่งพา open source software ต่อไปนี้:
+This project is built on the following open-source software:
 
 - **[FastMCP](https://github.com/jlowin/fastmcp)** — MCP Server framework
-- **[PostgreSQL](https://www.postgresql.org)** — ฐานข้อมูลหลัก
-- **[pgvector](https://github.com/pgvector/pgvector)** — Vector similarity search extension
-- **[sentence-transformers](https://www.sbert.net)** — Embedding generation
-- **[Hugging Face](https://huggingface.co)** — Model hosting & distribution
-- **[Docker](https://www.docker.com)** — Containerization
-- **[Terraform](https://www.terraform.io)** — Infrastructure as Code
+- **[PostgreSQL](https://www.postgresql.org)** — primary database
+- **[pgvector](https://github.com/pgvector/pgvector)** — vector similarity extension
+- **[sentence-transformers](https://www.sbert.net)** — embedding generation
+- **[Hugging Face](https://huggingface.co)** — model hosting & distribution
+- **[Docker](https://www.docker.com)** — containerization
+- **[Terraform](https://www.terraform.io)** — infrastructure as code
 
 ---
 
 ## 🌐 Infrastructure
 
-- **Cloud VPS provider** — Hosting สำหรับ public instance
+- **Cloud VPS provider** — hosting for the public instance
 - **CDN / reverse proxy provider** — TLS, caching, DDoS protection
-- **[GitHub](https://github.com)** — Code hosting
-- **[Hugging Face Datasets](https://huggingface.co/datasets)** — Data distribution
+- **[GitHub](https://github.com)** — code hosting
+- **[Hugging Face Datasets](https://huggingface.co/datasets)** — data distribution
 
 ---
 
 ## 💛 Personal Thanks
 
-ขอขอบคุณครูบาอาจารย์ทุกท่านที่ได้ประสิทธิ์ประสาทความรู้ทางธรรม
-ขอบคุณเพื่อนๆ ที่ทดสอบและให้ข้อเสนอแนะในระหว่างการพัฒนา
-และขอบคุณผู้มีส่วนร่วมทุกท่านที่จะเข้ามาช่วยพัฒนาโครงการนี้ต่อไป
+With gratitude to all the teachers who have shared the Dhamma,
+to the friends who tested and gave feedback during development,
+and to every future contributor who helps carry this project forward.
 
 ---
 
 ## 🤝 Become a Contributor
 
-หากท่านต้องการร่วมสนับสนุนโครงการนี้:
+If you'd like to help support this project:
 
 - **Report bugs / errors**: [GitHub Issues](https://github.com/dhamma-seeker/tripitaka-mcp/issues)
-- **Improve translations**: Pull requests ยินดีต้อนรับ
-- **Add new dictionaries**: ช่วยเพิ่มแหล่งพจนานุกรมที่ license compatible
-- **Translate UI**: ช่วยแปลเอกสารเป็นภาษาอื่น
-- **Share**: บอกต่อให้ผู้สนใจธรรมได้รู้จักเครื่องมือนี้
+- **Improve translations**: pull requests welcome
+- **Add new dictionaries**: help expand license-compatible dictionary sources
+- **Translate UI**: help translate the documentation into other languages
+- **Share**: spread the word to others interested in the Dhamma
 
-รายละเอียดการร่วมพัฒนา: ดู `CONTRIBUTING.md`
+For contributor guidelines, see `CONTRIBUTING.md`.
 
 ---
 
 ## 📜 Disclaimer
 
-> โครงการนี้ไม่ได้เป็นตัวแทนของวัดญาณเวศกวัน, SuttaCentral,
-> ผู้แปล หรือสำนักพิมพ์ใดๆ ทั้งสิ้น
-> ผู้จัดทำรับผิดชอบในการรวบรวมและจัดทำระบบนี้แต่เพียงผู้เดียว
+> This project does not represent Wat Nyanavesakavan, SuttaCentral,
+> any translator, or any publisher.
+> The maintainer is solely responsible for assembling and operating this system.
 >
-> ข้อผิดพลาดในการ scrape, OCR, alignment, หรือการแสดงผลใดๆ
-> เป็นความรับผิดชอบของผู้จัดทำ — มิใช่ของผู้เรียบเรียงหรือแหล่งต้นฉบับ
+> Any errors in scraping, OCR, alignment, or presentation
+> are the maintainer's responsibility — not that of the original compilers or sources.
 
 ---
 
-**สาธุ สาธุ สาธุ 🙏**
+**Sādhu sādhu sādhu 🙏**
 
-ขอผลบุญที่เกิดจากการเผยแผ่ธรรมนี้ จงเป็นไปเพื่อประโยชน์และความสุข
-แก่สรรพสัตว์ทั้งหลายโดยถ้วนหน้า เทอญ
+May the merit arising from the sharing of this Dhamma
+bring benefit and happiness to all beings without exception.

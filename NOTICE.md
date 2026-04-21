@@ -1,105 +1,103 @@
 # NOTICE — Third-Party Licenses & Attribution
 
-โปรเจกต์ **Tripitaka MCP** รวมข้อมูลจากหลายแหล่งที่อยู่ภายใต้ license ต่างกัน
-**ผู้ใช้ / ผู้ fork ต้องปฏิบัติตามเงื่อนไขของแต่ละแหล่งข้อมูลแยกกัน**
+The **Tripitaka MCP** project aggregates data from multiple sources under different licenses.
+**Users and forkers must comply with the terms of each source independently.**
 
-สรุปภาพรวม:
+Summary:
 
-| ส่วน | License | เงื่อนไขหลัก |
+| Component | License | Key terms |
 |---|---|---|
-| Source code (ทุกไฟล์ `.py`, `.yml`, `.tf`, `.sh` ฯลฯ) | MIT | ใช้/แก้ไข/ขายได้เสรี |
-| พระไตรปิฎกบาลี + คำแปลอังกฤษ (SuttaCentral bilara-data) | CC0 1.0 | ใช้ได้ทุกอย่าง ไม่ต้อง attribute (แต่ควร attribute) |
-| คำแปลไทย CC0 (ดิรานันท์, ชยสาโร) | CC0 1.0 | ใช้ได้ทุกอย่าง |
-| พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์ (ป. อ. ปยุตฺโต) | **ธรรมทาน (Dhamma Dāna)** | **⚠️ Non-commercial เท่านั้น** |
+| Source code (all `.py`, `.yml`, `.tf`, `.sh`, etc.) | MIT | Free to use, modify, sell |
+| Pāli Tipiṭaka + English translations (SuttaCentral bilara-data) | CC0 1.0 | Any use, no attribution required (but recommended) |
+| Thai CC0 translations (Dhīranando, Jayasāro) | CC0 1.0 | Any use |
+| Dictionary of Buddhism (P. A. Payutto) | **Dhamma Dāna** | **⚠️ Non-commercial only** |
 
 ---
 
 ## 1. Source Code — MIT License
 
-Source code ของ Tripitaka MCP อยู่ภายใต้ MIT License — ดู [LICENSE](./LICENSE)
+The Tripitaka MCP source code is under the MIT License — see [LICENSE](./LICENSE).
 
 ## 2. Tipiṭaka Data — SuttaCentral bilara-data (CC0 1.0)
 
-- **ที่มา**: [github.com/suttacentral/bilara-data](https://github.com/suttacentral/bilara-data)
+- **Source**: [github.com/suttacentral/bilara-data](https://github.com/suttacentral/bilara-data)
 - **License**: [Creative Commons Zero v1.0 Universal (CC0)](https://creativecommons.org/publicdomain/zero/1.0/)
-- **หมายถึง**: public domain — ใช้ทำอะไรก็ได้ ไม่ต้อง attribute ตามกฎหมาย
-- **แต่เราแนะนำให้ attribute** เสมอ เพื่อแสดงความขอบคุณต่อชุมชน SuttaCentral
+- **Meaning**: public domain — any use allowed, no legal requirement to attribute
+- **We recommend attribution** regardless, as a gesture of gratitude to the SuttaCentral community
 
 ## 3. Thai CC0 Translations
 
-คำแปลไทยของพระธีรนันโท (dhiranandi) และพระอาจารย์ชยสาโร (jayasaro)
-เผยแพร่ภายใต้ CC0 1.0 ผ่านโครงการ SuttaCentral — เงื่อนไขเหมือนข้อ 2
+Thai translations by Ven. Dhīranando (dhiranandi) and Ajahn Jayasāro (jayasaro) are released under CC0 1.0 through the SuttaCentral project — same terms as section 2.
 
-## 4. พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์ — ⚠️ สำคัญที่สุด
+## 4. Dictionary of Buddhism — ⚠️ Most Important
 
-### เรียบเรียงโดย
-**สมเด็จพระพุทธโฆษาจารย์ (ป. อ. ปยุตฺโต)**
+### Compiled by
+**Somdet Phra Buddhaghosacariya (P. A. Payutto)**
 
-### แหล่งที่มา
-- เว็บไซต์วัดญาณเวศกวัน: [watnyanaves.net](https://www.watnyanaves.net)
+### Sources
+- Wat Nyanavesakavan website: [watnyanaves.net](https://www.watnyanaves.net)
 - 84000.org: [84000.org](https://84000.org)
-- ข้อมูลใน repo นี้ scrape มาจาก `tripitaka-online.blogspot.com`
+- The data in this repo was scraped from `tripitaka-online.blogspot.com`
 
-### เงื่อนไขการใช้งาน (Dhamma Dāna License)
+### Terms of Use (Dhamma Dāna License)
 
-พจนานุกรมนี้เผยแผ่เป็น **"ธรรมทาน"** ได้รับอนุญาตจากผู้เรียบเรียงตามนโยบายของวัดญาณเวศกวัน
-โดยมีเงื่อนไขสำคัญดังนี้:
+This dictionary is released as **Dhamma Dāna** ("a gift of the Dhamma"), authorized by the compiler under the policy of Wat Nyanavesakavan. Key conditions:
 
-1. **ต้องเผยแผ่ฟรี 100%** — ห้ามเรียกเก็บค่าใช้จ่าย ห้ามใช้เชิงพาณิชย์ทุกรูปแบบ
-2. **ต้องรักษาความถูกต้องตามต้นฉบับ** — ห้ามดัดแปลง แก้ไข หรือแต่งเติมเนื้อหา
-3. **ต้องระบุที่มา** — ระบุชื่อผู้เรียบเรียง + link กลับไปยังต้นฉบับ
-4. **ผู้จัดทำรับผิดชอบความถูกต้อง** — วัดไม่กำกับดูแลเว็บฆราวาส
+1. **Must remain 100% free** — no fees, no commercial use of any kind
+2. **Must preserve the original** — no modifications, edits, or additions to the content
+3. **Must attribute** — credit the compiler + link back to the original
+4. **The distributor bears responsibility for accuracy** — the monastery does not supervise third-party websites
 
-### ⚠️ สำหรับผู้ fork / นำไปใช้ต่อ
+### ⚠️ For forkers / downstream users
 
-- ✅ ใช้ในโปรเจกต์ **ฟรี / ธรรมทาน / การศึกษา** ได้
-- ✅ ใช้ส่วนตัว / ใช้ใน AI Agent ส่วนตัว ได้
-- ❌ **ห้ามใช้ในสินค้า/บริการที่เรียกเก็บเงิน**
-- ❌ **ห้ามใช้ในโฆษณา / monetized content**
-- ❌ **ห้ามแก้ไขคำแปล** (แก้ bug/typo ที่แน่ใจว่าเป็นข้อผิดพลาด OCR/scrape เท่านั้น)
+- ✅ Use in **free / dhamma-dāna / educational** projects — allowed
+- ✅ Personal use / use in your own AI agent — allowed
+- ❌ **No paid products or services**
+- ❌ **No ads / monetized content**
+- ❌ **No modifications to translations** (except fixing clear OCR/scrape errors)
 
-ถ้าต้องการใช้เชิงพาณิชย์ — **ต้องติดต่อขออนุญาตจากวัดญาณเวศกวันโดยตรง**
+For commercial use — **contact Wat Nyanavesakavan directly for permission**.
 
 ---
 
-## Attribution ที่แสดงในโปรเจกต์
+## Attribution shown in the project
 
-โครงการนี้แสดง attribution ผ่าน:
+This project displays attribution via:
 
-1. MCP instructions (`main.py`) — แสดงเมื่อ AI client เชื่อมต่อ
-2. Response ของ `get_word_definition` — แนบ source + disclaimer ทุกครั้ง
-3. Landing page / website consumer
+1. MCP instructions (`main.py`) — shown when an AI client connects
+2. Responses from `get_word_definition` — source + disclaimer attached every time
+3. Landing page / consumer website
 4. README.md
-5. ไฟล์นี้ (NOTICE.md)
+5. This file (NOTICE.md)
 
 ---
 
 ## Disclaimer
 
-> ข้อมูลในโปรเจกต์นี้จัดทำขึ้นเพื่อ **การศึกษาและเผยแผ่ธรรมเท่านั้น**
-> หากพบข้อผิดพลาด หรือต้องการอ้างอิงอย่างเป็นทางการ
-> โปรดตรวจสอบกับตัวเล่มหนังสือฉบับพิมพ์ล่าสุด
-> (พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์ ปัจจุบันพิมพ์ครั้งที่ 35)
+> The data in this project is provided **for study and for the sharing of Dhamma only**.
+> If you find errors, or need an official citation,
+> please verify against the latest printed edition
+> (the Dictionary of Buddhism is currently in its 35th printing).
 >
-> ผู้จัดทำไม่ได้เป็นตัวแทนของวัดญาณเวศกวันหรือผู้เรียบเรียง
-> และรับผิดชอบข้อผิดพลาดในการจัดทำระบบนี้แต่เพียงผู้เดียว
+> The maintainer does not represent Wat Nyanavesakavan or the compiler,
+> and is solely responsible for any errors in how this system was built.
 
 ---
 
-## ขอแจ้งข้อผิดพลาด / รายงานการใช้ผิดเงื่อนไข
+## Reporting errors / misuse
 
 - Code issues: [GitHub Issues](https://github.com/dhamma-seeker/tripitaka-mcp/issues)
-- เนื้อหาผิดพลาด / misuse: (กรอก email ติดต่อ)
+- Content errors / misuse: (contact email here)
 
 ---
 
-## ขออนุโมทนา 🙏
+## Gratitude 🙏
 
-ขอแสดงความขอบคุณและอนุโมทนาบุญต่อ:
+With deep appreciation and anumodanā to:
 
-- **สมเด็จพระพุทธโฆษาจารย์ (ป. อ. ปยุตฺโต)** — ผู้เรียบเรียงพจนานุกรมพุทธศาสน์
-- **วัดญาณเวศกวัน** — ผู้เผยแผ่และดูแลต้นฉบับ
-- **SuttaCentral** — การจัดทำ bilara-data พระไตรปิฎกดิจิทัลภายใต้ CC0
-- **พระธีรนันโท, พระอาจารย์ชยสาโร** — ผู้แปลพระไตรปิฎกภาษาไทย (CC0)
-- **84000.org** — แหล่งข้อมูลพระไตรปิฎกดิจิทัล
-- ผู้ร่วมพัฒนาและชุมชนทุกคนที่สนับสนุนโครงการนี้
+- **Somdet Phra Buddhaghosacariya (P. A. Payutto)** — compiler of the Dictionary of Buddhism
+- **Wat Nyanavesakavan** — publisher and guardian of the source text
+- **SuttaCentral** — for producing the digital Pāli Tipiṭaka (bilara-data) under CC0
+- **Ven. Dhīranando, Ajahn Jayasāro** — Thai translators of the Tipiṭaka (CC0)
+- **84000.org** — a digital canon resource
+- All contributors and community members who support this project
