@@ -29,17 +29,65 @@ from db.schema import create_tables
 
 load_dotenv()
 
+
+# =============================================================================
+# Language Coverage (feature flag)
+# =============================================================================
+# canonical = SuttaCentral bilara-data (Pāli + Sujato English).
+# Thai/อื่น ๆ จะเปิดได้เมื่อ index ฉบับแปลพร้อม — ไม่งั้นปิดไว้ใน prod เพื่อ
+# ป้องกัน user ได้ผลลัพธ์ครึ่ง ๆ กลาง ๆ. AI client ฝั่งผู้ใช้ควรแปล query
+# เป็นบาลีโรมัน/อังกฤษก่อนเรียก search tools.
+SUPPORTED_LANGUAGES = frozenset({"pali", "thai", "english"})
+
+
+def _parse_enabled_languages() -> frozenset[str]:
+    raw = os.getenv("TRIPITAKA_ENABLED_LANGUAGES", "pali,english")
+    langs = {x.strip().lower() for x in raw.split(",") if x.strip()}
+    if not langs:
+        raise ValueError(
+            "TRIPITAKA_ENABLED_LANGUAGES must enable at least one language"
+        )
+    invalid = langs - SUPPORTED_LANGUAGES
+    if invalid:
+        raise ValueError(
+            f"TRIPITAKA_ENABLED_LANGUAGES has unknown values: {sorted(invalid)} "
+            f"(supported: {sorted(SUPPORTED_LANGUAGES)})"
+        )
+    if "pali" not in langs:
+        # Pāli เป็น canonical reference — ปิดไม่ได้
+        raise ValueError(
+            "TRIPITAKA_ENABLED_LANGUAGES must include 'pali' (canonical reference)"
+        )
+    return frozenset(langs)
+
+
+ENABLED_LANGUAGES = _parse_enabled_languages()
+
+
 # =============================================================================
 # Initialize MCP Server
 # =============================================================================
-mcp = FastMCP(
-    "Tripitaka",
-    instructions=(
-        "MCP Server สำหรับค้นหาและอ้างอิงเนื้อหาจากพระไตรปิฎก (Tipiṭaka) "
-        "รองรับ 3 ภาษา: บาลี (Pali), ไทย (Thai), อังกฤษ (English). "
+def _build_instructions() -> str:
+    enabled_list = ", ".join(sorted(ENABLED_LANGUAGES))
+    disabled = SUPPORTED_LANGUAGES - ENABLED_LANGUAGES
+    coverage_note = (
+        f"🌐 ภาษาที่เปิดใช้ในเซิร์ฟเวอร์นี้: {enabled_list}\n"
+        if not disabled
+        else (
+            f"🌐 ภาษาที่เปิดใช้: {enabled_list} "
+            f"(ปิดชั่วคราว: {', '.join(sorted(disabled))} — "
+            f"ข้อมูลยังไม่พร้อมใช้งาน)\n"
+            "💡 ถ้า user ถาม query ในภาษาที่ปิดอยู่ ให้ AI client "
+            "**แปล query เป็นบาลีโรมัน (preferred) หรืออังกฤษ** "
+            "ก่อนเรียก search tools — แล้วแปลผลลัพธ์กลับเป็นภาษาผู้ใช้.\n"
+        )
+    )
+    return (
+        "MCP Server สำหรับค้นหาและอ้างอิงเนื้อหาจากพระไตรปิฎก (Tipiṭaka). "
         "ใช้สำหรับค้นหาพระสูตร, อ้างอิงคำสอนพระพุทธเจ้า, "
         "และเปรียบเทียบคำแปลข้ามภาษา.\n\n"
-        "📚 แหล่งข้อมูล (Data Sources):\n"
+        + coverage_note
+        + "\n📚 แหล่งข้อมูล (Data Sources):\n"
         "• พระไตรปิฎกบาลี + คำแปลอังกฤษ: SuttaCentral bilara-data (CC0)\n"
         "• คำแปลไทย: พระธีรนันโท, พระอาจารย์ชยสาโร (CC0) / ฉบับ มจร., ฉบับหลวง\n"
         "• พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์: "
@@ -50,8 +98,10 @@ mcp = FastMCP(
         "หากพบข้อผิดพลาดหรือต้องการอ้างอิงอย่างเป็นทางการ "
         "โปรดตรวจสอบกับตัวเล่มหนังสือฉบับพิมพ์ล่าสุด.\n\n"
         "🙏 โครงการนี้เผยแผ่เป็นธรรมทาน ห้ามใช้ในเชิงพาณิชย์."
-    ),
-)
+    )
+
+
+mcp = FastMCP("Tripitaka", instructions=_build_instructions())
 
 # สร้างตารางตอน startup (ถ้ายังไม่มี)
 # Prod ที่ใช้ readonly user ให้ข้ามด้วย TRIPITAKA_SKIP_MIGRATIONS=true
@@ -109,11 +159,22 @@ PROJECT_NOTICE = (
 )
 
 # Whitelists สำหรับ validate input ที่จะถูกใช้ใน SQL / filter
-VALID_LANGUAGES_SEARCH = frozenset({"pali", "thai", "english"})
-VALID_LANGUAGES_DISPLAY = frozenset({"pali", "thai", "english", "all"})
+# Search/display restricted to ENABLED_LANGUAGES — language ที่ปิดจะถูก reject
+VALID_LANGUAGES_SEARCH = ENABLED_LANGUAGES
+VALID_LANGUAGES_DISPLAY = ENABLED_LANGUAGES | {"all"}
 VALID_PITAKAS = frozenset({"vinaya", "sutta", "abhidhamma"})
 VALID_EDITIONS = frozenset({"dhiranandi", "jayasaro", "mbu", "royal"})
 VALID_DICT_LANGUAGES = frozenset({"en", "thai", "th", "all"})
+
+# language code mapping — translation table ใช้ ISO 2-letter code
+TRANSLATION_LANG_CODES = {
+    "pali": "pi",
+    "thai": "th",
+    "english": "en",
+}
+ENABLED_TRANSLATION_CODES = frozenset(
+    TRANSLATION_LANG_CODES[lang] for lang in ENABLED_LANGUAGES
+)
 
 # sutta_id format เช่น "mn1", "dn22", "sn56.11", "an4.5.6", "dhp1-20", "tha-ap411", "mil3.1.1"
 SUTTA_ID_PATTERN = re.compile(r"^[a-z]{2,6}(-[a-z]+)?\d+(-\d+)?(\.\d+(-\d+)?){0,4}[a-z]?$")
@@ -149,6 +210,28 @@ def _build_context(row: tuple, columns: list[str]) -> dict[str, Any]:
     return dict(zip(columns, row))
 
 
+# Mapping ระหว่างชื่อ column ใน result กับ ENABLED_LANGUAGES check
+_TEXT_COLUMN_TO_LANG = {
+    "text_pali": "pali",
+    "text_thai": "thai",
+    "text_english": "english",
+}
+
+
+def _strip_disabled_text_fields(result: dict[str, Any]) -> dict[str, Any]:
+    """ลบ field text_<lang> ที่ภาษาถูกปิดอยู่ ออกจาก result dict.
+
+    ใช้กับผลลัพธ์ search/lookup ที่อาจมี text_thai/text_english/text_pali —
+    เพื่อให้ output สอดคล้องกับ ENABLED_LANGUAGES.
+    """
+    return {
+        k: v
+        for k, v in result.items()
+        if k not in _TEXT_COLUMN_TO_LANG
+        or _TEXT_COLUMN_TO_LANG[k] in ENABLED_LANGUAGES
+    }
+
+
 # =============================================================================
 # MCP Tools
 # =============================================================================
@@ -164,14 +247,25 @@ def search_by_keyword(
 ) -> list[dict[str, Any]]:
     """ค้นหาข้อความในพระไตรปิฎกด้วย keyword
 
-    ค้นหาแบบ trigram (word similarity) รองรับทั้ง 3 ภาษา
-    สามารถกรองผลลัพธ์ตามปิฎกและฉบับแปลได้
+    ค้นหาแบบ trigram (word similarity) บนภาษาที่เปิดใช้งานในเซิร์ฟเวอร์.
+    สามารถกรองผลลัพธ์ตามปิฎกและฉบับแปลได้.
+
+    💡 **คำแนะนำสำหรับ AI client:**
+    Canonical reference ของระบบคือบาลีโรมัน (จาก SuttaCentral). ถ้า user
+    ถามเป็นภาษาที่ปิด (หรือไม่อยู่ใน supported set) ให้แปล keyword เป็น
+    บาลีโรมัน (preferred) หรืออังกฤษก่อนเรียก tool นี้ — เช่น
+    "ทุกข์" → "dukkha", "อานาปานสติ" → "ānāpānassati".
+    ดูภาษาที่ใช้ได้ใน server instructions ด้านบน.
 
     Args:
         keyword: คำที่ต้องการค้นหา
-        language: ภาษาที่ค้นหา — "pali", "thai", หรือ "english" (default: "pali")
+        language: ภาษาที่ค้นหา — ต้องอยู่ใน ENABLED_LANGUAGES ของเซิร์ฟเวอร์
+                  (default: "pali"). ภาษาที่ปิดอยู่จะ return error.
         edition: ฉบับแปลภาษาไทย — "dhiranandi", "jayasaro", "mbu", "royal" หรือ None
+                  (ใช้เฉพาะเมื่อ language="thai" และ Thai เปิดอยู่)
         pitaka: กรองตามปิฎก — "vinaya", "sutta", "abhidhamma" หรือ None (ค้นทั้งหมด)
+                ⚠️ ปัจจุบัน Sutta Piṭaka ครอบคลุมครบ ส่วน Vinaya/Abhidhamma
+                มีบางส่วน (Vibhaṅga, Kathāvatthu) — ดู list_structure
         limit: จำนวนผลลัพธ์สูงสุด (default: 10, max: 50)
     """
     try:
@@ -252,7 +346,7 @@ def search_by_keyword(
             hint = f" (edition: {edition})" if edition else ""
             return [{"message": f"ไม่พบผลลัพธ์สำหรับ '{keyword}' ในภาษา {language}{hint}"}]
 
-        return results
+        return [_strip_disabled_text_fields(r) for r in results]
 
     except Exception as e:
         return [{"error": f"เกิดข้อผิดพลาดในการค้นหา: {str(e)}"}]
@@ -366,14 +460,15 @@ def get_sutta(
         segment_rows = cur.fetchall()
 
         # สร้าง segments ตามภาษาที่ต้องการ
+        # ภาษาที่ปิดใน ENABLED_LANGUAGES จะไม่ถูก include แม้ language="all"
         segments = []
         for seg_row in segment_rows:
             seg = {"segment_id": seg_row[0]}
-            if language in ("pali", "all"):
+            if "pali" in ENABLED_LANGUAGES and language in ("pali", "all"):
                 seg["text_pali"] = seg_row[1]
-            if language in ("thai", "all"):
+            if "thai" in ENABLED_LANGUAGES and language in ("thai", "all"):
                 seg["text_thai"] = seg_row[2]
-            if language in ("english", "all"):
+            if "english" in ENABLED_LANGUAGES and language in ("english", "all"):
                 seg["text_english"] = seg_row[3]
             segments.append(seg)
 
@@ -480,7 +575,7 @@ def search_semantic(
         if not results:
             return [{"message": f"ไม่พบผลลัพธ์ที่ตรงกับความหมาย (ระยะวิเคราะห์ < {threshold}) — ทดลองคลาย threshold เพื่อค้นหาแบบกว้าง"}]
 
-        return results
+        return [_strip_disabled_text_fields(r) for r in results]
 
     except Exception as e:
         return [{"error": f"เกิดข้อผิดพลาดในการค้นหา: {str(e)}"}]
@@ -544,28 +639,39 @@ def search_hybrid(
 
         keyword_ranks: dict[int, int] = {}
         if tokens:
-            seg_conds = " OR ".join(
-                ["text_pali ILIKE %s OR text_thai ILIKE %s OR text_english ILIKE %s"] * len(tokens)
-            )
-            trans_conds = " OR ".join(["text ILIKE %s"] * len(tokens))
+            # สร้าง ILIKE conditions เฉพาะคอลัมน์ภาษาที่เปิดใช้งาน
+            enabled_cols = [
+                LANGUAGE_COLUMNS[lang]
+                for lang in ("pali", "thai", "english")
+                if lang in ENABLED_LANGUAGES
+            ]
+            per_token_seg = " OR ".join(f"{c} ILIKE %s" for c in enabled_cols)
+            seg_conds = " OR ".join([f"({per_token_seg})"] * len(tokens))
             seg_params: list[str] = []
             for t in tokens:
-                seg_params.extend([f"%{t}%", f"%{t}%", f"%{t}%"])
-            trans_params = [f"%{t}%" for t in tokens]
+                seg_params.extend([f"%{t}%"] * len(enabled_cols))
 
-            cur.execute(
-                f"""
-                SELECT seg_id FROM (
-                    SELECT id as seg_id FROM segment
-                    WHERE {seg_conds}
-                    UNION
-                    SELECT segment_id as seg_id FROM translation
-                    WHERE language = 'th' AND ({trans_conds})
-                ) AS combined_search
-                LIMIT 50
-                """,
-                tuple(seg_params + trans_params)
-            )
+            sql = f"SELECT id as seg_id FROM segment WHERE {seg_conds}"
+
+            # union กับ translation table เฉพาะเมื่อ Thai เปิดอยู่
+            # (translation table มีแค่ภาษาไทย)
+            if "thai" in ENABLED_LANGUAGES:
+                trans_conds = " OR ".join(["text ILIKE %s"] * len(tokens))
+                trans_params = [f"%{t}%" for t in tokens]
+                sql = (
+                    f"SELECT seg_id FROM ("
+                    f"  {sql}"
+                    f"  UNION"
+                    f"  SELECT segment_id as seg_id FROM translation"
+                    f"  WHERE language = 'th' AND ({trans_conds})"
+                    f") AS combined_search LIMIT 50"
+                )
+                params = tuple(seg_params + trans_params)
+            else:
+                sql = f"SELECT seg_id FROM ({sql}) AS combined_search LIMIT 50"
+                params = tuple(seg_params)
+
+            cur.execute(sql, params)
             keyword_results = cur.fetchall()
             keyword_ranks = {row[0]: rank + 1 for rank, row in enumerate(keyword_results)}
 
@@ -617,8 +723,8 @@ def search_hybrid(
             if seg_id in id_to_row:
                 row = id_to_row[seg_id]
                 context_row = (row[1], row[2], row[3], row[4], row[5], round(rrf_scores[seg_id], 4))
-                results.append(_build_context(context_row, columns))
-                
+                results.append(_strip_disabled_text_fields(_build_context(context_row, columns)))
+
         return results
 
     except Exception as e:
@@ -819,7 +925,8 @@ def list_editions() -> list[dict[str, Any]]:
     conn = get_connection()
     try:
         cur = conn.cursor()
-        cur.execute("""
+        cur.execute(
+            """
             SELECT
                 t.edition,
                 t.translator,
@@ -829,9 +936,12 @@ def list_editions() -> list[dict[str, Any]]:
             FROM translation t
             JOIN segment seg ON t.segment_id = seg.id
             JOIN section sec ON seg.section_id = sec.id
+            WHERE t.language = ANY(%s)
             GROUP BY t.edition, t.translator, t.language
             ORDER BY t.language, t.edition
-        """)
+            """,
+            (list(ENABLED_TRANSLATION_CODES),),
+        )
         columns = ["edition", "translator", "language", "segment_count", "sutta_count"]
         results = [_build_context(row, columns) for row in cur.fetchall()]
 
@@ -889,15 +999,15 @@ def compare_translations(
 
         seg_db_id, seg_id, sutta_id, text_pali, text_thai_default, text_english = row
 
-        # ดึงคำแปลจาก translation table ทุก edition
+        # ดึงคำแปลจาก translation table — กรองเฉพาะภาษาที่เปิดใช้งาน
         cur.execute(
             """
             SELECT edition, translator, language, text
             FROM translation
-            WHERE segment_id = %s
+            WHERE segment_id = %s AND language = ANY(%s)
             ORDER BY language, edition
             """,
-            (seg_db_id,),
+            (seg_db_id, list(ENABLED_TRANSLATION_CODES)),
         )
         translations = [
             {
@@ -909,15 +1019,18 @@ def compare_translations(
             for r in cur.fetchall()
         ]
 
-        return {
+        # field text_thai_default = null เมื่อ Thai ไม่ได้เปิด
+        # (schema คงไว้เพื่อ forward-compatible — เปิดกลับมาได้โดยไม่ต้องแก้ client)
+        result: dict[str, Any] = {
             "segment_id": seg_id,
             "sutta_id": sutta_id,
-            "text_pali": text_pali,
-            "text_english": text_english,
-            "text_thai_default": text_thai_default,
+            "text_pali": text_pali if "pali" in ENABLED_LANGUAGES else None,
+            "text_english": text_english if "english" in ENABLED_LANGUAGES else None,
+            "text_thai_default": text_thai_default if "thai" in ENABLED_LANGUAGES else None,
             "translations": translations,
             "total_editions": len(translations),
         }
+        return result
 
     except Exception as e:
         return {"error": f"เกิดข้อผิดพลาด: {str(e)}"}
@@ -929,9 +1042,16 @@ def compare_translations(
 @mcp.tool()
 def get_word_definition(word: str, language: str = "all", limit_context: int = 3) -> dict[str, Any]:
     """ดึงความหมายพจนานุกรมของคําศัพท์บาลี พร้อมด้วยตัวอย่างประโยคบริบทในพระสูตร
-    
-    ใช้เป็น Pali Dictionary Bridge เพื่อทำความเข้าใจความหมายแท้จริงของคำ 
+
+    ใช้เป็น Pali Dictionary Bridge เพื่อทำความเข้าใจความหมายแท้จริงของคำ
     โดยนำเสนอ "นิยาม" ควบคู่กับ "บริบทที่พระพุทธองค์ทรงใช้จริง"
+
+    📖 **เกี่ยวกับฐานข้อมูลพจนานุกรม:**
+    Tool นี้ใช้พจนานุกรมต้นฉบับหลายเล่ม รวมถึง "พจนานุกรมพุทธศาสน์ ฉบับ
+    ประมวลศัพท์" ของสมเด็จพระพุทธโฆษาจารย์ (ป. อ. ปยุตฺโต) ที่เป็นภาษาไทย —
+    เนื้อหาเหล่านี้เป็น **ผลงานต้นฉบับวิชาการที่สมบูรณ์อยู่แล้ว** (ไม่ใช่
+    คำแปล) จึง **เปิดให้ใช้ได้เสมอ** แม้ ENABLED_LANGUAGES จะปิดภาษาไทย.
+    AI client ควรแปลเนื้อหาผลลัพธ์ภาษาไทยเป็นภาษาผู้ใช้เองหากจำเป็น.
 
     Args:
         word: คำที่ต้องการค้นหา (เช่น "dukkha", "กฐิน")
