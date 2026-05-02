@@ -909,8 +909,28 @@ def get_reference(
         if not row:
             return {"error": f"ไม่พบสูตร: {sutta_id}"}
 
-        title_pali = row[1] or sutta_id
-        title_english = row[3] or ""
+        # title fallback จาก segment :0.2 (เช่นเดียวกับ get_sutta) — เพราะ
+        # section.title_* ใน DB หลายแถวเป็น null. หาตัวแรกที่ลงท้าย ":0.2"
+        # ใน section นี้
+        title_pali_fb = title_thai_fb = title_english_fb = None
+        cur.execute(
+            """
+            SELECT text_pali, text_thai, text_english
+            FROM segment
+            WHERE section_id = (SELECT id FROM section WHERE sutta_id = %s)
+              AND segment_id LIKE %s
+            ORDER BY id
+            LIMIT 1
+            """,
+            (sutta_id, "%:0.2"),
+        )
+        fb_row = cur.fetchone()
+        if fb_row:
+            title_pali_fb, title_thai_fb, title_english_fb = fb_row
+
+        title_pali = row[1] or title_pali_fb or sutta_id
+        title_thai = row[2] or title_thai_fb
+        title_english = row[3] or title_english_fb or ""
         nikaya_english = row[6] or ""
         nikaya_code = row[7] or ""
 
@@ -919,12 +939,17 @@ def get_reference(
         if title_english:
             citation = f"{title_english} ({title_pali}, {sutta_id.upper()}), {nikaya_english}"
 
+        def _title_for(lang: str, db: str | None, fb: str | None) -> str | None:
+            if lang not in ENABLED_LANGUAGES:
+                return None
+            return db or fb
+
         return {
             "sutta_id": row[0],
             "title": {
-                "pali": row[1],
-                "thai": row[2],
-                "english": row[3],
+                "pali": _title_for("pali", row[1], title_pali_fb),
+                "thai": _title_for("thai", row[2], title_thai_fb),
+                "english": _title_for("english", row[3], title_english_fb),
             },
             "location": {
                 "nikaya": {
