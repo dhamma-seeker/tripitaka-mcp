@@ -11,5 +11,11 @@ FROM caddy:2-alpine
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 
 # Caddy รันเป็น non-root อยู่แล้วใน image ทางการ
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD wget -qO- http://127.0.0.1/health || exit 1
+#
+# Healthcheck = TCP liveness ที่ port 80 + 443
+# (เดิมใช้ wget http://127.0.0.1/health ซึ่ง Caddy 308 redirect → HTTPS โดเมน
+# จริง → ผ่าน Cloudflare → TLS internal error เมื่อ probe จากในเครื่องเอง.
+# nc -z probe ระดับ TCP พิสูจน์ว่า Caddy listening อยู่และ accept connection
+# ได้ ซึ่งเป็น liveness signal ที่ stable + ไม่ depend on external network)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD nc -z -w 3 127.0.0.1 80 && nc -z -w 3 127.0.0.1 443 || exit 1
