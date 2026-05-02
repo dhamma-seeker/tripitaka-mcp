@@ -257,6 +257,21 @@ def search_by_keyword(
     "ทุกข์" → "dukkha", "อานาปานสติ" → "ānāpānassati".
     ดูภาษาที่ใช้ได้ใน server instructions ด้านบน.
 
+    🔍 **เลือก tool ค้นหาให้เหมาะกับงาน:**
+    - **หาคำเป๊ะ (term lookup)** — เช่น "appearances of `ānāpānassati`":
+      ใช้ tool นี้ ดี เพราะ trigram match ตรงคำสุด
+    - **หา "เนื้อหาเรื่อง X" (concept search)** — เช่น "discourses about
+      mindfulness of breathing": **ใช้ `search_hybrid` แทน** เพราะ
+      canonical Pāli มีลักษณะที่ keyword search หา concept ได้ไม่ครบ:
+        • คำสำคัญในชื่อหมวด (`Ānāpānapabba`) ไม่ได้อยู่ในเนื้อหาคำสอน
+          ที่ใช้ verb อื่น (`assasati`, `passasati`, `dīghaṁ`, `rassaṁ`) —
+          เช่น DN22 Ānāpānapabba มี 16 segments แต่คำว่า `ānāpāna`
+          ปรากฏแค่ 2 ที่ (header + footer) — เนื้อหาจริงจะหาไม่เจอ
+        • Stock phrases (เช่น `So satova assasati, satova passasati`)
+          ปรากฏซ้ำใน 10+ สูตร — keyword จะ rank ผลกว้าง ไม่ชี้สูตรเฉพาะ
+    - **ค้นทั่วไปจาก keyword เดียว** — ใช้ `limit≥30` แล้วกรองเอง
+      หรือเรียกหลายคำที่เกี่ยวข้อง (root verb + noun + compound)
+
     Args:
         keyword: คำที่ต้องการค้นหา
         language: ภาษาที่ค้นหา — ต้องอยู่ใน ENABLED_LANGUAGES ของเซิร์ฟเวอร์
@@ -591,18 +606,32 @@ def search_hybrid(
     limit: int = 5,
 ) -> list[dict[str, Any]]:
     """ค้นหาแบบผสมผสาน (Hybrid Search) — รวมพลัง Keyword + Semantic
-    
+
     ใช้เทคนิค RRF (Reciprocal Rank Fusion) เพื่อนำผลลัพธ์จาก
-    การค้นหาคำตรงๆ มารวมกับผลลัพธ์จากการค้นหาความหมาย
-    ทำให้ระบบค้นหาครอบคลุมที่สุด หาอะไรก็เจอแน่ๆ
-    
+    การค้นหาคำตรงๆ มารวมกับผลลัพธ์จากการค้นหาความหมาย —
+    **เป็น tool ที่แนะนำสำหรับ "หาเนื้อหาเรื่อง X"** เพราะ semantic ช่วย
+    จับสูตรที่พูดถึง concept เดียวกันแม้ใช้คำต่างกัน (เช่น คำสอน
+    อานาปานสติบางสูตรใช้ `assasati/passasati/dīghaṁ` แทน `ānāpānassati`).
+
+    💡 **คำแนะนำสำหรับ AI client:**
+    - Query ภาษาอังกฤษมักได้ผลดี (เช่น `mindfulness of breathing`)
+      เพราะ embedding model เป็น multilingual แต่ tuned สำหรับ EN เป็นหลัก
+    - Stop word ภาษาไทยอ่อน — ถ้า query ไทยไม่ได้ผลดี ให้ AI client
+      แปลเป็นบาลี/อังกฤษก่อน (ดู server instructions)
+    - default `limit=5` มักน้อยเกินสำหรับ topic survey — ถ้าต้องการ
+      coverage ดี ใช้ `limit=15-20` (max 20)
+    - Ranking ตาม similarity ไม่ใช่ canonical importance — สูตรหลัก
+      (locus classicus) เช่น MN118, DN22 อาจ rank ต่ำกว่าสูตรเล็ก
+      ถ้าสูตรเล็กมีคำเป๊ะกว่า. ใช้ผลลัพธ์เป็น "starting point"
+      แล้วต่อด้วย `get_sutta` สำหรับสูตรเฉพาะที่เป็น canonical reference
+
     Args:
-        query: ข้อความ (ภาษาไทย, บาลี หรืออังกฤษ)
+        query: ข้อความ (ภาษาไทย, บาลี หรืออังกฤษ — อังกฤษให้ผลดีสุด)
         language: ภาษาที่ต้องการให้แสดงในผลลัพธ์ ("pali", "thai", "english", "all")
-        limit: จำนวนข้อความที่ต้องการค้นพบ
+        limit: จำนวนข้อความที่ต้องการค้นพบ (default 5, max 20)
 
     Returns:
-        รายการประโยคจากพระไตรปิฎกที่มีค่า rrf_score สูงที่สุด 
+        รายการประโยคจากพระไตรปิฎกที่มีค่า rrf_score สูงที่สุด
     """
     limit = min(max(1, limit), 20)
     

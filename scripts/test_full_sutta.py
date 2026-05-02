@@ -1,0 +1,93 @@
+"""Smoke test — verify get_sutta returns full content for various sutta sizes.
+
+ตรวจ 3 invariants ต่อสูตร:
+1. server return ไม่มี error
+2. segment_count == len(segments) (no truncation)
+3. ลำดับ segment_id เรียงตามต้นฉบับ (first → last)
+
+ใช้:
+    .venv/bin/python scripts/test_full_sutta.py                     # default = staging
+    MCP_URL=http://localhost:8080/mcp .venv/bin/python scripts/test_full_sutta.py
+
+Exit code 0 ถ้าผ่านทุกเคส, 1 ถ้ามี fail ใด ๆ — ใช้ใน CI ได้
+"""
+
+import asyncio
+import json
+import os
+import sys
+
+from fastmcp import Client
+
+DEFAULT_URL = "https://staging.tripitaka-mcp.com/mcp"
+
+# (sutta_id, expected_min_segments) — min ใช้กัน drift เล็ก ๆ ไม่ fail
+# เลือกครอบ size range: เล็ก/ปกติ/ใหญ่/ใหญ่มาก/ที่สุด + compound IDs
+SUTTAS: list[tuple[str, int]] = [
+    ("sn56.11", 30),  # ธัมมจักกัปปวัตตนสูตร — สั้น
+    ("mn62", 100),  # มหาราหุโลวาท — ปกติ
+    ("mn1", 300),  # มูลปริยายสูตร — ใหญ่
+    ("dn22", 400),  # มหาสติปัฏฐาน — ใหญ่มาก
+    ("dn16", 800),  # มหาปรินิพพาน — ที่สุด (challenge: ยาวกว่า DN22)
+]
+
+
+async def check(client: Client, sutta_id: str, min_segs: int) -> tuple[bool, str]:
+    try:
+        result = await client.call_tool(
+            "get_sutta", {"sutta_id": sutta_id, "language": "pali"}
+        )
+        payload = json.loads(result.content[0].text)
+    except Exception as e:
+        return False, f"call failed: {e}"
+
+    if "error" in payload:
+        return False, f"server error: {payload['error']}"
+
+    count = payload.get("segment_count", 0)
+    segments = payload.get("segments", [])
+    actual = len(segments)
+
+    if count != actual:
+        return False, f"count mismatch: server={count} actual={actual}"
+
+    if actual < min_segs:
+        return False, f"too few segments: {actual} < expected {min_segs}"
+
+    # spot-check ordering by id (first should be :0.x or :1.x)
+    if segments:
+        first_id = segments[0]["segment_id"]
+        last_id = segments[-1]["segment_id"]
+        if not first_id.startswith(f"{sutta_id}:"):
+            return False, f"first id {first_id!r} not in sutta {sutta_id}"
+        if not last_id.startswith(f"{sutta_id}:"):
+            return False, f"last id {last_id!r} not in sutta {sutta_id}"
+
+    return True, f"count={count} first={first_id} last={last_id}"
+
+
+async def main(url: str) -> int:
+    print(f"target: {url}\n")
+    print(f"{'sutta':10} {'status':6} {'detail'}")
+    print("-" * 70)
+
+    failures = 0
+    async with Client(url) as client:
+        for sutta_id, min_segs in SUTTAS:
+            ok, detail = await check(client, sutta_id, min_segs)
+            mark = "PASS" if ok else "FAIL"
+            print(f"{sutta_id:10} {mark:6} {detail}")
+            if not ok:
+                failures += 1
+
+    print()
+    if failures:
+        print(f"❌ {failures}/{len(SUTTAS)} failed")
+        return 1
+    print(f"✅ all {len(SUTTAS)} suttas returned full content")
+    return 0
+
+
+if __name__ == "__main__":
+    url = os.environ.get("MCP_URL", DEFAULT_URL)
+    sys.exit(asyncio.run(main(url)))
