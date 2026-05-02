@@ -59,18 +59,49 @@
         respond "ok" 200
     }
 
-    # --- proxy → MCP server ---------------------------------------------------
-    reverse_proxy mcp-server:8080 {
-        # SSE ต้อง flush ทันที + keep connection นาน
-        flush_interval -1
-        transport http {
-            read_timeout 5m
-            write_timeout 5m
+    # --- legacy SSE transport (deprecated by MCP spec 2025-03-26) -----------
+    # FastMCP serve: GET /sse (event stream) + POST /messages/{session_id}
+    # คงไว้เพื่อ backward compat กับ clients เก่า ลบเมื่อ migrate ครบ
+    @sse path /sse /messages /messages/*
+    handle @sse {
+        reverse_proxy mcp-server:8080 {
+            # SSE ต้อง flush ทันที + keep connection นาน
+            flush_interval -1
+            transport http {
+                read_timeout 5m
+                write_timeout 5m
+            }
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
         }
+    }
 
-        # limit request body (MCP เป็น JSON-RPC เล็กๆ ไม่ต้อง upload ไฟล์)
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
+    # --- canonical Streamable HTTP transport (MCP spec 2025-03-26) ----------
+    # FastMCP serve: /mcp (POST + GET, response อาจ stream SSE)
+    @mcp path /mcp /mcp/*
+    handle @mcp {
+        reverse_proxy mcp-server-http:8080 {
+            flush_interval -1
+            transport http {
+                read_timeout 5m
+                write_timeout 5m
+            }
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+
+    # --- fallback: unmatched paths → canonical (Streamable HTTP) ------------
+    handle {
+        reverse_proxy mcp-server-http:8080 {
+            flush_interval -1
+            transport http {
+                read_timeout 5m
+                write_timeout 5m
+            }
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+        }
     }
 
     # --- body size limit ------------------------------------------------------

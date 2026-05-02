@@ -50,8 +50,11 @@ services:
         max-file: "3"
 
   # --------------------------------------------------------------------------
-  # MCP Server (production)
+  # MCP Server — SSE transport (legacy, deprecated by MCP spec 2025-03-26)
   # --------------------------------------------------------------------------
+  # คงไว้เพื่อ backward compatibility — clients เก่า (Claude.ai web SSE,
+  # Claude Desktop รุ่นเก่า) ยังใช้ /sse + /messages/{session_id}.
+  # ให้ลบ service นี้เมื่อ ecosystem migrate ไป Streamable HTTP ครบ.
   mcp-server:
     build:
       context: .
@@ -67,6 +70,7 @@ services:
       DATABASE_URL: postgresql://tripitaka_ro:${TRIPITAKA_RO_PASSWORD:?TRIPITAKA_RO_PASSWORD must be set}@db:5432/${POSTGRES_DB}
       # ข้าม create_tables() — runtime เป็น readonly ไม่มีสิทธิ์ DDL
       TRIPITAKA_SKIP_MIGRATIONS: "true"
+      TRIPITAKA_ENABLED_LANGUAGES: ${TRIPITAKA_ENABLED_LANGUAGES:-pali,english}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
       EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-384}
       MCP_TRANSPORT: ${MCP_TRANSPORT:-sse}
@@ -102,6 +106,52 @@ services:
         max-file: "3"
 
   # --------------------------------------------------------------------------
+  # MCP Server — Streamable HTTP transport (canonical, MCP spec 2025-03-26)
+  # --------------------------------------------------------------------------
+  # canonical endpoint = /mcp (POST + GET, อาจ stream SSE ใน response).
+  # MCP_HOST=0.0.0.0 บังคับ — Caddy ต้องเชื่อมต่อข้าม container ได้.
+  mcp-server-http:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tripitaka-mcp:${APP_VERSION:-latest}
+    container_name: tripitaka-mcp-server-http
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://tripitaka_ro:${TRIPITAKA_RO_PASSWORD:?TRIPITAKA_RO_PASSWORD must be set}@db:5432/${POSTGRES_DB}
+      TRIPITAKA_SKIP_MIGRATIONS: "true"
+      TRIPITAKA_ENABLED_LANGUAGES: ${TRIPITAKA_ENABLED_LANGUAGES:-pali,english}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-384}
+      MCP_TRANSPORT: streamable-http
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "8080"
+    expose:
+      - "8080"
+    volumes:
+      - model_cache:/app/.cache
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # --------------------------------------------------------------------------
   # Caddy reverse proxy + TLS + rate limit
   # --------------------------------------------------------------------------
   # ผู้ใช้ที่มี Cloudflare อยู่หน้า: ตั้ง DNS proxy + Cloudflare rate limit
@@ -114,6 +164,7 @@ services:
     container_name: tripitaka-caddy
     depends_on:
       - mcp-server
+      - mcp-server-http
     environment:
       TRIPITAKA_DOMAIN: ${TRIPITAKA_DOMAIN:?TRIPITAKA_DOMAIN must be set (eg. mcp.example.org)}
     volumes:
