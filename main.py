@@ -476,7 +476,13 @@ def get_sutta(
 
         # สร้าง segments ตามภาษาที่ต้องการ
         # ภาษาที่ปิดใน ENABLED_LANGUAGES จะไม่ถูก include แม้ language="all"
+        # ขณะเดียวกัน เก็บ title fallback จาก segment :0.2 (SC convention —
+        # section.title_* ใน DB หลายแถวเป็น null, แต่ segment :0.2 มักมี
+        # ชื่อสูตรครบทุกภาษา เช่น "Mūlapariyāyasutta" / "The Root of All Things")
         segments = []
+        title_from_segment: dict[str, str | None] = {
+            "pali": None, "thai": None, "english": None,
+        }
         for seg_row in segment_rows:
             seg = {"segment_id": seg_row[0]}
             if "pali" in ENABLED_LANGUAGES and language in ("pali", "all"):
@@ -486,13 +492,26 @@ def get_sutta(
             if "english" in ENABLED_LANGUAGES and language in ("english", "all"):
                 seg["text_english"] = seg_row[3]
             segments.append(seg)
+            if seg_row[0].endswith(":0.2") and title_from_segment["pali"] is None:
+                title_from_segment = {
+                    "pali": seg_row[1],
+                    "thai": seg_row[2],
+                    "english": seg_row[3],
+                }
+
+        # title: prefer section.title_* (curated), fallback ไป segment :0.2
+        # respect ENABLED_LANGUAGES — ภาษาที่ปิดอยู่ return null
+        def _title_for(lang: str, db_title: str | None) -> str | None:
+            if lang not in ENABLED_LANGUAGES:
+                return None
+            return db_title or title_from_segment[lang]
 
         return {
             "sutta_id": section_row[1],
             "title": {
-                "pali": section_row[2],
-                "thai": section_row[3],
-                "english": section_row[4],
+                "pali": _title_for("pali", section_row[2]),
+                "thai": _title_for("thai", section_row[3]),
+                "english": _title_for("english", section_row[4]),
             },
             "nikaya": {
                 "pali": section_row[5],

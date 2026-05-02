@@ -24,11 +24,20 @@ DEFAULT_URL = "https://staging.tripitaka-mcp.com/mcp"
 # (sutta_id, expected_min_segments) — min ใช้กัน drift เล็ก ๆ ไม่ fail
 # เลือกครอบ size range: เล็ก/ปกติ/ใหญ่/ใหญ่มาก/ที่สุด + compound IDs
 SUTTAS: list[tuple[str, int]] = [
+    # 4 main nikāyā
     ("sn56.11", 30),  # ธัมมจักกัปปวัตตนสูตร — สั้น
     ("mn62", 100),  # มหาราหุโลวาท — ปกติ
     ("mn1", 300),  # มูลปริยายสูตร — ใหญ่
     ("dn22", 400),  # มหาสติปัฏฐาน — ใหญ่มาก
-    ("dn16", 800),  # มหาปรินิพพาน — ที่สุด (challenge: ยาวกว่า DN22)
+    ("dn16", 800),  # มหาปรินิพพาน — ที่สุด (ยาวกว่า DN22)
+    # KN sub-books (Phase A coverage check)
+    ("dhp1-20", 20),  # Dhammapada — bilara group verses เป็นช่วง
+    ("snp1.8", 5),  # Karaṇīyamettasutta — เมตตสูตร (ที่ Claude อ้างใน mettā workflow)
+    ("ud3.4", 3),  # Sāriputtasutta อุทาน — ยืนยันที่เพิ่งเทสต์
+    ("iti85", 2),  # Asubhānupassīsutta
+    ("thag1.1", 1),  # Theragāthā 1.1
+    ("ja1", 5),  # Jātaka 1 (Apaṇṇaka)
+    ("mil3.1.1", 3),  # Milindapañha — paracanonical, 3-level id format
 ]
 
 
@@ -54,14 +63,22 @@ async def check(client: Client, sutta_id: str, min_segs: int) -> tuple[bool, str
     if actual < min_segs:
         return False, f"too few segments: {actual} < expected {min_segs}"
 
-    # spot-check ordering by id (first should be :0.x or :1.x)
+    # spot-check segments are grouped under this sutta. Range IDs (e.g.
+    # "dhp1-20") have segments with individual verse ids (dhp1:..., dhp2:...)
+    # not the range prefix, so accept either exact prefix or alpha-prefix match.
     if segments:
         first_id = segments[0]["segment_id"]
         last_id = segments[-1]["segment_id"]
-        if not first_id.startswith(f"{sutta_id}:"):
-            return False, f"first id {first_id!r} not in sutta {sutta_id}"
-        if not last_id.startswith(f"{sutta_id}:"):
-            return False, f"last id {last_id!r} not in sutta {sutta_id}"
+        is_range = "-" in sutta_id and any(c.isdigit() for c in sutta_id)
+        if is_range:
+            alpha_prefix = "".join(c for c in sutta_id if c.isalpha())
+            if not first_id.startswith(alpha_prefix):
+                return False, f"first id {first_id!r} alpha mismatch with {sutta_id}"
+        else:
+            if not first_id.startswith(f"{sutta_id}:"):
+                return False, f"first id {first_id!r} not in sutta {sutta_id}"
+            if not last_id.startswith(f"{sutta_id}:"):
+                return False, f"last id {last_id!r} not in sutta {sutta_id}"
 
     return True, f"count={count} first={first_id} last={last_id}"
 
