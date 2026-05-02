@@ -87,7 +87,19 @@ def _build_instructions() -> str:
         "ใช้สำหรับค้นหาพระสูตร, อ้างอิงคำสอนพระพุทธเจ้า, "
         "และเปรียบเทียบคำแปลข้ามภาษา.\n\n"
         + coverage_note
-        + "\n📚 แหล่งข้อมูล (Data Sources):\n"
+        + "\n🔗 **Cross-reference URLs (สำคัญ — surface ในคำตอบเสมอ):**\n"
+        "ทุก response มี field `cross_reference` ที่มี URL ไปยังต้นฉบับ:\n"
+        "• `suttacentral` — Pāli canonical, deep-link ระดับ segment ได้\n"
+        "  (`url`, `pali_url`, `english_url`, `segment_url`)\n"
+        "• `tipitaka_84000` — ฉบับมหาจุฬาฯ ภาษาไทย (homepage + search hint)\n\n"
+        "💡 **AI client เลือก URL ตามภาษาของ user:**\n"
+        "- User คุยภาษาไทย → surface `tipitaka_84000.url` เป็นลิงก์หลัก "
+        "(แนะนำให้ค้นด้วย Pāli title) + suttacentral เป็น secondary\n"
+        "- User คุยภาษาอังกฤษ/อื่น → surface `suttacentral.english_url` "
+        "เป็นลิงก์หลัก + segment_url เมื่ออ้างประโยคเฉพาะ\n"
+        "- รวมลิงก์ใน response เป็น markdown clickable เสมอ — เพื่อ user "
+        "verify ต้นฉบับได้ทันที (ลด hallucination)\n"
+        "\n📚 แหล่งข้อมูล (Data Sources):\n"
         "• พระไตรปิฎกบาลี + คำแปลอังกฤษ: SuttaCentral bilara-data (CC0)\n"
         "• คำแปลไทย: พระธีรนันโท, พระอาจารย์ชยสาโร (CC0) / ฉบับ มจร., ฉบับหลวง\n"
         "• พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์: "
@@ -216,6 +228,59 @@ _TEXT_COLUMN_TO_LANG = {
     "text_thai": "thai",
     "text_english": "english",
 }
+
+
+# =============================================================================
+# Cross-reference URL builders
+# =============================================================================
+# AI client ใช้ URL เหล่านี้แสดงเป็น clickable link ในคำตอบ user — เพื่อให้
+# verify ต้นฉบับได้ทันที (groundability + reduce hallucination).
+# Default = SuttaCentral (Pāli canonical, deep-link ระดับ segment ได้)
+# 84000.org = ฉบับมหาจุฬาฯ ภาษาไทย — ใช้ homepage เพราะ deep-link
+# mapping (SC ID ↔ B/A) ยังไม่มี (ดู PROGRESS.md TODO)
+
+SUTTACENTRAL_BASE = "https://suttacentral.net"
+TIPITAKA_84000_BASE = "https://84000.org/tipitaka/"
+
+
+def _suttacentral_urls(sutta_id: str, segment_id: str | None = None) -> dict[str, str]:
+    """สร้าง URL set ของ SuttaCentral สำหรับ cross-reference.
+
+    Returns:
+        - url: หน้าหลักของสูตร (SC default — มี language switcher)
+        - pali_url: ฉบับบาลี Mahāsaṅgīti
+        - english_url: คำแปลอังกฤษโดย Bhikkhu Sujato
+        - segment_url: deep-link ไปยัง segment เฉพาะ (ถ้าส่ง segment_id)
+    """
+    base = f"{SUTTACENTRAL_BASE}/{sutta_id}"
+    urls = {
+        "url": base,
+        "pali_url": f"{base}/pli/ms",
+        "english_url": f"{base}/en/sujato",
+    }
+    if segment_id:
+        urls["segment_url"] = f"{base}/pli/ms#{segment_id}"
+    return urls
+
+
+def _cross_reference_urls(sutta_id: str, segment_id: str | None = None) -> dict[str, Any]:
+    """รวม URL จากทุกแหล่งสำหรับ AI client surface ใน response.
+
+    Returns dict with:
+        - suttacentral: deep-link set (canonical, default)
+        - tipitaka_84000: ฉบับมหาจุฬาฯ ไทย — homepage + hint (deep-link
+          mapping ยังไม่ได้สร้าง, AI ควรแนะนำให้ user ค้นด้วย Pāli title)
+    """
+    return {
+        "suttacentral": _suttacentral_urls(sutta_id, segment_id),
+        "tipitaka_84000": {
+            "url": TIPITAKA_84000_BASE,
+            "note": (
+                "ฉบับมหาจุฬาฯ ภาษาไทย — ค้นด้วยชื่อบาลีของสูตรหรือเลขสูตร "
+                "(deep-link mapping จาก SuttaCentral ID ยังไม่ได้สร้าง)"
+            ),
+        },
+    }
 
 
 def _strip_disabled_text_fields(result: dict[str, Any]) -> dict[str, Any]:
@@ -361,7 +426,13 @@ def search_by_keyword(
             hint = f" (edition: {edition})" if edition else ""
             return [{"message": f"ไม่พบผลลัพธ์สำหรับ '{keyword}' ในภาษา {language}{hint}"}]
 
-        return [_strip_disabled_text_fields(r) for r in results]
+        return [
+            _strip_disabled_text_fields({
+                **r,
+                "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
+            })
+            for r in results
+        ]
 
     except Exception as e:
         return [{"error": f"เกิดข้อผิดพลาดในการค้นหา: {str(e)}"}]
@@ -526,6 +597,7 @@ def get_sutta(
             "edition": edition,
             "segment_count": len(segments),
             "segments": segments,
+            "cross_reference": _cross_reference_urls(section_row[1]),
         }
 
     except Exception as e:
@@ -609,7 +681,13 @@ def search_semantic(
         if not results:
             return [{"message": f"ไม่พบผลลัพธ์ที่ตรงกับความหมาย (ระยะวิเคราะห์ < {threshold}) — ทดลองคลาย threshold เพื่อค้นหาแบบกว้าง"}]
 
-        return [_strip_disabled_text_fields(r) for r in results]
+        return [
+            _strip_disabled_text_fields({
+                **r,
+                "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
+            })
+            for r in results
+        ]
 
     except Exception as e:
         return [{"error": f"เกิดข้อผิดพลาดในการค้นหา: {str(e)}"}]
@@ -771,7 +849,9 @@ def search_hybrid(
             if seg_id in id_to_row:
                 row = id_to_row[seg_id]
                 context_row = (row[1], row[2], row[3], row[4], row[5], round(rrf_scores[seg_id], 4))
-                results.append(_strip_disabled_text_fields(_build_context(context_row, columns)))
+                ctx = _build_context(context_row, columns)
+                ctx["cross_reference"] = _cross_reference_urls(ctx["sutta_id"], ctx["segment_id"])
+                results.append(_strip_disabled_text_fields(ctx))
 
         return results
 
@@ -966,7 +1046,7 @@ def get_reference(
             },
             "segment_count": row[11],
             "citation_format": citation,
-            "suttacentral_url": f"https://suttacentral.net/{sutta_id}/pli/ms",
+            "cross_reference": _cross_reference_urls(sutta_id),
         }
 
     except Exception as e:
@@ -1102,6 +1182,7 @@ def compare_translations(
             "text_thai_default": text_thai_default if "thai" in ENABLED_LANGUAGES else None,
             "translations": translations,
             "total_editions": len(translations),
+            "cross_reference": _cross_reference_urls(sutta_id, seg_id),
         }
         return result
 
