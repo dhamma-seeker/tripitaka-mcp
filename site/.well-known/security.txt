@@ -1,0 +1,9 @@
+Contact: https://github.com/dhamma-seeker/tripitaka-mcp/issues
+Expires: 2027-05-04T00:00:00.000Z
+Preferred-Languages: en, th
+Canonical: https://tripitaka-mcp.com/.well-known/security.txt
+
+# This project is offered as Dhamma Dāna (free, non-commercial).
+# Please report security issues responsibly via GitHub Issues — the maintainers
+# read every report. For sensitive disclosures, mark the issue as a Security
+# advisory or contact us privately through the GitHub repository.
