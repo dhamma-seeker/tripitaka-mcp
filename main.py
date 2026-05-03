@@ -189,7 +189,15 @@ ENABLED_TRANSLATION_CODES = frozenset(
 )
 
 # sutta_id format เช่น "mn1", "dn22", "sn56.11", "an4.5.6", "dhp1-20", "tha-ap411", "mil3.1.1"
-SUTTA_ID_PATTERN = re.compile(r"^[a-z]{2,6}(-[a-z]+)?\d+(-\d+)?(\.\d+(-\d+)?){0,4}[a-z]?$")
+# sutta_id formats supported:
+#   simple:        mn1, dn22, sn56.11, an4.5.6
+#   range:         dhp1-20  (KN range groupings)
+#   1 hyphen alpha: tha-ap1, thi-ap1
+#   compound:      mil3.1.1
+#   Vinaya:        pli-tv-bu-vb-pj1, pli-tv-bu-vb-as1-7, pli-tv-kd1, pli-tv-pvr1, pli-tv-bu-pm
+# multiple `-[a-z]+` segments allowed (for SC's pli-tv-* convention).
+# `\d*` (not `\d+`) so the digit-less "pli-tv-bu-pm" passes too.
+SUTTA_ID_PATTERN = re.compile(r"^[a-z]{2,6}(-[a-z]+)*\d*(-\d+)?(\.\d+(-\d+)?){0,4}[a-z]?$")
 
 
 class ValidationError(ValueError):
