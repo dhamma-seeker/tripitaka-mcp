@@ -238,7 +238,18 @@ footer p { margin: 0.5rem 0; }
   }
 }</code></pre>
 <p><strong>3.</strong> Quit Claude Desktop completely (<kbd>⌘Q</kbd> / right-click tray → Quit), then reopen. The 🔌 indicator in the bottom-left should show <code>tripitaka</code> connected with 10 tools available.</p>
-<p>The repo's <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/claude_desktop_config.example.json">annotated example config</a> covers stdio (local install) and both remote transports.</p>
+<p><em>First connection takes 5–10 seconds</em> while <code>npx</code> downloads <code>mcp-remote</code> on demand — give Claude Desktop a moment after restart before assuming it failed. The repo's <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/claude_desktop_config.example.json">annotated example config</a> covers stdio (local install) and both remote transports.</p>
+
+<h3>Try asking</h3>
+<p>Once connected, ask Claude things like:</p>
+<ul>
+<li>"What does the Buddha teach about mindfulness of breathing? Quote the relevant passages from MN 118 with citations."</li>
+<li>"Show me the full text of the Karaṇīyamettasutta in Pāli and English."</li>
+<li>"Compare how Bhikkhu Sujato and Bhikkhu Brahmali render the term <em>sīla</em> across the Vinaya."</li>
+<li>"What does the Pāli word <em>sati</em> mean according to the Payutto dictionary?"</li>
+<li>"Find suttas where the Buddha discusses anger. Cite the locus classicus."</li>
+</ul>
+<p>Claude will pick the right tool, fetch the canonical Pāli (and English where available), and surface clickable links back to SuttaCentral so you can verify the source.</p>
 
 <h3>Optional research skill</h3>
 <p>Drop <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/skills/tipitaka-research.md"><code>skills/tipitaka-research.md</code></a> into <code>~/.claude/skills/</code> to activate a multi-step research workflow (clarify → verify coverage → search → drill → cite) tailored to scriptural research.</p>

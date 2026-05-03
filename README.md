@@ -68,6 +68,17 @@ which npx
 
 **3.** Quit Claude Desktop completely (`⌘Q` on macOS, tray → Quit on Windows) and reopen. The 🔌 indicator in the bottom-left should show `tripitaka` with 10 tools available.
 
+> _First connection takes 5–10 seconds_ while `npx` downloads `mcp-remote` on demand — give Claude Desktop a moment after restart before assuming it failed.
+
+Once connected, try asking Claude things like:
+
+- "What does the Buddha teach about mindfulness of breathing? Quote the relevant passages from MN 118."
+- "Show me the full text of the Karaṇīyamettasutta in Pāli and English."
+- "What does the Pāli word _sati_ mean according to the Payutto dictionary?"
+- "Find suttas where the Buddha discusses anger."
+
+Claude will pick the right tool, fetch the canonical Pāli, and surface clickable links back to SuttaCentral for verification.
+
 The hosted server is rate-limited (10 req/10s + 60 req/min per IP) and offered for personal study, research, and dhamma practice — see [NOTICE.md](./NOTICE.md) before redistributing or using commercially.
 
 ### 🏎️ Fastest local path — use the installer (recommended for non-developers)
