@@ -59,6 +59,24 @@
         respond "ok" 200
     }
 
+    # --- topics: static markdown pages (curated reference content) ----------
+    # serve markdown ดิบ — modern AI clients render markdown ใน chat ได้, search
+    # engines index content จริง (ไม่ใช่แค่ homepage). file_server browse ปิดไว้
+    # เพื่อไม่ให้ user list directory tree
+    @topics path /topics /topics/*
+    handle @topics {
+        root * /var/www/topics
+        # Serve .md as text/plain (browsers render readable; AI clients fetch ok)
+        @markdown path *.md
+        header @markdown Content-Type "text/plain; charset=utf-8"
+        # CORS open — เป็น public reference content
+        header Access-Control-Allow-Origin "*"
+        # cache 1 hour — content เปลี่ยนไม่บ่อย
+        header Cache-Control "public, max-age=3600"
+        try_files {path} {path}.md {path}/README.md /README.md
+        file_server
+    }
+
     # --- legacy SSE transport (deprecated by MCP spec 2025-03-26) -----------
     # FastMCP serve: GET /sse (event stream) + POST /messages/{session_id}
     # คงไว้เพื่อ backward compat กับ clients เก่า ลบเมื่อ migrate ครบ
