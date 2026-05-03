@@ -100,6 +100,17 @@
         respond "ok" 200
     }
 
+    # --- human visitors at mcp.* root → redirect to apex landing -----------
+    # ผู้ใช้ที่ paste URL จาก claude_desktop_config (เช่น mcp.example.org)
+    # ลง browser จะได้ landing page ของ apex แทน HTTP 405 จาก mcp-server-http.
+    # ปลอดภัย: MCP Streamable HTTP ใช้ /mcp endpoint, ไม่ได้ใช้ root /.
+    # Self-hosters ที่ไม่มี apex landing → เว้น TRIPITAKA_APEX_DOMAIN ว่าง,
+    # redirect URL จะ malformed แต่ไม่กระทบ /mcp endpoint (ที่จริงๆ ใช้)
+    @browser_root path /
+    handle @browser_root {
+        redir https://{$TRIPITAKA_APEX_DOMAIN}/ 302
+    }
+
     # --- topics: static markdown pages (curated reference content) ----------
     # serve markdown ดิบ — modern AI clients render markdown ใน chat ได้, search
     # engines index content จริง (ไม่ใช่แค่ homepage).
