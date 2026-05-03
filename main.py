@@ -242,6 +242,82 @@ _TEXT_COLUMN_TO_LANG = {
 SUTTACENTRAL_BASE = "https://suttacentral.net"
 TIPITAKA_84000_BASE = "https://84000.org/tipitaka/"
 
+# Heuristic: nikāya prefix → 84000 volume number (มหาจุฬาฯ 45-volume edition)
+# - Vinaya = vols 1-8
+# - Sutta:  DN = 9-11, MN = 12-14, SN = 15-19, AN = 20-24, KN = 25-33
+# - Abhidhamma = vols 34-45
+# ค่านี้คือ "starting volume" ของแต่ละนิกาย; deep-link sutta-level ต้องการ
+# A= (paragraph offset) ที่เรายังไม่มี mapping → ให้ user landing ที่หน้าเล่มแรก
+# แล้วใช้ search_hint หา sutta เอง
+_NIKAYA_TO_84000_VOL = {
+    "dn": 9,
+    "mn": 12,
+    "sn": 15,
+    "an": 20,
+    # KN sub-books — เริ่มที่ vol 25
+    "kn-kp": 25,
+    "kn-dhp": 25,
+    "kn-ud": 25,
+    "kn-iti": 25,
+    "kn-snp": 25,
+    "kn-vv": 26,
+    "kn-pv": 26,
+    "kn-thag": 26,
+    "kn-thig": 26,
+    "kn-ja": 27,
+    "kn-mnd": 29,
+    "kn-cnd": 30,
+    "kn-ps": 31,
+    "kn-bv": 33,
+    "kn-cp": 33,
+    # KN sub-books แบบ short prefix (sutta_id ใช้ short เช่น "dhp1-20", "snp1.8")
+    "dhp": 25,
+    "ud": 25,
+    "iti": 25,
+    "snp": 25,
+    "vv": 26,
+    "pv": 26,
+    "thag": 26,
+    "thig": 26,
+    "ja": 27,
+    "mnd": 29,
+    "cnd": 30,
+    "ps": 31,
+    "bv": 33,
+    "cp": 33,
+    # Vinaya
+    "vin": 1,
+    "pli-tv": 1,
+    # Abhidhamma
+    "ds": 34,
+    "vb": 35,
+    "dt": 36,
+    "pp": 36,
+    "kv": 37,
+    "ym": 38,
+    "pt": 40,
+    # Apadāna / Buddhavaṃsa subset (ไม่ map ตรงๆ ใน Thai canon — fallback to 33)
+    "tha-ap": 32,
+    "thi-ap": 32,
+}
+
+
+def _parse_nikaya_prefix(sutta_id: str) -> str | None:
+    """ดึง nikāya prefix จาก sutta_id เพื่อหา 84000 volume.
+
+    ตัวอย่าง: mn1 → "mn", dhp1-20 → "dhp", sn56.11 → "sn", tha-ap1 → "tha-ap",
+    mil3.1.1 → "mil" (ไม่อยู่ใน mapping → return None → fallback)
+    """
+    sid = sutta_id.lower()
+    # ลอง match prefix ยาวก่อน (kn-thag ก่อน thag, pli-tv ก่อน pli)
+    for prefix in sorted(_NIKAYA_TO_84000_VOL.keys(), key=len, reverse=True):
+        if sid.startswith(prefix):
+            # ตรวจว่าตัวถัดไปเป็น digit หรือ '-' (กัน match บางส่วนเช่น "dn" match "dn..." แต่ไม่ match "dnnn")
+            rest = sid[len(prefix):]
+            if rest and (rest[0].isdigit() or rest[0] == "-" or rest[0] == "."):
+                return prefix
+    return None
+
 
 def _suttacentral_urls(sutta_id: str, segment_id: str | None = None) -> dict[str, str]:
     """สร้าง URL set ของ SuttaCentral สำหรับ cross-reference.
@@ -263,23 +339,58 @@ def _suttacentral_urls(sutta_id: str, segment_id: str | None = None) -> dict[str
     return urls
 
 
+def _tipitaka_84000_urls(sutta_id: str) -> dict[str, str]:
+    """สร้าง URL set ของ 84000.org (ฉบับมหาจุฬาฯ ภาษาไทย).
+
+    Strategy: heuristic mapping จาก nikāya prefix → starting volume number.
+    user landing ที่หน้าแรกของเล่ม (ไม่ใช่ sutta-level) แล้วใช้ search_hint
+    หา sutta ในเล่ม. เพิ่ม Google site-search URL เป็น fallback ที่แม่นกว่า
+
+    Returns:
+        - url: 84000 volume URL ที่ใกล้สูตรนี้สุด (best-effort)
+        - search_url: Google site-search ของ 84000 ด้วย sutta_id (precise)
+        - note: hint สำหรับ AI client
+    """
+    nikaya_prefix = _parse_nikaya_prefix(sutta_id)
+    volume = _NIKAYA_TO_84000_VOL.get(nikaya_prefix or "")
+
+    google_search = (
+        f"https://www.google.com/search?q=site%3A84000.org+%22{sutta_id}%22"
+    )
+
+    if volume:
+        volume_url = f"https://84000.org/tipitaka/read/r.php?B={volume}&A=1"
+        note = (
+            f"เปิดที่หน้าแรกของเล่ม {volume} (ฉบับ มจร 45 เล่ม) — "
+            "เลื่อน/ค้นชื่อสูตรในเล่มเอง. ใช้ search_url เพื่อค้นใน 84000 ตรง"
+        )
+        return {
+            "url": volume_url,
+            "search_url": google_search,
+            "note": note,
+        }
+    # Fallback: paracanonical (Mil, Ne, Pe) หรือ id ที่ไม่อยู่ใน mapping
+    return {
+        "url": TIPITAKA_84000_BASE,
+        "search_url": google_search,
+        "note": (
+            "Sutta นี้อยู่นอก 45 เล่มหลัก (paracanonical) — "
+            "ใช้ search_url เพื่อหาในไซต์"
+        ),
+    }
+
+
 def _cross_reference_urls(sutta_id: str, segment_id: str | None = None) -> dict[str, Any]:
     """รวม URL จากทุกแหล่งสำหรับ AI client surface ใน response.
 
     Returns dict with:
         - suttacentral: deep-link set (canonical, default)
-        - tipitaka_84000: ฉบับมหาจุฬาฯ ไทย — homepage + hint (deep-link
-          mapping ยังไม่ได้สร้าง, AI ควรแนะนำให้ user ค้นด้วย Pāli title)
+        - tipitaka_84000: ฉบับมหาจุฬาฯ ไทย — volume page + Google search
+          fallback (deep-link mapping เป็น heuristic, ใช้ search_url ถ้าไม่ตรง)
     """
     return {
         "suttacentral": _suttacentral_urls(sutta_id, segment_id),
-        "tipitaka_84000": {
-            "url": TIPITAKA_84000_BASE,
-            "note": (
-                "ฉบับมหาจุฬาฯ ภาษาไทย — ค้นด้วยชื่อบาลีของสูตรหรือเลขสูตร "
-                "(deep-link mapping จาก SuttaCentral ID ยังไม่ได้สร้าง)"
-            ),
-        },
+        "tipitaka_84000": _tipitaka_84000_urls(sutta_id),
     }
 
 
