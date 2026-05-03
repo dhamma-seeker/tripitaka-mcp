@@ -14,7 +14,10 @@
 # 7. รอ healthcheck + ทดสอบ /health จาก external
 #
 # Usage:
-#   ./scripts/deploy.sh [--domain mcp.example.org] [--dump-url URL]
+#   ./scripts/deploy.sh [--domain mcp.example.org] [--dump-url URL] [--force-restore]
+#
+# --force-restore: drop existing segment data and restore from dump
+#                  (use when refreshing prod with a new dump from HF)
 
 set -euo pipefail
 
@@ -34,9 +37,24 @@ ok()   { echo "${C_GREEN}✓${C_RESET} $*"; }
 warn() { echo "${C_YELLOW}⚠${C_RESET}  $*"; }
 die()  { echo "${C_RED}✗${C_RESET} $*" >&2; exit 1; }
 
+# Read a single key from .env without sourcing the whole file (which would
+# break on values containing spaces — `TRIPITAKA_DOMAIN=a.com b.com` would
+# try to execute `b.com`). Strips matching surrounding quotes.
+load_env() {
+    local key="$1"
+    local raw
+    raw=$(grep -E "^${key}=" .env 2>/dev/null | head -1 | cut -d= -f2-) || true
+    # strip matched leading/trailing quote pair
+    if [[ "${raw}" == \"*\" ]] || [[ "${raw}" == \'*\' ]]; then
+        raw="${raw:1:${#raw}-2}"
+    fi
+    printf '%s' "${raw}"
+}
+
 # --- parse args --------------------------------------------------------------
 DOMAIN=""
 DUMP_URL=""
+FORCE_RESTORE=0
 HF_REPO="dhamma-seeker/tripitaka-mcp-dump"
 HF_FILE="tripitaka_production_data.dump"
 DEFAULT_DUMP_URL="https://huggingface.co/datasets/${HF_REPO}/resolve/main/${HF_FILE}"
@@ -45,6 +63,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --domain) DOMAIN="${2:-}"; shift 2 ;;
         --dump-url) DUMP_URL="${2:-}"; shift 2 ;;
+        --force-restore) FORCE_RESTORE=1; shift ;;
         -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) die "unknown arg: $1" ;;
     esac
@@ -67,10 +86,8 @@ ok "environment พร้อม"
 # --- 2. .env ---------------------------------------------------------------
 if [[ -f .env ]]; then
     warn ".env มีอยู่แล้ว — จะไม่ overwrite"
-    # shellcheck disable=SC1091
-    set -a; source .env; set +a
-    [[ -n "${DOMAIN}" && "${DOMAIN}" != "${TRIPITAKA_DOMAIN:-}" ]] && \
-        warn "--domain ${DOMAIN} ขัดกับ .env (${TRIPITAKA_DOMAIN:-ว่าง}) — จะใช้ค่าใน .env"
+    [[ -n "${DOMAIN}" && "${DOMAIN}" != "$(load_env TRIPITAKA_DOMAIN)" ]] && \
+        warn "--domain ${DOMAIN} ขัดกับ .env ($(load_env TRIPITAKA_DOMAIN)) — จะใช้ค่าใน .env"
 else
     log "สร้าง .env ใหม่..."
     if [[ -z "${DOMAIN}" ]]; then
@@ -92,9 +109,16 @@ else
     echo "   RO password:   ${TRIPITAKA_RO_PASSWORD:0:8}... (full อยู่ใน .env)"
 fi
 
-# shellcheck disable=SC1091
-set -a; source .env; set +a
-[[ -n "${TRIPITAKA_DOMAIN:-}" ]] || die "TRIPITAKA_DOMAIN ว่าง — แก้ .env"
+# load specific keys we need — DON'T source the whole .env (handles
+# space-separated values like TRIPITAKA_DOMAIN="a.com b.com")
+POSTGRES_USER="$(load_env POSTGRES_USER)"
+POSTGRES_DB="$(load_env POSTGRES_DB)"
+POSTGRES_PASSWORD="$(load_env POSTGRES_PASSWORD)"
+TRIPITAKA_DOMAIN="$(load_env TRIPITAKA_DOMAIN)"
+TRIPITAKA_RO_PASSWORD="$(load_env TRIPITAKA_RO_PASSWORD)"
+[[ -n "${TRIPITAKA_DOMAIN}" ]] || die "TRIPITAKA_DOMAIN ว่าง — แก้ .env"
+[[ -n "${POSTGRES_USER}" ]] || die "POSTGRES_USER ว่าง — แก้ .env"
+[[ -n "${POSTGRES_DB}" ]] || die "POSTGRES_DB ว่าง — แก้ .env"
 
 # --- 3. dump ---------------------------------------------------------------
 DUMP_PATH=""
@@ -119,31 +143,39 @@ log "build + start DB..."
 docker compose -f docker-compose.prod.yml up -d --build db
 
 for i in {1..60}; do
-    if docker exec tripitaka-db pg_isready -U "${POSTGRES_USER:-admin}" -d "${POSTGRES_DB:-tripitaka_db}" >/dev/null 2>&1; then
+    if docker exec tripitaka-db pg_isready -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1; then
         ok "DB พร้อม"; break
     fi
     sleep 2
     [[ $i -eq 60 ]] && die "DB ไม่ response ใน 2 นาที"
 done
 
-# --- 5. restore (ข้ามถ้า DB มีข้อมูลอยู่แล้ว) ------------------------------
-EXISTING=$(docker exec tripitaka-db psql -U "${POSTGRES_USER:-admin}" -d "${POSTGRES_DB:-tripitaka_db}" -Atc "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='segment'" 2>/dev/null || echo "0")
-if [[ "${EXISTING}" -gt 0 ]]; then
-    COUNT=$(docker exec tripitaka-db psql -U "${POSTGRES_USER:-admin}" -d "${POSTGRES_DB:-tripitaka_db}" -Atc "SELECT COUNT(*) FROM segment" 2>/dev/null || echo "0")
-    warn "DB มี segment อยู่แล้ว ${COUNT} rows — ข้าม restore (ใช้ --force-restore เพื่อ drop+reload ในอนาคต)"
+# --- 5. restore (ข้ามถ้า DB มีข้อมูลอยู่แล้ว, --force-restore เพื่อ drop+reload) ----
+EXISTING=$(docker exec tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Atc "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='segment'" 2>/dev/null || echo "0")
+
+if [[ "${EXISTING}" -gt 0 && "${FORCE_RESTORE}" -eq 0 ]]; then
+    COUNT=$(docker exec tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Atc "SELECT COUNT(*) FROM segment" 2>/dev/null || echo "0")
+    warn "DB มี segment อยู่แล้ว ${COUNT} rows — ข้าม restore (ใช้ --force-restore เพื่อ drop+reload)"
 else
+    if [[ "${EXISTING}" -gt 0 ]]; then
+        OLD_COUNT=$(docker exec tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Atc "SELECT COUNT(*) FROM segment" 2>/dev/null || echo "0")
+        warn "--force-restore: DB มี ${OLD_COUNT} segments — drop schema แล้ว reload"
+        docker exec -i tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" \
+            -c "DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public; CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pg_trgm;" >/dev/null
+        ok "schema ดรอปและสร้างใหม่ + extensions พร้อม"
+    fi
     log "Restore จาก ${DUMP_PATH}..."
-    docker exec -i tripitaka-db pg_restore -U "${POSTGRES_USER:-admin}" -d "${POSTGRES_DB:-tripitaka_db}" --no-owner --no-acl < "${DUMP_PATH}" \
+    docker exec -i tripitaka-db pg_restore -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" --no-owner --no-acl < "${DUMP_PATH}" \
         || warn "pg_restore มี warnings (ปกติ) — ตรวจ count ด้านล่าง"
-    COUNT=$(docker exec tripitaka-db psql -U "${POSTGRES_USER:-admin}" -d "${POSTGRES_DB:-tripitaka_db}" -Atc "SELECT COUNT(*) FROM segment")
+    COUNT=$(docker exec tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Atc "SELECT COUNT(*) FROM segment")
     [[ "${COUNT}" -gt 0 ]] || die "restore เสร็จแต่ segment ว่าง — dump file อาจเสีย"
     ok "restore: ${COUNT} segments"
 fi
 
 # --- 6. readonly user ------------------------------------------------------
 log "ตั้งค่า readonly user..."
-docker exec -i tripitaka-db psql -U "${POSTGRES_USER:-admin}" -d "${POSTGRES_DB:-tripitaka_db}" < scripts/setup_readonly_user.sql >/dev/null
-docker exec tripitaka-db psql -U "${POSTGRES_USER:-admin}" -d "${POSTGRES_DB:-tripitaka_db}" \
+docker exec -i tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" < scripts/setup_readonly_user.sql >/dev/null
+docker exec tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" \
     -c "ALTER ROLE tripitaka_ro PASSWORD '${TRIPITAKA_RO_PASSWORD}'" >/dev/null
 ok "tripitaka_ro พร้อม"
 
