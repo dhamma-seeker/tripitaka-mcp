@@ -195,9 +195,11 @@ ENABLED_TRANSLATION_CODES = frozenset(
 #   1 hyphen alpha: tha-ap1, thi-ap1
 #   compound:      mil3.1.1
 #   Vinaya:        pli-tv-bu-vb-pj1, pli-tv-bu-vb-as1-7, pli-tv-kd1, pli-tv-pvr1, pli-tv-bu-pm
+#   Abhidhamma:    ds1.1, vb1.1, kv1.1, ya1.1, patthana1.1 (yes, "patthana" is one prefix, 8 chars)
 # multiple `-[a-z]+` segments allowed (for SC's pli-tv-* convention).
 # `\d*` (not `\d+`) so the digit-less "pli-tv-bu-pm" passes too.
-SUTTA_ID_PATTERN = re.compile(r"^[a-z]{2,6}(-[a-z]+)*\d*(-\d+)?(\.\d+(-\d+)?){0,4}[a-z]?$")
+# {2,10} on the leading prefix to fit "patthana" (8 chars) with headroom.
+SUTTA_ID_PATTERN = re.compile(r"^[a-z]{2,10}(-[a-z]+)*\d*(-\d+)?(\.\d+(-\d+)?){0,4}[a-z]?$")
 
 
 class ValidationError(ValueError):
