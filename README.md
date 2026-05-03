@@ -8,12 +8,13 @@ Gives AI agents (such as Claude or Cursor) the ability to look up suttas, quote 
 
 ## ✨ Features
 
+- 📚 **Full Tipiṭaka coverage at parity with SuttaCentral** — all three baskets indexed (~444K segments): Sutta (Pāli + Sujato English), Vinaya (Pāli + Brahmali English), and Abhidhamma (Pāli only — no English in upstream `bilara-data` for any Abhidhamma book). Live counts via `list_structure`.
 - ⚖️ **Hybrid Search** — highest precision by combining keyword and semantic search through Reciprocal Rank Fusion (RRF). Ready to use.
 - 🔍 **Keyword Search** — trigram fuzzy matching with cross-language alignment.
 - 🧠 **Semantic Search** — meaning-based search via vector similarity (pgvector).
 - 📖 **Translation Comparison** — view and compare renderings across editions, aligned at the segment level.
 - 📚 **Dictionary Bridge** — built-in dictionary of 20,000+ entries (P. A. Payutto, PTS, DPPN).
-- 📖 **Get Sutta & Reference** — fetch sutta content by ID (e.g. `mn1`) and generate properly formatted academic citations.
+- 📖 **Get Sutta & Reference** — fetch sutta content by ID (e.g. `mn1`, `pli-tv-bu-vb-pj1`, `patthana1.1`) and generate properly formatted academic citations.
 - 🔬 **Pāli word analyzer** — strip inflectional suffixes to find the root form when dictionary lookup misses (`bhikkhūnaṁ` → `bhikkhu`).
 - 🔗 **Cross-reference URLs in every response** — clickable deep links to SuttaCentral (Pāli + Sujato English + segment anchor) plus 84000.org volume routing for Thai users. AI clients can surface these so users verify the source in one click.
 - 📡 **Dual transport** — both legacy SSE (`/sse`) and canonical Streamable HTTP (`/mcp`, MCP spec 2025-03-26).
@@ -141,43 +142,17 @@ For an extra hardening layer, front Caddy with **Cloudflare** (DNS proxy + rate-
 
 ## 🔧 Connecting to Claude Desktop
 
-### Local (stdio)
+The repo ships [`claude_desktop_config.example.json`](./claude_desktop_config.example.json) with **three ready-to-use entries** — copy whichever fits your setup into `claude_desktop_config.json` (`~/Library/Application Support/Claude/` on macOS, `%APPDATA%\Claude\` on Windows), then edit the absolute paths:
 
-Add to `claude_desktop_config.json`:
+| Entry | When to use | Transport |
+|---|---|---|
+| `tripitaka-local` | You ran the installer locally on the same machine as Claude Desktop | stdio (no network) |
+| `tripitaka-remote` | You self-hosted the server on a VPS and want the modern transport | Streamable HTTP (`/mcp`) |
+| `tripitaka-remote-sse` | Your client doesn't support Streamable HTTP yet | Legacy SSE (`/sse`) |
 
-```json
-{
-  "mcpServers": {
-    "tripitaka": {
-      "command": "python",
-      "args": ["/path/to/tripitaka-mcp/main.py"],
-      "env": {
-        "DATABASE_URL": "postgresql://admin:password123@localhost:5432/tripitaka_db"
-      }
-    }
-  }
-}
-```
+The remote entries route through [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) — Claude Desktop ↔ npx bridge ↔ remote MCP. The example file has annotated comments explaining each field; remove the `_comment` keys before saving.
 
-### Remote (self-hosted on a server)
-
-If you've deployed the MCP server to a VPS, use [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) to bridge it into Claude Desktop. The server exposes both transports — pick `/mcp` for new clients, `/sse` for legacy:
-
-```json
-{
-  "mcpServers": {
-    "tripitaka-remote": {
-      "command": "/Users/YOU/.nvm/versions/node/v22.x/bin/npx",
-      "args": ["-y", "mcp-remote", "https://mcp.example.org/mcp"],
-      "env": {
-        "PATH": "/Users/YOU/.nvm/versions/node/v22.x/bin:/usr/local/bin:/usr/bin:/bin"
-      }
-    }
-  }
-}
-```
-
-To force the legacy SSE transport instead, change the URL to `.../sse` and add `"--transport", "sse-only"` to `args`. A fully annotated example with both transports is in [`claude_desktop_config.example.json`](./claude_desktop_config.example.json).
+> **Heads-up for nvm users:** `command` and `env.PATH` need absolute node paths — Claude Desktop doesn't read your shell profile. Find the right paths with `which npx` / `which python` while your normal shell is active.
 
 ### Optional: install the research skill
 
@@ -228,17 +203,22 @@ tripitaka-mcp/
 ├── embedding/
 │   └── model.py                  # SentenceTransformer wrapper
 ├── scripts/
-│   ├── install.sh                # One-shot installer (HF dump → DB)
-│   ├── deploy.sh                 # Deploy / restart on a VPS
-│   ├── backup.sh                 # pg_dump → S3-compatible store
-│   ├── seed_metadata.py          # Seed pitaka/nikāya metadata
-│   ├── data_loader.py            # Load Pāli/English from SuttaCentral
-│   ├── load_vinaya.py            # Vinaya loader (Vibhaṅga done; rest Phase B)
-│   ├── load_thai_cc0.py          # Thai translation loader
-│   ├── load_dictionary.py        # Load dictionary data
-│   ├── scrape_payutto.py         # Web scraper for the Payutto dictionary
-│   ├── generate_embeddings.py    # Generate vector embeddings
-│   └── test_full_sutta.py        # Smoke test (12 size-tiered suttas)
+│   ├── install.sh                    # One-shot installer (HF dump → DB)
+│   ├── deploy.sh                     # Deploy / restart on a VPS
+│   ├── backup.sh                     # pg_dump → S3-compatible store
+│   ├── dump_and_publish.sh           # Verify embeddings → pg_dump → upload to HuggingFace
+│   ├── seed_metadata.py              # Seed pitaka/nikāya metadata
+│   ├── data_loader.py                # Load Sutta Piṭaka (Pāli + Sujato English)
+│   ├── load_vinaya.py                # Vinaya loader (Vibhaṅga + Pātimokkha + Khandhaka + Parivāra, Brahmali EN)
+│   ├── load_abhidhamma.py            # Abhidhamma loader (7 books, Pāli — bilara has no EN)
+│   ├── load_thai_cc0.py              # Thai translation loader
+│   ├── load_dictionary.py            # Load dictionary data
+│   ├── scrape_payutto.py             # Web scraper for the Payutto dictionary
+│   ├── generate_embeddings.py        # Generate vector embeddings
+│   ├── run_embedding_with_retry.sh   # Resilient wrapper around embedding generation (retries on DB drop)
+│   ├── check_embedding_progress.py   # Live progress snapshot (or --watch mode) for the embedding job
+│   ├── smoke_test.sh                 # Endpoint smoke test (TLS + /sse + /mcp + /health)
+│   └── test_full_sutta.py            # Full-content smoke test (22 size-tiered suttas across all 3 piṭakas)
 ├── topics/                       # Static markdown pages served at /topics/*
 │   ├── README.md                 # Index of available topic pages
 │   ├── tipitaka-overview.md      # Canon structure + coverage
