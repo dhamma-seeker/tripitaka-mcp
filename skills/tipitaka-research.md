@@ -48,7 +48,7 @@ When the user wants a specific sutta, fetch the full content. Don't try to recit
 
 ### Step 4 — Be honest about gaps and uncertainty
 When data is incomplete or a place's modern location is disputed, say so explicitly. Distinguish between:
-- Pāli Canon (this server): Sutta Piṭaka full, Vinaya/Abhidhamma partial
+- Pāli Canon (this server, v1.1+): all three piṭakas at parity with SuttaCentral bilara-data — Sutta + Vinaya + Abhidhamma (Vinaya has Brahmali English; Abhidhamma is Pāli only because bilara has no English for it)
 - Atthakathā (commentaries): not in this server
 - Mahāvaṃsa / Sri Lankan chronicles: not in this server
 - Modern archaeology / Malalasekera *Dictionary of Pali Proper Names*: external context, cite separately

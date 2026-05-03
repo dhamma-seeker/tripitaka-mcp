@@ -463,8 +463,8 @@ def search_by_keyword(
         edition: ฉบับแปลภาษาไทย — "dhiranandi", "jayasaro", "mbu", "royal" หรือ None
                   (ใช้เฉพาะเมื่อ language="thai" และ Thai เปิดอยู่)
         pitaka: กรองตามปิฎก — "vinaya", "sutta", "abhidhamma" หรือ None (ค้นทั้งหมด)
-                ⚠️ ปัจจุบัน Sutta Piṭaka ครอบคลุมครบ ส่วน Vinaya/Abhidhamma
-                มีบางส่วน (Vibhaṅga, Kathāvatthu) — ดู list_structure
+                ✅ v1.1+: ทั้ง 3 ปิฎกครบ (Sutta + Vinaya + Abhidhamma) เทียบเท่า
+                SuttaCentral bilara — ดู list_structure ตัวเลขสด
         limit: จำนวนผลลัพธ์สูงสุด (default: 10, max: 50)
     """
     try:
@@ -589,10 +589,14 @@ def get_sutta(
     - response มี `cross_reference` field — render เป็น markdown clickable
       ใน reply เพื่อให้ user verify ต้นฉบับได้
 
-    ⚠️ **ขีดจำกัด:**
-    - Sutta Piṭaka (DN/MN/SN/AN/KN): ✅ ครบ
-    - Vinaya: ⚠️ มีแค่ Vibhaṅga (754 segments) — สูตรอื่นใน Vinaya = "ไม่พบ"
-    - Abhidhamma: ⚠️ มีแค่ Kathāvatthu (421 segments)
+    ✅ **Coverage (v1.1+):** ครบ 3 ปิฎก เทียบเท่า SuttaCentral bilara-data
+    - Sutta Piṭaka (DN/MN/SN/AN/KN): ✅ ครบ Pāli + Sujato EN (5,791 sections)
+    - Vinaya Piṭaka: ✅ ครบ Pāli + Brahmali EN — ใช้ SC codes เช่น
+      `pli-tv-bu-vb-pj1` (ปาราชิก ๑), `pli-tv-bi-vb-pj1` (ภิกขุนี),
+      `pli-tv-kd1` (มหาวรรค), `pli-tv-pvr10` (ปริวาร), `pli-tv-bu-pm`
+      (ภิกขุปาฏิโมกข์)
+    - Abhidhamma Piṭaka: ✅ ครบ 7 books (ds, vb, dt, pp, kv, ya, patthana)
+      — Pāli only (bilara ไม่มี EN ทุก translator)
 
     Args:
         sutta_id: รหัสสูตร เช่น "mn1", "dn22", "sn56.11", "dhp1-20"
@@ -1018,22 +1022,30 @@ def list_structure() -> dict[str, Any]:
 
     💡 **ใช้ tool นี้เมื่อ:**
     - User ถามภาพรวมพระไตรปิฎก (มีอะไรบ้าง / นิกายอะไร)
-    - ตรวจ coverage ก่อนสัญญาว่าจะค้นได้ (segment_count = 0 = ไม่มีข้อมูล,
-      อย่าสัญญาว่าจะหาเจอใน Vinaya/Abhidhamma sub-collections ที่ count = 0)
-    - Verify scope สำหรับการ compile artifact (ดูว่า Sutta Piṭaka ครบไหม)
+    - ตรวจ coverage ก่อนสัญญาว่าจะค้นได้ — ดู segment_count > 0 เป็นตัว
+      ตัดสินว่า sub-collection นั้นโหลดแล้ว
+    - Verify scope สำหรับการ compile artifact
 
-    📊 **State ปัจจุบัน (อ้างอิงเมื่อตอบ):**
-    - Sutta Piṭaka ครบ: DN 37, MN 155, SN 1,829, AN 1,419, KN 2,351 suttas
-      (~284,702 segments รวม)
-    - Vinaya partial: เฉพาะ Vibhaṅga (754 segs); Mahāvagga/Cullavagga/Parivāra
-      ยังไม่ load segment data แต่ metadata มี
-    - Abhidhamma partial: เฉพาะ Kathāvatthu (421 segs); Dhammasaṅgaṇī/Vibhaṅga/
-      Yamaka/Paṭṭhāna ฯลฯ ยังว่าง
+    📊 **State ปัจจุบัน v1.1+ (เทียบเท่า SuttaCentral bilara-data):**
+    - **Sutta Piṭaka** ครบ: DN 37, MN 155, SN 1,829, AN 1,419, KN 2,351 sections
+      (~284,702 segments รวม) — Pāli + Sujato EN
+    - **Vinaya Piṭaka** ครบ: Bhikkhu Vibhaṅga 222, Bhikkhunī Vibhaṅga 127,
+      Khandhaka 22, Parivāra 51 + Pātimokkha 2 (~71,557 segs) — Pāli + Brahmali EN
+    - **Abhidhamma Piṭaka** ครบ: 7 books (ds, vb, dt, pp, kv, ya, patthana)
+      ~88,414 segs — Pāli only (bilara ไม่มี EN ทุก translator)
+    - **รวม ~444,673 segments** ใน DB
 
-    ⚠️ **Quirks:**
-    - Vinaya/Abhidhamma มี duplicate codes (เช่น `vin-p` + `pli-tv-pvr` ทั้งคู่
-      = Parivāra) — schema เก็บทั้ง legacy code และ SuttaCentral code ใน
-      transition; เลือก code ที่มี segment_count > 0 ตอนใช้งาน
+    ⚠️ **Quirks ที่ยังอยู่:**
+    - Schema มี duplicate codes legacy + SC modern ใช้ co-exist:
+      - Vinaya: `vin-v/vin-m/vin-c/vin-p` (legacy, segment_count = 0) คู่กับ
+        `pli-tv-bu-vb/pli-tv-bi-vb/pli-tv-kd/pli-tv-pvr` (active, มี segments)
+      - Abhidhamma: `ym/pt` (legacy = 0) คู่กับ `ya/patthana` (active)
+    - **เลือก code ที่ segment_count > 0 ตอนใช้งาน** — ตัวอื่นเป็น metadata
+      placeholder จาก migration เก่า
+
+    🌐 **ภาษา:** ส่งกลับ Pāli + Thai + English labels เสมอ (metadata ไม่ใช่
+    segment text); text content ตามภาษาที่ ENABLED_LANGUAGES บอก. ตอนนี้
+    ฉบับแปลไทยใน DB ยังไม่มี — Thai user ใช้ cross_reference 84000.org เพิ่ม
 
     Returns:
         โครงสร้างแบบ hierarchical:
