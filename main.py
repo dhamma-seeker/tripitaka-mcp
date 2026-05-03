@@ -447,27 +447,48 @@ def get_sutta(
     language: str = "pali",
     edition: str | None = None,
 ) -> dict[str, Any]:
-    """ดึงเนื้อหาสูตร/กัณฑ์ตาม ID
+    """ดึงเนื้อหาสูตร/กัณฑ์ตาม ID — return เนื้อหาเต็มทุก segment
 
     ใช้รหัสมาตรฐาน SuttaCentral เช่น:
-    - mn1 = มัชฌิมนิกาย สูตรที่ 1 (มูลปริยายสูตร)
-    - dn22 = ทีฆนิกาย สูตรที่ 22 (มหาสติปัฏฐานสูตร)
-    - sn56.11 = สังยุตตนิกาย 56.11 (ธัมมจักกัปปวัตตนสูตร)
+    - `mn1` = มัชฌิมนิกาย สูตรที่ 1 (Mūlapariyāyasutta — มูลปริยายสูตร, 334 segments)
+    - `dn22` = ทีฆนิกาย สูตรที่ 22 (Mahāsatipaṭṭhānasutta — มหาสติปัฏฐาน, 454 segments)
+    - `dn16` = ทีฆนิกาย สูตรที่ 16 (Mahāparinibbānasutta — สูตรยาวที่สุด 1,664 segments)
+    - `sn56.11` = สังยุตต์ 56.11 (Dhammacakkappavattana — ธัมมจักกัปปวัตตนะ)
+    - `mn62` = มัชฌิมนิกาย 62 (Mahārāhulovāda — สอนพระราหุล)
+    - `dhp1-20` = Dhammapada verses 1-20 (KN ใช้ range format)
+    - `mil3.1.1` = Milindapañha 3.1.1 (paracanonical, 3-4 level id)
+
+    💡 **คำแนะนำสำหรับ AI client:**
+    - **Quote text_pali / text_english โดยตรงจาก segment** — อย่าดึงจาก
+      training memory. ระบบ verify ได้, AI หลายครั้งจำผิดได้
+    - Segment สั้นๆ ลงท้ายด้วย `:0.1` หรือ `:0.2` มักเป็น **header** (ชื่อ
+      นิกาย/สูตร) ไม่ใช่เนื้อหา teaching จริง — เริ่ม content จาก `:1.1`
+    - Segment ที่ลงท้ายด้วย "...niṭṭhitaṁ" (เช่น `mn1:194.10` =
+      "Mūlapariyāyasuttaṁ niṭṐhitaṁ paṭhamaṁ") เป็น **colophon** ปิดสูตร
+    - Segments ที่มี `…pe…` (peyyāla = เปยยาล) คือ **abbreviated repetition**
+      ไม่ใช่ข้อมูลขาดหาย — ตำราบาลีย่อด้วยวิธีนี้
+    - response มี `cross_reference` field — render เป็น markdown clickable
+      ใน reply เพื่อให้ user verify ต้นฉบับได้
+
+    ⚠️ **ขีดจำกัด:**
+    - Sutta Piṭaka (DN/MN/SN/AN/KN): ✅ ครบ
+    - Vinaya: ⚠️ มีแค่ Vibhaṅga (754 segments) — สูตรอื่นใน Vinaya = "ไม่พบ"
+    - Abhidhamma: ⚠️ มีแค่ Kathāvatthu (421 segments)
 
     Args:
-        sutta_id: รหัสสูตร เช่น "mn1", "dn22", "sn56.11"
-        language: ภาษาที่ต้องการ — "pali", "thai", "english", หรือ "all" (default: "pali")
-        edition: ฉบับแปลภาษาไทย — "dhiranandi", "jayasaro", "mbu", "royal" หรือ None
-                 ถ้าไม่ระบุ จะใช้ text_thai จาก bilara-data (ถ้ามี)
+        sutta_id: รหัสสูตร เช่น "mn1", "dn22", "sn56.11", "dhp1-20"
+        language: ภาษาที่ต้องการ — "pali", "thai", "english", หรือ "all"
+                  (default: "pali"). Thai ปิดอยู่ใน server ปัจจุบัน → return null
+        edition: ฉบับแปลภาษาไทย — "dhiranandi", "jayasaro", "mbu", "royal"
+                 หรือ None. ถ้าไม่ระบุ จะใช้ text_thai จาก bilara-data
+                 ⚠️ ปัจจุบัน DB ไม่มีฉบับแปลไทย → ทุกค่ามักเป็น null
 
     Returns:
         ข้อมูลสูตรประกอบด้วย:
-        - sutta_id: รหัสสูตร
-        - title: ชื่อสูตร (ถ้ามี)
-        - nikaya: ชื่อนิกาย
-        - pitaka: ชื่อปิฎก
-        - edition: ฉบับแปลที่ใช้ (ถ้าระบุ)
-        - segments: เนื้อหาเรียงตาม segment
+        - sutta_id, title{pali,thai,english}, nikaya, pitaka, edition
+        - segment_count, segments[] (เรียงตาม id, ครบทุก segment)
+        - cross_reference: SuttaCentral URLs (sutta + Pāli + English) +
+          84000 link สำหรับ Thai user routing
     """
     try:
         sutta_id = _validate_sutta_id(sutta_id)
@@ -616,26 +637,36 @@ def search_semantic(
 ) -> list[dict[str, Any]]:
     """ค้นหาแบบ semantic — ค้นหาตามความหมาย ไม่จำเป็นต้องตรงคำ
 
-    ใช้ vector similarity search (cosine distance) บน `text_pali`
-    ซึ่ง embed ด้วย multilingual MiniLM model
+    ใช้ vector similarity search (cosine distance) บน `text_pali` ที่ embed
+    ด้วย multilingual MiniLM model.
 
-    ⚠️ ข้อจำกัดสำคัญ:
-    - Index สร้างบนบาลีเท่านั้น (SuttaCentral ยังไม่มี Thai translation ใน bilara)
-    - Model เป็น multilingual ทั่วไป ไม่ได้ fine-tune บน Pali
-    - **แนะนำ query เป็นบาลีหรืออังกฤษ** — ผลลัพธ์จะตรงกว่าภาษาไทยมาก
-    - สำหรับ keyword ตรง ๆ (เช่น "appamāda") ใช้ `search_by_keyword` จะแม่นกว่า
-    - สำหรับค้นทั่วไป ใช้ `search_hybrid` ซึ่งรวม keyword + semantic
+    🤔 **ส่วนใหญ่คุณควรใช้ `search_hybrid` แทน** — มันรวม semantic นี้กับ
+    keyword search แล้ว ranking ดีกว่า. ใช้ tool นี้เฉพาะเมื่อ:
+    - ต้องการ pure semantic (ไม่ต้องการ keyword influence)
+    - อยาก tune `threshold` ละเอียด (hybrid ใช้ RRF ปรับยาก)
+    - debug ดูว่า semantic จับอะไรได้บ้างเทียบกับ keyword
+
+    ⚠️ ข้อจำกัดที่ทราบ:
+    - Index = บาลีเท่านั้น (English/Thai ใช้ได้แต่ผ่าน multilingual embedding
+      ที่ไม่ได้ tune บน Pāli)
+    - English query มัก embed ดีกว่าไทย (model tune EN เป็นหลัก)
+    - คำเฉพาะตัว (`appamāda`, `dukkha`) ที่ค้นแบบ exact ดีกว่า → ใช้
+      `search_by_keyword`
+    - Stock phrases บาลีปรากฏในหลายสูตร → similarity score กระจัดกระจาย,
+      อ่าน top 10 อย่ายึดแค่ rank 1
 
     Args:
-        query: ข้อความที่ต้องการค้นหา (**แนะนำบาลี/อังกฤษ** — ไทยใช้ได้แต่ผลหลวม)
-        language: ภาษาที่ต้องการแสดงผล — "pali", "thai", "english", หรือ "all"
+        query: ข้อความ (อังกฤษให้ผลดีสุด, รองมาเป็นบาลี, ไทยอ่อน)
+        language: ภาษา output — "pali", "thai", "english", หรือ "all"
+                  (Thai disabled → null)
         limit: จำนวนผลลัพธ์สูงสุด (default: 5, max: 20)
-        threshold: ระยะห่างความหมาย (ยิ่งน้อยยิ่งตรงเผง, default: 0.7)
+        threshold: cosine distance สูงสุด (น้อย=ตรงเผง). default 0.7;
+                   ลดเป็น 0.5 ถ้าอยากเข้มงวด, เพิ่มเป็น 0.9 ถ้าอยากกว้าง
 
     Returns:
-        รายการผลลัพธ์เรียงตามความใกล้เคียงทางความหมาย
-        แต่ละรายการมี:
-        - segment_id, sutta_id, text (ตามภาษา), distance
+        list ผลลัพธ์เรียงตาม distance (น้อยไปมาก) แต่ละรายการมี:
+        - segment_id, sutta_id, text_pali/text_english (ตาม language flag),
+          distance, cross_reference URLs
     """
     limit = min(max(1, limit), 20)
 
@@ -864,11 +895,31 @@ def search_hybrid(
 
 @mcp.tool()
 def list_structure() -> dict[str, Any]:
-    """แสดงโครงสร้างพระไตรปิฎกทั้ง 3 ปิฎก
+    """แสดงโครงสร้างพระไตรปิฎกทั้ง 3 ปิฎก พร้อมสถิติ coverage
+
+    💡 **ใช้ tool นี้เมื่อ:**
+    - User ถามภาพรวมพระไตรปิฎก (มีอะไรบ้าง / นิกายอะไร)
+    - ตรวจ coverage ก่อนสัญญาว่าจะค้นได้ (segment_count = 0 = ไม่มีข้อมูล,
+      อย่าสัญญาว่าจะหาเจอใน Vinaya/Abhidhamma sub-collections ที่ count = 0)
+    - Verify scope สำหรับการ compile artifact (ดูว่า Sutta Piṭaka ครบไหม)
+
+    📊 **State ปัจจุบัน (อ้างอิงเมื่อตอบ):**
+    - Sutta Piṭaka ครบ: DN 37, MN 155, SN 1,829, AN 1,419, KN 2,351 suttas
+      (~284,702 segments รวม)
+    - Vinaya partial: เฉพาะ Vibhaṅga (754 segs); Mahāvagga/Cullavagga/Parivāra
+      ยังไม่ load segment data แต่ metadata มี
+    - Abhidhamma partial: เฉพาะ Kathāvatthu (421 segs); Dhammasaṅgaṇī/Vibhaṅga/
+      Yamaka/Paṭṭhāna ฯลฯ ยังว่าง
+
+    ⚠️ **Quirks:**
+    - Vinaya/Abhidhamma มี duplicate codes (เช่น `vin-p` + `pli-tv-pvr` ทั้งคู่
+      = Parivāra) — schema เก็บทั้ง legacy code และ SuttaCentral code ใน
+      transition; เลือก code ที่มี segment_count > 0 ตอนใช้งาน
 
     Returns:
         โครงสร้างแบบ hierarchical:
-        - pitakas → nikayas พร้อมจำนวนสูตรในแต่ละนิกาย
+        - pitakas{vinaya/sutta/abhidhamma} → nikayas[]
+        - แต่ละ nikaya: code, name (3 ภาษา), sutta_count, segment_count
     """
     conn = get_connection()
     try:
@@ -933,20 +984,26 @@ def list_structure() -> dict[str, Any]:
 def get_reference(
     sutta_id: str,
 ) -> dict[str, Any]:
-    """สร้างข้อมูลอ้างอิง (reference) ที่ถูกต้องสำหรับสูตร
+    """สร้างข้อมูลอ้างอิง (citation) ที่ถูกต้องสำหรับสูตร
 
-    ใช้เพื่อสร้างการอ้างอิงที่ถูกต้องตามหลักวิชาการ
-    เมื่อต้องการอ้างอิงเนื้อหาจากพระไตรปิฎก
+    💡 **ใช้ tool นี้เมื่อ:**
+    - User ขอ citation สำหรับงานวิชาการ/บทความ/อ้างอิง
+    - ต้องการรู้ตำแหน่งในพระไตรปิฎก (ปิฎก/นิกาย) ของสูตร
+    - ต้องการ formatted citation string พร้อมใช้
+
+    🔗 vs `get_sutta`: tool นี้ return เฉพาะ metadata + citation ไม่มี segments;
+    ใช้คู่กับ `get_sutta` เมื่ออยากได้ทั้งเนื้อหา + citation
 
     Args:
         sutta_id: รหัสสูตร เช่น "mn1", "dn22", "sn56.11"
 
     Returns:
-        ข้อมูลอ้างอิงประกอบด้วย:
-        - sutta_id: รหัสสูตร
-        - title: ชื่อสูตร (3 ภาษา)
-        - location: ตำแหน่งในพระไตรปิฎก
-        - citation_format: รูปแบบการอ้างอิงสำเร็จรูป
+        - sutta_id, title{pali,thai,english}
+        - location: nikaya + pitaka (3 ภาษา)
+        - segment_count: ขนาดสูตร (segments)
+        - citation_format: รูปแบบ ready-to-use เช่น "The Root of All Things
+          (Mūlapariyāyasutta, MN1), Middle Discourses"
+        - cross_reference: SuttaCentral + 84000 URLs สำหรับลิงก์ใน citation
     """
     try:
         sutta_id = _validate_sutta_id(sutta_id)
@@ -1063,16 +1120,26 @@ def get_reference(
 
 @mcp.tool()
 def list_editions() -> list[dict[str, Any]]:
-    """แสดงรายการฉบับแปลภาษาไทยที่มีในระบบ
+    """แสดงรายการฉบับแปลที่มีในระบบ พร้อมสถิติ coverage
 
-    แสดงทุก edition ที่ถูก load เข้า translation table พร้อมสถิติ
+    💡 **ใช้ tool นี้เมื่อ:**
+    - ก่อนเรียก `compare_translations` หรือ `get_sutta(edition=...)` —
+      เพื่อรู้ว่าใช้ค่า edition อะไรได้บ้างและฉบับไหนคุ้มเทียบ
+    - User ถามว่ามีฉบับแปลใดบ้างใน DB
+
+    🔍 **กรอง:** Tool นี้ filter ตาม `TRIPITAKA_ENABLED_LANGUAGES` ของเซิร์ฟเวอร์
+    — Thai disabled → return empty list. ทำงานเฉพาะภาษาที่เปิดอยู่
+
+    ⚠️ **State ปัจจุบัน:** DB ส่วนใหญ่มีแต่ Pāli (default จาก SuttaCentral
+    bilara) + English (Sujato). Thai editions (`dhiranandi`, `jayasaro`,
+    `mbu`, `royal`) ยังไม่ได้ index — return empty จนกว่าจะ load
 
     Returns:
-        รายการ edition แต่ละรายการมี:
-        - edition: รหัสฉบับ เช่น "dhiranandi", "mbu"
+        list ของ edition object แต่ละตัวมี:
+        - edition: รหัสฉบับ เช่น "sujato", "dhiranandi", "mbu"
         - translator: ชื่อผู้แปล
-        - language: ภาษา
-        - segment_count: จำนวน segments ที่มีคำแปล
+        - language: รหัสภาษา ISO ("pi", "en", "th")
+        - segment_count: จำนวน segments ที่มีคำแปลใน edition นี้
         - sutta_count: จำนวนสูตรที่มีคำแปล
     """
     conn = get_connection()
@@ -1116,20 +1183,38 @@ def compare_translations(
 ) -> dict[str, Any]:
     """เปรียบเทียบคำแปลทุกฉบับที่มีสำหรับ segment เดียวกัน
 
-    ใช้เพื่อตรวจสอบความถูกต้องและเปรียบเทียบสำนวนของผู้แปลต่างๆ
-    รวมทั้งต้นฉบับบาลีและคำแปลอังกฤษ
+    💡 **ใช้ tool นี้เมื่อ:**
+    - User ถามความหมาย/การแปลของบรรทัดเดียวจากบาลี ที่อยากเทียบหลายผู้แปล
+    - ตรวจสอบว่าผู้แปลแต่ละคนตีความต่างกันยังไง (เช่น คำเทคนิค `dukkha`,
+      `anattā`, `nibbāna` มี nuance ในการแปลต่างกัน)
+    - งานวิชาการที่ต้อง quote multiple translations
+
+    🔍 **vs `get_sutta`:** tool นี้ targets **1 segment** (line-level), ส่วน
+    `get_sutta` targets **ทั้งสูตร**. ถ้าอยากเทียบทั้งสูตร ต้องเรียก
+    `compare_translations` หลาย segment
+
+    📋 **Format ของ segment_id:** `<sutta_id>:<paragraph>.<line>` เช่น
+    `mn1:171.4` (Mūlapariyāyasutta paragraph 171 line 4 — "Nandī dukkhassa
+    mūlaṁ"). หา segment_id จาก `get_sutta` หรือ search results
+
+    ⚠️ **State ปัจจุบัน:** Translation table ยังว่าง (DB load เฉพาะ default
+    Pāli+English จาก bilara). `total_editions` มักเป็น 0; `text_pali` กับ
+    `text_english` ใช้ได้เสมอ. Thai editions เพิ่มทีหลัง
 
     Args:
-        segment_id: รหัส segment เช่น "mn26:8.2", "dn22:17.1"
+        segment_id: รหัส segment เช่น "mn26:8.2", "dn22:17.1", "mn62:5.3"
 
     Returns:
-        ข้อมูลเปรียบเทียบประกอบด้วย:
-        - segment_id: รหัส segment
-        - sutta_id: รหัสสูตร
-        - text_pali: ต้นฉบับบาลี
-        - text_english: คำแปลอังกฤษ (Sujato/bilara-data)
-        - text_thai_default: คำแปลไทยจาก bilara-data (ถ้ามี)
-        - translations: คำแปลจากทุก edition ใน translation table
+        - segment_id, sutta_id
+        - text_pali: ต้นฉบับบาลี (Mahāsaṅgīti)
+        - text_english: Sujato translation (จาก bilara-data)
+        - text_thai_default: bilara Thai translation (ปัจจุบัน null เพราะ
+          Thai disabled)
+        - translations[]: filtered ตาม ENABLED_LANGUAGES — list of
+          {edition, translator, language, text}
+        - total_editions: นับจำนวน editions ที่ active
+        - cross_reference: SuttaCentral segment-level deep link (สำคัญ —
+          link ตรงไปยัง segment ใน SC viewer)
     """
     conn = get_connection()
     try:
@@ -1378,16 +1463,36 @@ def get_word_definition(word: str, language: str = "all", limit_context: int = 3
 
 @mcp.tool()
 def parse_pali_word(word: str) -> dict[str, Any]:
-    """วิเคราะห์คำบาลีเพื่อหารากศัพท์ (Stemming/Lemmatization เบื้องต้น)
-    
-    ใช้เมื่อเจอคำศัพท์บาลีที่ถูกแจกวิภัตติแล้ว (มี suffix) และค้นหาในพจนานุกรมไม่พบ
-    Tool นี้จะช่วยตัด Suffix ภาษาบาลีที่พบบ่อย และเดารากศัพท์ให้
-    
+    """วิเคราะห์คำบาลีเพื่อหารากศัพท์ (Stemming / Lemmatization เบื้องต้น)
+
+    💡 **ใช้ tool นี้เมื่อ:**
+    - เจอคำบาลีในข้อความ (เช่น `dukkhassa`, `bhikkhūnaṁ`) แล้ว
+      `get_word_definition` หาไม่เจอ — Pāli inflect คำตามวิภัตติ ๘ × วจน ๒
+      = ๑๖ form ต่อราก
+    - ต้องการแยก compound word (`sammāsambuddhassa` → `sammā` + `sambuddha`
+      + `-ssa` genitive)
+    - ดู possible stems ก่อนค้นต่อใน `get_word_definition`
+
+    🔄 **Workflow แนะนำ:**
+    `parse_pali_word(inflected_form)` → ได้ `possible_stems[]` →
+    เรียก `get_word_definition(stem)` ทีละ stem จนเจอ definition
+
+    ⚠️ **ข้อจำกัด:**
+    - เป็น rule-based เบื้องต้น — ตัด common suffixes (case endings, vowel
+      shortening) ไม่ใช่ full morphological analyzer
+    - Compound words (samāsa) ไม่ได้แยก — เช่น `dukkhanirodha` ไม่ตัดเป็น
+      `dukkha` + `nirodha`
+    - ไม่จับ sandhi (เสียงเชื่อม) เช่น `tena ahaṁ → tenāhaṁ`
+    - ผลลัพธ์เป็น **possible** stems — ต้อง verify ผ่าน `get_word_definition`
+
     Args:
-        word: คำบาลีที่ต้องการวิเคราะห์ (เช่น "dukkhassa", "bhikkhūnaṁ")
+        word: คำบาลีที่ inflected (เช่น "dukkhassa", "bhikkhūnaṁ", "sīlavā")
 
     Returns:
-        รากศัพท์ดั้งเดิมที่น่าจะเป็นไปได้ ซึ่งสามารถนำไปค้นใน get_word_definition ต่อได้
+        - original_word: input ที่ normalize แล้ว
+        - matched_suffixes_removed: list ของ suffix ที่ตัดได้
+        - possible_stems: list ของรากศัพท์ที่อาจเป็นไปได้
+        - guidance: คำแนะนำ workflow ต่อ
     """
     word = word.lower().strip()
     
