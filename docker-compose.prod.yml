@@ -167,9 +167,14 @@ services:
       - mcp-server-http
     environment:
       TRIPITAKA_DOMAIN: ${TRIPITAKA_DOMAIN:?TRIPITAKA_DOMAIN must be set (eg. mcp.example.org)}
+      # Optional apex domain for the landing page (e.g. example.org).
+      # Leave unset/empty to skip — Caddy falls back to localhost.invalid
+      # placeholder so the apex site block is effectively a no-op.
+      TRIPITAKA_APEX_DOMAIN: ${TRIPITAKA_APEX_DOMAIN:-}
     volumes:
       - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./topics:/var/www/topics:ro
+      - ./site:/var/www/site:ro
       - caddy_data:/data
       - caddy_config:/config
     ports:

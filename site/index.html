@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tripitaka MCP — Pāli Canon for AI agents, offered as Dhamma Dāna</title>
+<meta name="description" content="An MCP server giving AI agents (Claude, Cursor, etc.) the ability to search and cite the Pāli Canon. Free, non-commercial, full Tipiṭaka coverage at parity with SuttaCentral.">
+<link rel="canonical" href="https://tripitaka-mcp.com/">
+<meta property="og:title" content="Tripitaka MCP">
+<meta property="og:description" content="Pāli Canon access for AI agents — free, non-commercial Dhamma Dāna.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tripitaka-mcp.com/">
+<style>
+:root {
+    --bg: #fafaf7;
+    --fg: #1c1c1c;
+    --muted: #6b6b6b;
+    --accent: #8b6914;
+    --code-bg: #f0ede5;
+    --border: #e2dfd5;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #16140f;
+        --fg: #e8e6e0;
+        --muted: #9a9690;
+        --accent: #d4b04a;
+        --code-bg: #221f17;
+        --border: #2e2a22;
+    }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Sarabun", "Noto Sans Thai", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 4rem 1.5rem 6rem;
+}
+header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2.5rem;
+    margin-bottom: 2.5rem;
+}
+h1 {
+    font-size: 2rem;
+    margin: 0 0 0.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+.tagline-th {
+    color: var(--muted);
+    font-size: 1.05rem;
+    margin: 0 0 1.25rem;
+}
+.lead {
+    font-size: 1.1rem;
+    margin: 0;
+}
+h2 {
+    font-size: 1.3rem;
+    margin: 3rem 0 0.75rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+}
+h3 {
+    font-size: 1.05rem;
+    margin: 1.75rem 0 0.5rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+p { margin: 0.75rem 0; }
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+ul { padding-left: 1.25rem; }
+li { margin: 0.4rem 0; }
+code {
+    background: var(--code-bg);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 0.92em;
+}
+pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    margin: 1rem 0;
+}
+pre code {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+}
+.coverage {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+    margin: 1.25rem 0;
+}
+.coverage div {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.85rem 1rem;
+}
+.coverage strong {
+    display: block;
+    font-size: 1.4rem;
+    color: var(--accent);
+    line-height: 1.2;
+}
+.coverage span {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+.endpoint {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 0.5em 0.7em;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    display: inline-block;
+    font-size: 0.95em;
+    margin: 0.25rem 0;
+}
+footer {
+    margin-top: 5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+footer p { margin: 0.5rem 0; }
+.aspiration {
+    color: var(--accent);
+    font-style: italic;
+    text-align: center;
+    margin: 0.5rem 0 1.25rem;
+}
+</style>
+</head>
+<body>
+<main>
+
+<header>
+<h1>Tripitaka MCP</h1>
+<p class="tagline-th">บริการพระไตรปิฎกบาลีผ่าน MCP protocol — เผยแผ่เป็นธรรมทาน</p>
+<p class="lead">An MCP server giving AI agents (Claude, Cursor, Codex, etc.) first-class access to the Pāli Canon — search, cite, compare translations, and resolve dictionary lookups in a single call.</p>
+</header>
+
+<h2>What it does</h2>
+<p>The server exposes <strong>10 tools and 3 resources</strong> over MCP. Your AI agent can:</p>
+<ul>
+<li>Search the canon by keyword (trigram), meaning (vector), or both (RRF hybrid)</li>
+<li>Fetch any sutta in full with cross-reference URLs to <a href="https://suttacentral.net">SuttaCentral</a> and <a href="https://84000.org">84000.org</a></li>
+<li>Compare translations side-by-side, segment-aligned across editions</li>
+<li>Resolve Pāli words against P. A. Payutto's dictionary, PTS, and DPPN — including inflected forms</li>
+</ul>
+
+<h2>Coverage</h2>
+<p>Full Tipiṭaka in Pāli at parity with SuttaCentral's <a href="https://github.com/suttacentral/bilara-data"><code>bilara-data</code></a> (CC0). English from Bhikkhu Sujato (Sutta) and Bhikkhu Brahmali (Vinaya).</p>
+
+<div class="coverage">
+<div><strong>~284K</strong><span>Sutta segments<br>5 nikāyas</span></div>
+<div><strong>~71K</strong><span>Vinaya segments<br>4 sub-collections</span></div>
+<div><strong>~88K</strong><span>Abhidhamma segments<br>7 books, Pāli only</span></div>
+<div><strong>~444K</strong><span>Total segments<br>indexed + embedded</span></div>
+</div>
+
+<p class="aspiration">— อิทํ เม ปุญฺญํ สพฺพสตฺตานํ เทมิ —</p>
+
+<h2>Try it</h2>
+<p>The hosted server is free and runs at:</p>
+<p><span class="endpoint">https://mcp.tripitaka-mcp.com/mcp</span> &nbsp; (Streamable HTTP, MCP spec 2025-03-26)<br>
+<span class="endpoint">https://mcp.tripitaka-mcp.com/sse</span> &nbsp; (legacy SSE, for older clients)</p>
+
+<h3>Claude Desktop</h3>
+<p>Add to <code>claude_desktop_config.json</code>:</p>
+<pre><code>{
+  "mcpServers": {
+    "tripitaka": {
+      "command": "/path/to/npx",
+      "args": ["-y", "mcp-remote", "https://mcp.tripitaka-mcp.com/mcp"],
+      "env": {
+        "PATH": "/path/to/node/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  }
+}</code></pre>
+<p>The repo's <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/claude_desktop_config.example.json">annotated example config</a> covers stdio (local install) and both remote transports. After saving, restart Claude Desktop.</p>
+
+<h3>Optional research skill</h3>
+<p>Drop <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/skills/tipitaka-research.md"><code>skills/tipitaka-research.md</code></a> into <code>~/.claude/skills/</code> to activate a multi-step research workflow (clarify → verify coverage → search → drill → cite) tailored to scriptural research.</p>
+
+<h2>Read</h2>
+<ul>
+<li><a href="https://github.com/dhamma-seeker/tripitaka-mcp"><strong>Source code</strong></a> — MIT-licensed, fork-friendly</li>
+<li><a href="/topics/"><strong>Topic pages</strong></a> — curated reference content (canon overview, places, …) served as plain markdown so AI agents can fetch and cite</li>
+<li><a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/NOTICE.md"><strong>NOTICE</strong></a> — data licenses (some components are non-commercial, please read before redistributing)</li>
+</ul>
+
+<footer>
+<p>Offered as <strong>Dhamma Dāna</strong> — please use freely for learning, research, and practice. Not for commercial use.</p>
+<p>Source data from <a href="https://suttacentral.net">SuttaCentral</a>, <a href="https://www.watnyanaves.net">Wat Nyanavesakavan</a> (Payutto dictionary), and the <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/CREDITS.md">contributors and translators credited here</a>.</p>
+<p>If you find an error, please open an <a href="https://github.com/dhamma-seeker/tripitaka-mcp/issues">issue</a> — verifying the canon is a community effort.</p>
+</footer>
+
+</main>
+</body>
+</html>
