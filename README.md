@@ -34,7 +34,32 @@ Gives AI agents (such as Claude or Cursor) the ability to look up suttas, quote 
 
 ## 🚀 Quick Start
 
-### 🏎️ Fastest path — use the installer (recommended for non-developers)
+### 🌐 No setup — connect to the public Dhamma Dāna server
+
+The maintainers run a free public instance at **[tripitaka-mcp.com](https://tripitaka-mcp.com)**.
+
+| Endpoint | Use |
+|---|---|
+| `https://mcp.tripitaka-mcp.com/mcp` | Streamable HTTP (MCP spec 2025-03-26) |
+| `https://mcp.tripitaka-mcp.com/sse` | Legacy SSE (older clients) |
+
+Drop this entry into `claude_desktop_config.json` (no install, no Docker, no GPU):
+
+```json
+{
+  "mcpServers": {
+    "tripitaka": {
+      "command": "/path/to/npx",
+      "args": ["-y", "mcp-remote", "https://mcp.tripitaka-mcp.com/mcp"],
+      "env": { "PATH": "/path/to/node/bin:/usr/local/bin:/usr/bin:/bin" }
+    }
+  }
+}
+```
+
+The hosted server is rate-limited (10 req/10s + 60 req/min per IP) and offered for personal study, research, and dhamma practice — see [NOTICE.md](./NOTICE.md) before redistributing or using commercially.
+
+### 🏎️ Fastest local path — use the installer (recommended for non-developers)
 
 ```bash
 git clone https://github.com/dhamma-seeker/tripitaka-mcp.git
