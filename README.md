@@ -43,19 +43,30 @@ The maintainers run a free public instance at **[tripitaka-mcp.com](https://trip
 | `https://mcp.tripitaka-mcp.com/mcp` | Streamable HTTP (MCP spec 2025-03-26) |
 | `https://mcp.tripitaka-mcp.com/sse` | Legacy SSE (older clients) |
 
-Drop this entry into `claude_desktop_config.json` (no install, no Docker, no GPU):
+**Connect Claude Desktop in three steps** (no install, no Docker, no GPU — you just need [Node.js](https://nodejs.org/)):
+
+**1.** Find your absolute `npx` path. Claude Desktop doesn't read your shell profile, so a bare `npx` won't resolve. Open a terminal:
+
+```bash
+which npx
+# example: /Users/you/.nvm/versions/node/v22.14.0/bin/npx
+```
+
+**2.** Open `claude_desktop_config.json` (`~/Library/Application Support/Claude/` on macOS, `%APPDATA%\Claude\` on Windows) and add the entry below — substitute `YOUR_NPX_PATH` with the output from step 1, and `YOUR_NODE_BIN_DIR` with that path's parent directory:
 
 ```json
 {
   "mcpServers": {
     "tripitaka": {
-      "command": "/path/to/npx",
+      "command": "YOUR_NPX_PATH",
       "args": ["-y", "mcp-remote", "https://mcp.tripitaka-mcp.com/mcp"],
-      "env": { "PATH": "/path/to/node/bin:/usr/local/bin:/usr/bin:/bin" }
+      "env": { "PATH": "YOUR_NODE_BIN_DIR:/usr/local/bin:/usr/bin:/bin" }
     }
   }
 }
 ```
+
+**3.** Quit Claude Desktop completely (`⌘Q` on macOS, tray → Quit on Windows) and reopen. The 🔌 indicator in the bottom-left should show `tripitaka` with 10 tools available.
 
 The hosted server is rate-limited (10 req/10s + 60 req/min per IP) and offered for personal study, research, and dhamma practice — see [NOTICE.md](./NOTICE.md) before redistributing or using commercially.
 

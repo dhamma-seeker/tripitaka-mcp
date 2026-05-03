@@ -221,19 +221,24 @@ footer p { margin: 0.5rem 0; }
 <span class="endpoint">https://mcp.tripitaka-mcp.com/sse</span> &nbsp; (legacy SSE, for older clients)</p>
 
 <h3>Claude Desktop</h3>
-<p>Add to <code>claude_desktop_config.json</code>:</p>
+<p>You'll need <a href="https://nodejs.org/">Node.js</a> installed (any recent version). The config below routes Claude Desktop to the remote server through the <a href="https://www.npmjs.com/package/mcp-remote"><code>mcp-remote</code></a> bridge.</p>
+<p><strong>1.</strong> Find your absolute <code>npx</code> path — Claude Desktop doesn't read your shell profile, so generic <code>npx</code> won't resolve. Open a terminal and run:</p>
+<pre><code>which npx
+# example output: /Users/you/.nvm/versions/node/v22.x/bin/npx</code></pre>
+<p><strong>2.</strong> Open <code>claude_desktop_config.json</code> (<code>~/Library/Application Support/Claude/</code> on macOS, <code>%APPDATA%\Claude\</code> on Windows) and add the entry below. Replace <code>YOUR_NPX_PATH</code> with the output from step 1, and <code>YOUR_NODE_BIN_DIR</code> with its parent directory:</p>
 <pre><code>{
   "mcpServers": {
     "tripitaka": {
-      "command": "/path/to/npx",
+      "command": "YOUR_NPX_PATH",
       "args": ["-y", "mcp-remote", "https://mcp.tripitaka-mcp.com/mcp"],
       "env": {
-        "PATH": "/path/to/node/bin:/usr/local/bin:/usr/bin:/bin"
+        "PATH": "YOUR_NODE_BIN_DIR:/usr/local/bin:/usr/bin:/bin"
       }
     }
   }
 }</code></pre>
-<p>The repo's <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/claude_desktop_config.example.json">annotated example config</a> covers stdio (local install) and both remote transports. After saving, restart Claude Desktop.</p>
+<p><strong>3.</strong> Quit Claude Desktop completely (<kbd>⌘Q</kbd> / right-click tray → Quit), then reopen. The 🔌 indicator in the bottom-left should show <code>tripitaka</code> connected with 10 tools available.</p>
+<p>The repo's <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/claude_desktop_config.example.json">annotated example config</a> covers stdio (local install) and both remote transports.</p>
 
 <h3>Optional research skill</h3>
 <p>Drop <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/skills/tipitaka-research.md"><code>skills/tipitaka-research.md</code></a> into <code>~/.claude/skills/</code> to activate a multi-step research workflow (clarify → verify coverage → search → drill → cite) tailored to scriptural research.</p>
