@@ -6,7 +6,7 @@
 3. ลำดับ segment_id เรียงตามต้นฉบับ (first → last)
 
 ใช้:
-    .venv/bin/python scripts/test_full_sutta.py                     # default = staging
+    .venv/bin/python scripts/test_full_sutta.py                     # default = production
     MCP_URL=http://localhost:8080/mcp .venv/bin/python scripts/test_full_sutta.py
 
 Exit code 0 ถ้าผ่านทุกเคส, 1 ถ้ามี fail ใด ๆ — ใช้ใน CI ได้
@@ -19,7 +19,7 @@ import sys
 
 from fastmcp import Client
 
-DEFAULT_URL = "https://staging.tripitaka-mcp.com/mcp"
+DEFAULT_URL = "https://mcp.tripitaka-mcp.com/mcp"
 
 # (sutta_id, expected_min_segments) — min ใช้กัน drift เล็ก ๆ ไม่ fail
 # เลือกครอบ size range: เล็ก/ปกติ/ใหญ่/ใหญ่มาก/ที่สุด + compound IDs
