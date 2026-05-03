@@ -24,20 +24,29 @@ DEFAULT_URL = "https://staging.tripitaka-mcp.com/mcp"
 # (sutta_id, expected_min_segments) — min ใช้กัน drift เล็ก ๆ ไม่ fail
 # เลือกครอบ size range: เล็ก/ปกติ/ใหญ่/ใหญ่มาก/ที่สุด + compound IDs
 SUTTAS: list[tuple[str, int]] = [
-    # 4 main nikāyā
+    # --- Sutta Piṭaka (Phase A — already in production) ---
     ("sn56.11", 30),  # ธัมมจักกัปปวัตตนสูตร — สั้น
     ("mn62", 100),  # มหาราหุโลวาท — ปกติ
     ("mn1", 300),  # มูลปริยายสูตร — ใหญ่
     ("dn22", 400),  # มหาสติปัฏฐาน — ใหญ่มาก
     ("dn16", 800),  # มหาปรินิพพาน — ที่สุด (ยาวกว่า DN22)
-    # KN sub-books (Phase A coverage check)
+    # --- KN sub-books ---
     ("dhp1-20", 20),  # Dhammapada — bilara group verses เป็นช่วง
-    ("snp1.8", 5),  # Karaṇīyamettasutta — เมตตสูตร (ที่ Claude อ้างใน mettā workflow)
-    ("ud3.4", 3),  # Sāriputtasutta อุทาน — ยืนยันที่เพิ่งเทสต์
+    ("snp1.8", 5),  # Karaṇīyamettasutta — เมตตสูตร
+    ("ud3.4", 3),  # Sāriputtasutta อุทาน
     ("iti85", 2),  # Asubhānupassīsutta
     ("thag1.1", 1),  # Theragāthā 1.1
     ("ja1", 5),  # Jātaka 1 (Apaṇṇaka)
     ("mil3.1.1", 3),  # Milindapañha — paracanonical, 3-level id format
+    # --- Vinaya Piṭaka (Phase B — local-only until prod deploy) ---
+    ("pli-tv-bu-pm", 700),  # Bhikkhu Pātimokkha — digit-less id format
+    ("pli-tv-bu-vb-as1-7", 30),  # Bhikkhu Vibhaṅga Adhikaraṇasamatha (range form)
+    ("pli-tv-kd1", 3000),  # Mahāvagga ch. 1 — large Khandhaka section
+    ("pli-tv-pvr10", 300),  # Parivāra
+    # --- Abhidhamma Piṭaka (Phase C — local-only until prod deploy) ---
+    ("ds1.1", 80),  # Dhammasaṅgaṇī 1.1
+    ("dt2.1", 500),  # Dhātukathā 2.1
+    ("kv10.1", 25),  # Kathāvatthu 10.1
 ]
 
 
