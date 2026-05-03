@@ -47,6 +47,9 @@ SUTTAS: list[tuple[str, int]] = [
     ("ds1.1", 80),  # Dhammasaṅgaṇī 1.1
     ("dt2.1", 500),  # Dhātukathā 2.1
     ("kv10.1", 25),  # Kathāvatthu 10.1
+    ("vb1", 2000),  # Vibhaṅga ch.1 — flat single-level id (no .x sub)
+    ("ya1.1.1", 100),  # Yamaka — 3-level id format
+    ("patthana1.1", 100),  # Paṭṭhāna — 8-char prefix needs {2,10} regex
 ]
 
 
