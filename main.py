@@ -1456,6 +1456,37 @@ def structure_resource() -> str:
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
+@mcp.resource("tripitaka://sutta/{sutta_id}")
+def sutta_resource(sutta_id: str) -> str:
+    """ดึงเนื้อหาสูตรเป็น MCP resource (URI: tripitaka://sutta/{sutta_id}).
+
+    เป็น native MCP resource alternative ของ get_sutta tool — client บางตัว
+    (เช่น Claude Desktop) แสดง resources เป็น attachable context, AI สามารถ
+    pin เนื้อหาสูตรไว้ในการสนทนาได้โดยไม่ต้องเรียก tool ทุกครั้ง.
+
+    Returns: JSON object เหมือน get_sutta(sutta_id, language="all")
+    """
+    import json
+
+    result = get_sutta(sutta_id, language="all")
+    return json.dumps(result, ensure_ascii=False, indent=2)
+
+
+@mcp.resource("tripitaka://word/{word}")
+def word_resource(word: str) -> str:
+    """พจนานุกรมศัพท์บาลี (URI: tripitaka://word/{word}).
+
+    เป็น MCP resource สำหรับ pin พจนานุกรมเข้าบทสนทนา — เหมาะเมื่อกำลัง
+    ศึกษาคำเฉพาะแล้วอยากให้ AI อ้างนิยามได้ตลอดโดยไม่ต้องเรียก tool ซ้ำ.
+
+    Returns: JSON object เหมือน get_word_definition(word, language="all")
+    """
+    import json
+
+    result = get_word_definition(word, language="all")
+    return json.dumps(result, ensure_ascii=False, indent=2)
+
+
 # =============================================================================
 # Entry Point
 # =============================================================================
