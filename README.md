@@ -1,5 +1,11 @@
 # 🛕 Tripitaka MCP Server
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![MCP Spec](https://img.shields.io/badge/MCP-2025--03--26-8b6914)](https://spec.modelcontextprotocol.io/)
+[![Coverage](https://img.shields.io/badge/Tipi%E1%B9%ADaka-%7E444K%20segments-8b6914)](https://tripitaka-mcp.com/)
+[![Hosted](https://img.shields.io/badge/hosted-tripitaka--mcp.com-8b6914)](https://tripitaka-mcp.com/)
+[![Dhamma Dāna](https://img.shields.io/badge/offered%20as-Dhamma%20D%C4%81na-8b6914?labelColor=fafaf7&color=8b6914)](./NOTICE.md)
+
 An MCP Server for searching and citing content from the Pāli Tipiṭaka.
 Gives AI agents (such as Claude or Cursor) the ability to look up suttas, quote the teachings, and compare translations across languages.
 
