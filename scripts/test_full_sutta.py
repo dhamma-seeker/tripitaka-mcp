@@ -72,17 +72,20 @@ async def check(client: Client, sutta_id: str, min_segs: int) -> tuple[bool, str
     if actual < min_segs:
         return False, f"too few segments: {actual} < expected {min_segs}"
 
-    # spot-check segments are grouped under this sutta. Range IDs (e.g.
-    # "dhp1-20") have segments with individual verse ids (dhp1:..., dhp2:...)
-    # not the range prefix, so accept either exact prefix or alpha-prefix match.
+    # spot-check segments are grouped under this sutta. Range IDs (ending
+    # in `<digit>+-<digit>+` like dhp1-20 or pli-tv-bu-vb-as1-7) have
+    # segments with individual verse-level ids, so we match on the prefix
+    # before the trailing range. Non-range ids must match exactly.
     if segments:
+        import re
         first_id = segments[0]["segment_id"]
         last_id = segments[-1]["segment_id"]
-        is_range = "-" in sutta_id and any(c.isdigit() for c in sutta_id)
+        is_range = bool(re.search(r"\d+-\d+$", sutta_id))
         if is_range:
-            alpha_prefix = "".join(c for c in sutta_id if c.isalpha())
-            if not first_id.startswith(alpha_prefix):
-                return False, f"first id {first_id!r} alpha mismatch with {sutta_id}"
+            # strip trailing "<digit>+-<digit>+" → e.g. "pli-tv-bu-vb-as1-7" → "pli-tv-bu-vb-as"
+            range_prefix = re.sub(r"\d+-\d+$", "", sutta_id)
+            if not first_id.startswith(range_prefix):
+                return False, f"first id {first_id!r} does not start with range prefix {range_prefix!r}"
         else:
             if not first_id.startswith(f"{sutta_id}:"):
                 return False, f"first id {first_id!r} not in sutta {sutta_id}"
