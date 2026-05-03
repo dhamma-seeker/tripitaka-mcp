@@ -48,15 +48,19 @@
     }
 
     # Redirect /mcp และ /sse บน apex → mcp.* (ผู้ใช้ที่ paste URL ผิด)
+    # ต้องอยู่ใน handle block เพื่อ short-circuit ก่อน static file_server fallback
     @mcp_misroute path /mcp /mcp/* /sse /messages /messages/*
     handle @mcp_misroute {
         redir https://{$TRIPITAKA_DOMAIN}{uri} 301
     }
 
-    # Static landing page
-    root * /var/www/site
-    try_files {path} {path}/ /index.html
-    file_server
+    # Static landing page (catch-all — handle block ทำให้ exclusive กับ
+    # @mcp_misroute ด้านบน ไม่งั้น file_server จะ serve index.html ทับ redirect)
+    handle {
+        root * /var/www/site
+        try_files {path} {path}/ /index.html
+        file_server
+    }
 }
 
 {$TRIPITAKA_DOMAIN} {
