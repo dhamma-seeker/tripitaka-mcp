@@ -9,12 +9,18 @@ Gives AI agents (such as Claude or Cursor) the ability to look up suttas, quote 
 ## ✨ Features
 
 - ⚖️ **Hybrid Search** — highest precision by combining keyword and semantic search through Reciprocal Rank Fusion (RRF). Ready to use.
-- 🔍 **Keyword Search** — keyword lookup across three languages (Pāli, Thai, English) with trigram fuzzy matching and cross-language alignment.
-- 🧠 **Semantic Search** — meaning-based search that captures the intent of a passage via vector similarity (pgvector).
-- 📖 **Translation Comparison** — view and compare renderings across different editions, aligned line-by-line at the segment level.
+- 🔍 **Keyword Search** — trigram fuzzy matching with cross-language alignment.
+- 🧠 **Semantic Search** — meaning-based search via vector similarity (pgvector).
+- 📖 **Translation Comparison** — view and compare renderings across editions, aligned at the segment level.
 - 📚 **Dictionary Bridge** — built-in dictionary of 20,000+ entries (P. A. Payutto, PTS, DPPN).
 - 📖 **Get Sutta & Reference** — fetch sutta content by ID (e.g. `mn1`) and generate properly formatted academic citations.
-- 📮 **Postman Ready** — ships with a Postman collection for testing the API in SSE mode so you can wire it up to your dev workflow immediately.
+- 🔬 **Pāli word analyzer** — strip inflectional suffixes to find the root form when dictionary lookup misses (`bhikkhūnaṁ` → `bhikkhu`).
+- 🔗 **Cross-reference URLs in every response** — clickable deep links to SuttaCentral (Pāli + Sujato English + segment anchor) plus 84000.org volume routing for Thai users. AI clients can surface these so users verify the source in one click.
+- 📡 **Dual transport** — both legacy SSE (`/sse`) and canonical Streamable HTTP (`/mcp`, MCP spec 2025-03-26).
+- 📦 **MCP Resources** — `tripitaka://structure`, `tripitaka://sutta/{id}`, `tripitaka://word/{w}` for clients that pin context as resources.
+- 📄 **Static topic pages** at `/topics/*` — curated reference content (places, canon overview) served as plain markdown so AI clients can fetch and cite, and search engines can index.
+- 🤖 **Claude skill** — `skills/tipitaka-research.md` ships a ready-to-install workflow file that activates a multi-step research pattern (clarify → verify coverage → search → drill in → cite) on Claude Desktop / Claude Code.
+- 📮 **Postman Ready** — ships with a Postman collection for testing the API.
 
 ## 🏗️ Tech Stack
 
@@ -155,14 +161,14 @@ Add to `claude_desktop_config.json`:
 
 ### Remote (self-hosted on a server)
 
-If you've deployed the MCP server to a VPS, use [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) to bridge SSE → stdio:
+If you've deployed the MCP server to a VPS, use [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) to bridge it into Claude Desktop. The server exposes both transports — pick `/mcp` for new clients, `/sse` for legacy:
 
 ```json
 {
   "mcpServers": {
     "tripitaka-remote": {
       "command": "/Users/YOU/.nvm/versions/node/v22.x/bin/npx",
-      "args": ["-y", "mcp-remote", "https://mcp.example.org/sse", "--transport", "sse-only"],
+      "args": ["-y", "mcp-remote", "https://mcp.example.org/mcp"],
       "env": {
         "PATH": "/Users/YOU/.nvm/versions/node/v22.x/bin:/usr/local/bin:/usr/bin:/bin"
       }
@@ -171,20 +177,34 @@ If you've deployed the MCP server to a VPS, use [`mcp-remote`](https://www.npmjs
 }
 ```
 
-A fully annotated example is in [`claude_desktop_config.example.json`](./claude_desktop_config.example.json).
+To force the legacy SSE transport instead, change the URL to `.../sse` and add `"--transport", "sse-only"` to `args`. A fully annotated example with both transports is in [`claude_desktop_config.example.json`](./claude_desktop_config.example.json).
 
-## 📦 MCP Tools
+### Optional: install the research skill
+
+For Claude Desktop / Claude Code users, copying the bundled skill activates the multi-step research workflow automatically:
+
+```bash
+mkdir -p ~/.claude/skills
+cp skills/tipitaka-research.md ~/.claude/skills/
+# Restart Claude Desktop (Cmd+Q then reopen) to pick up the skill
+```
+
+Details in [`skills/README.md`](./skills/README.md).
+
+## 📦 MCP Tools (10 total)
 
 | Tool | Description |
 |---|---|
-| `search_hybrid` | **(Recommended)** Combined search using RRF for maximum precision. |
-| `search_by_keyword` | Keyword search (trigram fuzzy match). |
-| `search_semantic` | Semantic search (vector similarity) — ⚠️ best with **Pāli / English** queries (see note below). |
-| `get_sutta` | Fetch sutta content by ID along with all available translations. |
-| `compare_translations`| Compare renderings across editions at the segment level. |
-| `get_word_definition` | Cross-language dictionary lookup (PTS, DPPN, and the Payutto dictionary). |
-| `list_structure` | Display the structure of the Tipiṭaka canon. |
-| `get_reference` | Generate a properly formatted academic citation. |
+| `search_hybrid` | **(Recommended for concept search)** Combined keyword + semantic via RRF — best when looking for "discourses about X". |
+| `search_by_keyword` | Trigram keyword search — best for exact word lookups (`appamāda`, `ānāpānassati`). |
+| `search_semantic` | Pure vector similarity — usually you want `search_hybrid` instead. |
+| `get_sutta` | Fetch a full sutta by ID (e.g. `mn1`, `dn22`, `dhp1-20`) — returns every segment with cross-reference URLs. |
+| `get_reference` | Generate a properly formatted academic citation with all source URLs. |
+| `compare_translations` | Compare renderings of a single segment across editions. |
+| `list_structure` | Show the Tipiṭaka structure with segment-count coverage per nikāya. |
+| `list_editions` | List Thai/English translation editions currently loaded. |
+| `get_word_definition` | Pāli dictionary lookup (PTS, DPPN, and the Payutto Thai dictionary). |
+| `parse_pali_word` | Strip Pāli suffixes to recover the root form when `get_word_definition` misses (`bhikkhūnaṁ` → `bhikkhu`). |
 
 ### ⚠️ Note on `search_semantic`
 
@@ -201,22 +221,41 @@ Upgrading to a Pāli-trained embedding model (e.g. bge-m3) plus embedding the Th
 
 ```text
 tripitaka-mcp/
-├── main.py                 # Main MCP Server (all tools)
+├── main.py                       # Main MCP Server (10 tools + 3 resources)
 ├── db/
-│   ├── connection.py       # Database connection pool
-│   └── schema.py           # Database schema (supports translation table)
+│   ├── connection.py             # Database connection pool
+│   └── schema.py                 # Schema (supports translation table)
 ├── embedding/
-│   └── model.py            # SentenceTransformer wrapper
+│   └── model.py                  # SentenceTransformer wrapper
 ├── scripts/
-│   ├── seed_metadata.py    # Seed pitaka/nikāya metadata
-│   ├── data_loader.py      # Load Pāli/English from SuttaCentral
-│   ├── load_thai_cc0.py    # Sentence-by-sentence Thai translation loader
-│   ├── load_dictionary.py  # Load dictionary data into the system
-│   ├── scrape_payutto.py   # Web scraper for the Payutto dictionary
-│   └── generate_embeddings.py  # Generate vector embeddings
-├── data/
-│   └── payutto_dict.json   # Thai dictionary dataset scraped from the web
-├── docker-compose.yml
+│   ├── install.sh                # One-shot installer (HF dump → DB)
+│   ├── deploy.sh                 # Deploy / restart on a VPS
+│   ├── backup.sh                 # pg_dump → S3-compatible store
+│   ├── seed_metadata.py          # Seed pitaka/nikāya metadata
+│   ├── data_loader.py            # Load Pāli/English from SuttaCentral
+│   ├── load_vinaya.py            # Vinaya loader (Vibhaṅga done; rest Phase B)
+│   ├── load_thai_cc0.py          # Thai translation loader
+│   ├── load_dictionary.py        # Load dictionary data
+│   ├── scrape_payutto.py         # Web scraper for the Payutto dictionary
+│   ├── generate_embeddings.py    # Generate vector embeddings
+│   └── test_full_sutta.py        # Smoke test (12 size-tiered suttas)
+├── topics/                       # Static markdown pages served at /topics/*
+│   ├── README.md                 # Index of available topic pages
+│   ├── tipitaka-overview.md      # Canon structure + coverage
+│   └── places.md                 # Places mentioned in the suttas
+├── skills/                       # Portable Claude skills for AI clients
+│   ├── README.md                 # How to install
+│   └── tipitaka-research.md      # Multi-step research workflow
+├── infra/                        # Reverse proxy + deploy config
+│   ├── Caddyfile                 # Caddy: TLS, rate limit, /topics, /sse, /mcp
+│   ├── Dockerfile.caddy          # Caddy + caddy-ratelimit plugin
+│   ├── cloud-init.yml            # VPS bootstrap
+│   └── *.tf                      # Terraform (provider-agnostic)
+├── docs/
+│   └── CAPACITY.md               # Capacity planning per VPS spec
+├── claude_desktop_config.example.json
+├── docker-compose.yml            # Dev (single mcp-server)
+├── docker-compose.prod.yml       # Prod (db + 2 mcp-server + caddy)
 ├── Dockerfile
 └── requirements.txt
 ```

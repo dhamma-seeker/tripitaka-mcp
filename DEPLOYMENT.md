@@ -88,9 +88,9 @@ All checks should pass:
 
 ### 5. Test real MCP tools
 
-Claude Desktop currently **does not support remote SSE directly** — you need [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) to bridge SSE → stdio.
+Claude Desktop bridges remote MCP servers through [`mcp-remote`](https://www.npmjs.com/package/mcp-remote). The server exposes both transports — pick whichever your client prefers.
 
-Add to `claude_desktop_config.json`:
+Add to `claude_desktop_config.json` (Streamable HTTP, recommended):
 
 ```json
 {
@@ -100,9 +100,7 @@ Add to `claude_desktop_config.json`:
       "args": [
         "-y",
         "mcp-remote",
-        "https://mcp.example.org/sse",
-        "--transport",
-        "sse-only"
+        "https://mcp.example.org/mcp"
       ],
       "env": {
         "PATH": "/Users/YOU/.nvm/versions/node/v22.x/bin:/usr/local/bin:/usr/bin:/bin"
@@ -111,6 +109,8 @@ Add to `claude_desktop_config.json`:
   }
 }
 ```
+
+To force the legacy SSE transport instead, change the URL to `.../sse` and add `"--transport", "sse-only"` to `args`. See [`claude_desktop_config.example.json`](./claude_desktop_config.example.json) for both side by side.
 
 **Things to know:**
 

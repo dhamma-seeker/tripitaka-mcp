@@ -12,8 +12,21 @@
       }
     },
 
-    "_comment_remote": "--- Remote SSE — ต่อไป server ที่ self-host บน VPS ผ่าน mcp-remote bridge ---",
+    "_comment_remote_http": "--- Remote Streamable HTTP (recommended — MCP spec 2025-03-26) — ใช้กับ self-hosted server ---",
     "tripitaka-remote": {
+      "command": "/Users/YOU/.nvm/versions/node/v22.x/bin/npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.example.org/mcp"
+      ],
+      "env": {
+        "PATH": "/Users/YOU/.nvm/versions/node/v22.x/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    },
+
+    "_comment_remote_sse": "--- Remote SSE (legacy, deprecated by spec but still supported for old clients) ---",
+    "tripitaka-remote-sse": {
       "command": "/Users/YOU/.nvm/versions/node/v22.x/bin/npx",
       "args": [
         "-y",
@@ -29,10 +42,12 @@
   },
 
   "_notes": [
-    "1. Claude Desktop ยังไม่รองรับ remote SSE โดยตรง — ต้องใช้ mcp-remote bridge SSE → stdio",
-    "2. command ต้องเป็น absolute path (Claude Desktop ไม่อ่าน shell PATH) — หา path: `which npx`, `which python`",
-    "3. env.PATH จำเป็นสำหรับ nvm user: ไม่งั้น npx จะเรียก node เก่าที่ไม่มี `node:path` module",
-    "4. --transport sse-only จำเป็น: mcp-remote default พยายาม Streamable HTTP ก่อน ซึ่ง Tripitaka MCP ไม่รองรับ → 502",
-    "5. ลบ _comment / _notes ออกก่อนใช้จริง (JSON parser ของ Claude ไม่สนใจ field ที่ไม่รู้จัก แต่เอาออกเพื่อความสะอาด)"
+    "1. Tripitaka MCP รองรับทั้ง Streamable HTTP (/mcp, canonical) และ SSE (/sse, legacy backward-compat) — เลือกตาม client ที่ใช้",
+    "2. mcp-remote default จะลอง Streamable HTTP ก่อน — ถ้า server รองรับก็ใช้ตัวนั้น (เร็วกว่า, MCP spec ใหม่กว่า)",
+    "3. ถ้าต้องการ pin ใช้ SSE legacy เท่านั้น: เพิ่ม args --transport sse-only และเปลี่ยน URL เป็น .../sse",
+    "4. command ต้องเป็น absolute path (Claude Desktop ไม่อ่าน shell PATH) — หา path: `which npx`, `which python`",
+    "5. env.PATH จำเป็นสำหรับ nvm user: ไม่งั้น npx จะเรียก node เก่าที่ไม่มี `node:path` module",
+    "6. ลบ _comment / _notes ออกก่อนใช้จริง (JSON parser ของ Claude ไม่สนใจ field ที่ไม่รู้จัก แต่เอาออกเพื่อความสะอาด)",
+    "7. ปลั๊ก-อิน Claude skill — copy `skills/tipitaka-research.md` ไป `~/.claude/skills/` เพื่อ auto-activate workflow ที่จัดมาให้ (ดู skills/README.md)"
   ]
 }
