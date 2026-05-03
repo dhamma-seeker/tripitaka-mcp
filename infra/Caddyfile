@@ -61,10 +61,11 @@
 
     # --- topics: static markdown pages (curated reference content) ----------
     # serve markdown ดิบ — modern AI clients render markdown ใน chat ได้, search
-    # engines index content จริง (ไม่ใช่แค่ homepage). file_server browse ปิดไว้
-    # เพื่อไม่ให้ user list directory tree
-    @topics path /topics /topics/*
-    handle @topics {
+    # engines index content จริง (ไม่ใช่แค่ homepage).
+    # ใช้ handle_path เพื่อ strip /topics prefix ก่อน file_server หา file ใน
+    # /var/www/topics (ไม่งั้น Caddy หา /var/www/topics/topics/*.md ซึ่งไม่มี
+    # → fall ไป /README.md → ทุก path ตอบเหมือนกัน)
+    handle_path /topics* {
         root * /var/www/topics
         # Serve .md as text/plain (browsers render readable; AI clients fetch ok)
         @markdown path *.md
@@ -73,6 +74,7 @@
         header Access-Control-Allow-Origin "*"
         # cache 1 hour — content เปลี่ยนไม่บ่อย
         header Cache-Control "public, max-age=3600"
+        # ถ้า request ลงท้ายด้วย / หรือ empty → ส่ง README.md
         try_files {path} {path}.md {path}/README.md /README.md
         file_server
     }
