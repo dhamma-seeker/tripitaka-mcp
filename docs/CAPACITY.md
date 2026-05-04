@@ -4,7 +4,8 @@ Estimates of how much load each VPS spec can handle,
 so self-hosters can plan budget and scale to the right size.
 
 > Numbers come from real-world testing on a VPS with **2 vCPU / 4 GB RAM** (Asia region, SSD)
-> during the staging phase — embedding model = `paraphrase-multilingual-MiniLM-L12-v2` (384 dim)
+> during pre-launch load testing — embedding model = `paraphrase-multilingual-MiniLM-L12-v2` (384 dim)
+> Data volume tested: ~444K segments (full Tipiṭaka — Sutta + Vinaya + Abhidhamma).
 
 ---
 
@@ -103,12 +104,15 @@ Recommended alert thresholds: CPU > 80% / Memory > 85% / Disk > 80% (5-minute wi
 ### Synthetic load test
 
 ```bash
-# From your laptop — fire 10 concurrent queries
+# From your laptop — fire 10 concurrent connection probes
+# (use /health since /mcp is POST-only and /sse holds connections open)
 for i in {1..10}; do
-  curl -sS https://mcp.example.org/sse > /dev/null &
+  curl -sS https://mcp.example.org/health > /dev/null &
 done
 wait
 ```
+
+For a more realistic load (actual tool calls), use `scripts/test_full_sutta.py` against your endpoint — it makes 22 `get_sutta` calls covering all three piṭakas, exercising both DB and embedding-model paths.
 
 Watch the CPU spike during this in your provider's dashboard — if it stays < 80% the current spec still has headroom.
 

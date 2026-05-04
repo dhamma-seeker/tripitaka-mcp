@@ -1,6 +1,6 @@
 # 🚢 Tripitaka MCP — Deployment Runbook
 
-Guide for deploying to staging → production on any VPS that runs Docker
+Guide for deploying your own instance on any VPS that runs Docker
 (Caddy reverse proxy + readonly DB + rate limit + Cloudflare).
 
 > This file is a **generic runbook** for anyone forking to deploy their own instance.
@@ -10,7 +10,7 @@ Guide for deploying to staging → production on any VPS that runs Docker
 
 ---
 
-## 📋 Gate 1 — Staging Deploy Checklist
+## 📋 Gate 1 — Initial Deploy Checklist
 
 ### 0. Prerequisites (on your laptop)
 
@@ -84,18 +84,19 @@ All checks should pass:
 - ✓ security headers (HSTS, X-Content-Type-Options, etc.)
 - ✓ Server header hidden
 - ✓ rate limit works (returns 429 on burst)
-- ✓ /sse → text/event-stream
+- ✓ /mcp → POST endpoint (Streamable HTTP, MCP spec 2025-03-26)
+- ✓ /sse → text/event-stream (legacy transport)
 
 ### 5. Test real MCP tools
 
-Claude Desktop bridges remote MCP servers through [`mcp-remote`](https://www.npmjs.com/package/mcp-remote). The server exposes both transports — pick whichever your client prefers.
+Claude Desktop bridges remote MCP servers through [`mcp-remote`](https://www.npmjs.com/package/mcp-remote). The server exposes both transports — `mcp-remote` will try Streamable HTTP first and fall back to SSE if needed.
 
-Add to `claude_desktop_config.json` (Streamable HTTP, recommended):
+Add to `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
-    "tripitaka-staging": {
+    "tripitaka": {
       "command": "/Users/YOU/.nvm/versions/node/v22.x/bin/npx",
       "args": [
         "-y",
@@ -110,20 +111,20 @@ Add to `claude_desktop_config.json` (Streamable HTTP, recommended):
 }
 ```
 
-To force the legacy SSE transport instead, change the URL to `.../sse` and add `"--transport", "sse-only"` to `args`. See [`claude_desktop_config.example.json`](./claude_desktop_config.example.json) for both side by side.
+To pin the legacy SSE transport instead, change the URL to `.../sse` and add `"--transport", "sse-only"` to `args`. See [`claude_desktop_config.example.json`](./claude_desktop_config.example.json) for both side by side.
 
 **Things to know:**
 
 - `command` must be the **full path** to `npx` (Claude Desktop doesn't see your shell's `PATH`) — find it with `which npx`
 - `env.PATH` is required when using **nvm**: otherwise `node` may resolve to an older version that lacks the `node:path` module
-- `--transport sse-only` forces SSE — without it, mcp-remote tries Streamable HTTP first and gets 502
+- First connection takes 5–10 seconds while `npx` downloads `mcp-remote` on demand
 - Full annotated example: [`claude_desktop_config.example.json`](./claude_desktop_config.example.json)
 
 Restart Claude and try:
 
 - `search_hybrid("metta")` — should return results
 - `get_word_definition("sati")` — should include attribution
-- `get_sutta("mn1")` — should return content
+- `get_sutta("dn22")` — should return ~454 segments of the Mahāsatipaṭṭhāna Sutta
 
 ---
 
@@ -179,6 +180,12 @@ docker compose -f docker-compose.prod.yml restart
 docker compose -f docker-compose.prod.yml restart mcp-server
 ```
 
+> **After editing `.env`**, prefer `up -d --force-recreate` over `restart` — plain `restart` may not reload environment variables from `.env` reliably (compose env-cache behavior). Pattern proven during a password rotation: `restart` showed containers up but they were still using the previous `DATABASE_URL`.
+>
+> ```bash
+> docker compose -f docker-compose.prod.yml up -d --force-recreate mcp-server mcp-server-http
+> ```
+
 ### Update (pull latest code)
 
 ```bash
@@ -226,14 +233,15 @@ docker logs tripitaka-caddy 2>&1 | jq -r '.request.remote_ip' | sort | uniq -c |
 
 ## 🩺 Troubleshooting
 
-### `/sse` returns 502 from Caddy
+### `/mcp` or `/sse` returns 502 from Caddy
 
 Common causes:
 
-1. **mcp-server bound to `127.0.0.1`** — `.env` must set `MCP_HOST=0.0.0.0`, otherwise the Caddy container can't connect
+1. **mcp-server bound to `127.0.0.1`** — the running container's `.env` must set `MCP_HOST=0.0.0.0`, otherwise Caddy (in a sibling container) can't connect
    - Check: `docker logs tripitaka-mcp-server | grep 'Uvicorn running'` — should show `http://0.0.0.0:8080`
-2. **`MCP_TRANSPORT=stdio`** — must be `sse` (otherwise there's no HTTP port open at all)
-3. **Port mismatch** — Caddy proxies to `:8080` but the server listens on `:8000` (the default when `MCP_PORT` isn't set)
+2. **Wrong `MCP_TRANSPORT`** — for the HTTP/SSE container, must be one of `streamable-http` or `sse` (`stdio` gives no HTTP listener at all). The prod stack runs both: `mcp-server` with `MCP_TRANSPORT=sse` for `/sse`, `mcp-server-http` with `MCP_TRANSPORT=streamable-http` for `/mcp`.
+3. **Port mismatch** — Caddy proxies to `:8080` but the server listens on `:8000` (the default when `MCP_PORT` isn't set in the container env)
+4. **Auth failure to DB** — server starts on port but tools fail. Check `docker logs tripitaka-mcp-server | grep -iE "fatal|auth"` — likely `password authentication failed for user "tripitaka_ro"` after a stale `.env` reload (see Restart note above; use `--force-recreate`)
 
 ### SSH refused (Connection refused) after previously working
 
@@ -248,8 +256,11 @@ Fix: set the full `PATH` in `env` to point at node ≥ 18, and/or run `nvm alias
 
 ### Claude Desktop: `Streamable HTTP error: Non-200 status code (502)`
 
-`mcp-remote` tries Streamable HTTP first, but our server only offers SSE.
-Fix: add `--transport sse-only` to args.
+`mcp-remote` connects to a URL that's not reachable. Possibilities:
+
+- DNS hasn't propagated yet — `dig <your-domain>` from your laptop should resolve to the proxy/origin IP
+- Cloudflare proxy is pointing at the wrong origin or origin is down — check `/health` directly
+- Origin is on the wrong transport — make sure `mcp-server-http` (Streamable HTTP) is up if your URL ends in `/mcp`, or `mcp-server` (SSE) if it ends in `/sse`
 
 ---
 
@@ -258,5 +269,5 @@ Fix: add `--transport sse-only` to args.
 1. **Resources**: 4 GB RAM recommended (with 2 GB swap as a safety net — already set by cloud-init).
    For capacity estimates and scaling guidance: [docs/CAPACITY.md](./docs/CAPACITY.md)
 2. **Never commit `.env`**: `chmod 600` and keep a backup in a password manager
-3. **Dump file**: ~500 MB–1 GB — remove after restoring (`rm tripitaka_production_data.dump`) to save disk
-4. **Let's Encrypt rate limit**: repeated failed deploys can get you banned for a week — test with `--staging` first if unsure
+3. **Dump file**: ~800 MB for the current full Tipiṭaka data (Sutta + Vinaya + Abhidhamma + embeddings, ~444K segments) — remove after restoring (`rm tripitaka_production_data.dump`) to save disk
+4. **Let's Encrypt rate limit**: repeated failed deploys can get you banned for a week — test with `--staging` first if unsure (the `--staging` flag here refers to Let's Encrypt's staging CA, not a separate environment)

@@ -36,7 +36,7 @@ This skill packages the proven multi-step workflow for researching Buddhist scri
 The Pāli Canon has 5,791+ suttas across DN/MN/SN/AN/KN. "Find every X" is rarely answerable in one response. Offer the user a tiered choice: a curated list of the major canonical loci (~30-40 items) vs an exhaustive multi-batch search.
 
 ### Step 1 — Verify database coverage before promising
-Before compiling a list, run a small batch (3-5) of `search_by_keyword` calls on the most expected Pāli terms to confirm the data is there. This catches silent gaps (Vinaya/Abhidhamma are partial — only Vibhaṅga and Kathāvatthu are loaded).
+Before compiling a list, run a small batch (3-5) of `search_by_keyword` calls on the most expected Pāli terms to confirm the data is there. As of v1.1.0 all three piṭakas are at parity with SuttaCentral bilara-data, so canonical content should be present — but this batch also catches surface issues like inflection mismatches (the corpus indexes Pāli forms; "ānāpāna" matches differently from "ānāpānassati", etc.).
 
 ### Step 2 — Discover with `search_hybrid`, then expand with `search_by_keyword`
 - Hybrid for the concept landscape (`limit=15-20`)
@@ -74,14 +74,14 @@ When the user asks for a compiled artifact ("list all places", "all suttas about
    - People → by role (Buddha / chief disciples / arahants / lay disciples / kings / brahmins / opponents)
    - Topics → locus classicus + parallel suttas + study order
 4. **Include for each entry**: Pāli name, Thai name (if user is Thai-speaking), brief description, 1-2 sutta references with clickable SC URLs
-5. **End with a "known gaps" section** — Jātaka 547 stories, Apadāna, Vinaya, Atthakathā are typically partial or external
+5. **End with a "known gaps" section** — distinguish what's in this server (full Tipiṭaka at SC parity as of v1.1.0 — Sutta + Vinaya + Abhidhamma) from what's external (Atthakathā commentaries, Mahāvaṃsa chronicles, modern scholarship). The Jātaka tales beyond #1 Apaṇṇaka are sparse in bilara-data; the Apadāna is also limited — note these specifically when relevant
 
 ## Anti-patterns to avoid
 
 - ❌ Reciting sutta content from memory without calling `get_sutta` first
 - ❌ Claiming a sutta exists without a verifiable URL
 - ❌ Translating Pāli loosely when the corpus has Bhikkhu Sujato's published translation — use `text_english` from the tool
-- ❌ Promising "every X" — the corpus is too large and the index is partial; offer tiered scope instead
+- ❌ Promising "every X" — the corpus is full Tipiṭaka but ~444K segments is still too large to enumerate exhaustively in one chat; offer tiered scope (curated highlights vs full sweep) instead
 - ❌ Surfacing URLs as plain text — always use markdown `[text](url)` so the client can render them clickable
 - ❌ Hiding limits to look impressive — being explicit about what isn't in the database builds more trust than a polished-but-uncertain answer
 

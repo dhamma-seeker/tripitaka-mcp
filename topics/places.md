@@ -1,8 +1,6 @@
 # Places in the Pāli Canon (Tipiṭaka)
 
-> **Status:** initial skeleton. The full curated list (~100 places organised by Mahājanapada, sacred sites, mountains/rivers, and cosmological realms) was compiled in a Claude Desktop session and is being merged into this page. Until then, use the MCP server tools or the [tipitaka-research](../skills/tipitaka-research.md) skill to compile a fresh list — the search workflow is well documented and reproduces consistent results.
->
-> Once finalised, this page will replace the need to recompile the list every conversation.
+> Geography of the suttas — major loci that recur across the canon. For a comprehensive prosopography of single-mention place names, cross-reference with [Malalasekera's *Dictionary of Pali Proper Names*](https://www.palikanon.com/english/pali_names/dic_idx.html) (DPPN). To compile something custom, use the MCP server tools and the [tipitaka-research](../skills/tipitaka-research.md) skill — that workflow reproduces consistent results.
 
 ## Scope and disclaimers
 
