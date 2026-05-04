@@ -12,7 +12,7 @@ The MCP server at `/mcp` is the dynamic interface; the pages here are the **dist
 | [getting-started.md](getting-started.md) | How to connect, choose the right tool, prompt patterns, anti-patterns | ready |
 | [places.md](places.md) | Locations mentioned across the suttas — by Mahājanapada, sacred sites, cosmological realms | ready (~main loci covered) |
 | people.md | (planned) Chief disciples, lay supporters, kings, opponents — by role | tbd |
-| themes.md | (planned) Locus classicus + parallel suttas for major teachings (4 Noble Truths, Eightfold Path, Dependent Origination, Mindfulness of Breathing) | tbd |
+| [themes.md](themes.md) | Locus classicus + parallel suttas for 10 foundational teachings — 4 Noble Truths, 3 Marks, Dependent Origination, 5 Aggregates, Eightfold Path, Satipaṭṭhāna, Ānāpānassati, Mettā, Hindrances, Awakening Factors | ready |
 
 ## Why these exist
 
