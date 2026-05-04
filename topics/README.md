@@ -9,9 +9,10 @@ The MCP server at `/mcp` is the dynamic interface; the pages here are the **dist
 | Page | What it covers | Status |
 | --- | --- | --- |
 | [tipitaka-overview.md](tipitaka-overview.md) | Structure of the Pāli Canon — pitakas, nikāyas, sub-books, segment counts | ready |
-| [places.md](places.md) | Locations mentioned across the suttas — by Mahājanapada, sacred sites, cosmological realms | wip — initial skeleton |
-| getting-started.md | (planned) How to call the MCP server, choosing tools, prompt patterns | tbd |
+| [getting-started.md](getting-started.md) | How to connect, choose the right tool, prompt patterns, anti-patterns | ready |
+| [places.md](places.md) | Locations mentioned across the suttas — by Mahājanapada, sacred sites, cosmological realms | ready (~main loci covered) |
 | people.md | (planned) Chief disciples, lay supporters, kings, opponents — by role | tbd |
+| themes.md | (planned) Locus classicus + parallel suttas for major teachings (4 Noble Truths, Eightfold Path, Dependent Origination, Mindfulness of Breathing) | tbd |
 
 ## Why these exist
 
