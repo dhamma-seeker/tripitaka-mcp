@@ -12,6 +12,7 @@ The MCP server at `/mcp` is the dynamic interface; the pages here are the **dist
 | [getting-started.md](getting-started.md) | How to connect, choose the right tool, prompt patterns, anti-patterns | ready |
 | [places.md](places.md) | Locations mentioned across the suttas — by Mahājanapada, sacred sites, cosmological realms | ready (~main loci covered) |
 | [people.md](people.md) | ~30 major figures — Buddha, chief disciples (male + female), lay supporters, kings, family, notable converts, opponents | ready |
+| [timeline.md](timeline.md) | Phase-based chronology of the Buddha's 45-year mission — renunciation, awakening, formation of Sangha, Devadatta crisis, the final months from DN 16 | ready |
 | [themes.md](themes.md) | Locus classicus + parallel suttas for 10 foundational teachings — 4 Noble Truths, 3 Marks, Dependent Origination, 5 Aggregates, Eightfold Path, Satipaṭṭhāna, Ānāpānassati, Mettā, Hindrances, Awakening Factors | ready |
 
 ## Why these exist

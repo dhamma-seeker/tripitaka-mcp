@@ -23,6 +23,7 @@
 - [Places in the canon](https://mcp.tripitaka-mcp.com/topics/places.md): Geography of the suttas — Mahājanapada kingdoms, the Four Holy Sites, mountains and rivers, cosmological realms.
 - [Themes](https://mcp.tripitaka-mcp.com/topics/themes.md): Locus classicus + parallel suttas for 10 foundational teachings (Four Noble Truths, Eightfold Path, Dependent Origination, Five Aggregates, Satipaṭṭhāna, Ānāpānassati, Mettā, Hindrances, Awakening Factors, Three Marks).
 - [People](https://mcp.tripitaka-mcp.com/topics/people.md): ~30 major figures organized by role — Buddha, chief monastic disciples, foremost bhikkhunīs, lay supporters, kings, family, notable converts, opponents.
+- [Timeline](https://mcp.tripitaka-mcp.com/topics/timeline.md): Phase-based chronology of the Buddha's 45-year mission — renunciation, awakening, early Sangha formation, mid-career establishment, Devadatta crisis, and the final months from DN 16. Anchored on canonical events; commentarial chronology flagged separately.
 
 ## Source
 
