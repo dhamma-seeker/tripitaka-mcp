@@ -25,7 +25,7 @@ Gives AI agents (such as Claude or Cursor) the ability to look up suttas, quote 
 - 🔗 **Cross-reference URLs in every response** — clickable deep links to SuttaCentral (Pāli + Sujato English + segment anchor) plus 84000.org volume routing for Thai users. AI clients can surface these so users verify the source in one click.
 - 📡 **Dual transport** — both legacy SSE (`/sse`) and canonical Streamable HTTP (`/mcp`, MCP spec 2025-03-26).
 - 📦 **MCP Resources** — `tripitaka://structure`, `tripitaka://sutta/{id}`, `tripitaka://word/{w}` for clients that pin context as resources.
-- 📄 **Static topic pages** at `/topics/*` — curated reference content (places, canon overview) served as plain markdown so AI clients can fetch and cite, and search engines can index.
+- 📄 **Curated reference pages** at [`/topics/*`](https://mcp.tripitaka-mcp.com/topics/) — five markdown pages covering canon structure, getting-started + tool selection, places (Mahājanapada + holy sites + cosmology), 10 foundational themes with locus classicus, and ~30 major figures (chief disciples, lay supporters, kings, opponents). Sutta IDs verified against live data; AI clients can fetch a page in one shot instead of running 30+ tool calls.
 - 🤖 **Claude skill** — `skills/tipitaka-research.md` ships a ready-to-install workflow file that activates a multi-step research pattern (clarify → verify coverage → search → drill in → cite) on Claude Desktop / Claude Code.
 - 📮 **Postman Ready** — ships with a Postman collection for testing the API.
 
@@ -275,7 +275,10 @@ tripitaka-mcp/
 ├── topics/                       # Static markdown pages served at /topics/*
 │   ├── README.md                 # Index of available topic pages
 │   ├── tipitaka-overview.md      # Canon structure + coverage
-│   └── places.md                 # Places mentioned in the suttas
+│   ├── getting-started.md        # Connection paths, tool selection, prompt patterns
+│   ├── places.md                 # Geography of the suttas (Mahājanapada, holy sites, cosmology)
+│   ├── themes.md                 # 10 foundational teachings + locus classicus
+│   └── people.md                 # ~30 major figures (chief disciples, lay supporters, kings)
 ├── skills/                       # Portable Claude skills for AI clients
 │   ├── README.md                 # How to install
 │   └── tipitaka-research.md      # Multi-step research workflow

@@ -17,9 +17,12 @@
 
 ## Reference content
 
+- [Topic pages index](https://mcp.tripitaka-mcp.com/topics/): All curated reference pages, with statuses.
 - [Canon overview](https://mcp.tripitaka-mcp.com/topics/tipitaka-overview.md): Structure of the Pāli Canon — three piṭakas, five nikāyas, segment counts per book.
+- [Getting started](https://mcp.tripitaka-mcp.com/topics/getting-started.md): How to connect, choose the right tool, prompt patterns, anti-patterns, a worked example for "mindfulness of breathing."
 - [Places in the canon](https://mcp.tripitaka-mcp.com/topics/places.md): Geography of the suttas — Mahājanapada kingdoms, the Four Holy Sites, mountains and rivers, cosmological realms.
-- [Getting started](https://mcp.tripitaka-mcp.com/topics/getting-started.md): How to choose tools, prompt patterns, anti-patterns, a worked example for "mindfulness of breathing."
+- [Themes](https://mcp.tripitaka-mcp.com/topics/themes.md): Locus classicus + parallel suttas for 10 foundational teachings (Four Noble Truths, Eightfold Path, Dependent Origination, Five Aggregates, Satipaṭṭhāna, Ānāpānassati, Mettā, Hindrances, Awakening Factors, Three Marks).
+- [People](https://mcp.tripitaka-mcp.com/topics/people.md): ~30 major figures organized by role — Buddha, chief monastic disciples, foremost bhikkhunīs, lay supporters, kings, family, notable converts, opponents.
 
 ## Source
 
