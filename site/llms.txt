@@ -1,0 +1,34 @@
+# Tripitaka MCP
+
+> An MCP (Model Context Protocol) server giving AI assistants first-class access to the full Pāli Tipiṭaka — the foundational scripture of Theravāda Buddhism. ~444,000 segments at parity with SuttaCentral's bilara-data, covering all three piṭakas (Sutta, Vinaya, Abhidhamma). Free, non-commercial, offered as Dhamma Dāna.
+
+## Connect
+
+- [Hosted endpoint — Streamable HTTP](https://mcp.tripitaka-mcp.com/mcp): Canonical MCP transport (spec 2025-03-26). Use `mcp-remote` bridge from any MCP-capable client.
+- [Hosted endpoint — Legacy SSE](https://mcp.tripitaka-mcp.com/sse): Backward-compat for older clients.
+- [Connection guide](https://mcp.tripitaka-mcp.com/topics/getting-started.md): Step-by-step setup for Claude Desktop, Cline, Cursor, etc.
+- [Installer agent spec](https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/llms-install.md): Machine-readable install instructions for AI installer agents.
+
+## Capabilities
+
+- 10 MCP tools: hybrid search (trigram + RRF semantic), full-sutta fetch, segment-aligned translation comparison, citation generation, Pāli word lookup against the P. A. Payutto Thai Buddhist dictionary, inflection analyzer.
+- 3 MCP resources: `tripitaka://structure`, `tripitaka://sutta/{id}`, `tripitaka://word/{w}`.
+- Every tool response includes cross-reference URLs back to SuttaCentral and 84000.org for source verification.
+
+## Reference content
+
+- [Canon overview](https://mcp.tripitaka-mcp.com/topics/tipitaka-overview.md): Structure of the Pāli Canon — three piṭakas, five nikāyas, segment counts per book.
+- [Places in the canon](https://mcp.tripitaka-mcp.com/topics/places.md): Geography of the suttas — Mahājanapada kingdoms, the Four Holy Sites, mountains and rivers, cosmological realms.
+- [Getting started](https://mcp.tripitaka-mcp.com/topics/getting-started.md): How to choose tools, prompt patterns, anti-patterns, a worked example for "mindfulness of breathing."
+
+## Source
+
+- [GitHub repository](https://github.com/dhamma-seeker/tripitaka-mcp): Source code, MIT-licensed.
+- [SuttaCentral bilara-data](https://github.com/suttacentral/bilara-data): Upstream Pāli + English data, CC0.
+- [Wat Nyanavesakavan / P. A. Payutto Buddhist Dictionary](https://www.watnyanaves.net): Thai dictionary source — Dhamma Dāna, non-commercial use only.
+- [NOTICE.md](https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/NOTICE.md): Data licenses — please read before redistributing.
+
+## Optional
+
+- [Research workflow skill](https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/skills/tipitaka-research.md): Multi-step research pattern (clarify → verify coverage → search → drill → cite) for AI clients doing scriptural research.
+- [Project landing page](https://tripitaka-mcp.com/): Marketing overview, coverage stats, example queries.
