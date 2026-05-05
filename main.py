@@ -298,14 +298,17 @@ _NIKAYA_TO_84000_VOL = {
     # Vinaya
     "vin": 1,
     "pli-tv": 1,
-    # Abhidhamma
+    # Abhidhamma — มี active code (segment_count > 0) คู่กับ legacy code (segment_count = 0)
+    # ทั้งสอง map เป็นเล่มเดียวกัน เผื่อ user ส่ง id แบบไหนมาก็ตอบถูก
     "ds": 34,
     "vb": 35,
     "dt": 36,
     "pp": 36,
     "kv": 37,
-    "ym": 38,
-    "pt": 40,
+    "ya": 38,        # active id format (e.g. ya1.1.1)
+    "ym": 38,        # legacy schema alias
+    "patthana": 40,  # active id format (e.g. patthana1.1)
+    "pt": 40,        # legacy schema alias
     # Apadāna / Buddhavaṃsa subset (ไม่ map ตรงๆ ใน Thai canon — fallback to 33)
     "tha-ap": 32,
     "thi-ap": 32,
