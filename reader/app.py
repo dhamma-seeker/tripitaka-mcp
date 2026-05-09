@@ -3,14 +3,20 @@
 Run locally:
     uvicorn reader.app:app --reload --port 8090
 
-Routes:
-    GET  /                  → landing redirect (placeholder)
-    GET  /healthz           → liveness probe
-    GET  /read/{sutta_id}   → bilingual reader (Pāli + English segments)
+Routes (all under /read/* namespace so apex Caddy can proxy a single path):
+    GET  /read/healthz                 → liveness probe
+    GET  /read/                        → browse tree (pitakas → nikayas)
+    GET  /read/browse/{nikaya_code}    → list of books + suttas in a nikāya
+    GET  /read/static/*                → CSS, fonts, etc.
+    GET  /read/{sutta_id}              → bilingual reader (Pāli + English)
+
+For local dev convenience, root `/` redirects to `/read/`. In production the
+apex Caddy site handles `/` (landing) and only proxies `/read/*` to this app.
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -18,30 +24,69 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from reader.queries import fetch_sutta
+from reader.queries import fetch_nikaya, fetch_structure, fetch_sutta
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+# Validate identifiers tightly — DB only has lowercase alphanumerics, dots,
+# and hyphens (e.g. mn128, pli-tv-bu-vb-pj1, mil3.1.1). Reject anything else
+# at the route boundary so we never form ill-formed SQL parameters.
+_SUTTA_ID_RE = re.compile(r"^[a-z0-9.\-]{1,50}$")
+_NIKAYA_CODE_RE = re.compile(r"^[a-z0-9\-]{1,30}$")
+
 app = FastAPI(title="Tripitaka Reader", docs_url=None, redoc_url=None)
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+app.mount(
+    "/read/static",
+    StaticFiles(directory=str(BASE_DIR / "static")),
+    name="static",
+)
 
 
-@app.get("/healthz", response_class=HTMLResponse)
+@app.get("/read/healthz", response_class=HTMLResponse)
 def healthz() -> str:
     return "ok"
 
 
 @app.get("/")
-def index() -> RedirectResponse:
-    # MVP-min: รากของ reader ยังไม่มี landing — ส่งไปสูตรตัวอย่าง
-    return RedirectResponse(url="/read/dn16", status_code=302)
+def root_redirect() -> RedirectResponse:
+    # Local dev convenience only — prod apex Caddy handles `/` directly
+    return RedirectResponse(url="/read/", status_code=302)
+
+
+@app.get("/read/", response_class=HTMLResponse)
+def browse_index(request: Request) -> HTMLResponse:
+    pitakas = fetch_structure()
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={"pitakas": pitakas},
+    )
+
+
+@app.get("/read/browse/{nikaya_code}", response_class=HTMLResponse)
+def browse_nikaya(request: Request, nikaya_code: str) -> HTMLResponse:
+    nikaya_code = nikaya_code.strip().lower()
+    if not _NIKAYA_CODE_RE.match(nikaya_code):
+        raise HTTPException(status_code=400, detail="invalid nikaya code")
+
+    data = fetch_nikaya(nikaya_code)
+    if data is None:
+        raise HTTPException(
+            status_code=404, detail=f"nikāya not found: {nikaya_code}"
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="nikaya.html",
+        context={"nikaya": data},
+    )
 
 
 @app.get("/read/{sutta_id}", response_class=HTMLResponse)
 def read_sutta(request: Request, sutta_id: str) -> HTMLResponse:
     sutta_id = sutta_id.strip().lower()
-    if not sutta_id or len(sutta_id) > 50:
+    if not _SUTTA_ID_RE.match(sutta_id):
         raise HTTPException(status_code=400, detail="invalid sutta_id")
 
     data = fetch_sutta(sutta_id)

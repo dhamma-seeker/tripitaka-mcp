@@ -54,8 +54,23 @@
         redir https://{$TRIPITAKA_DOMAIN}{uri} 301
     }
 
+    # --- Bilingual reader (Pāli + English web viewer) -----------------------
+    # MCP cross_reference URLs ส่ง user มาที่ /read/* เพื่อ verify quote บน
+    # โดเมนเดียว (same trust boundary as MCP server). reader serve ทุก path
+    # ภายใต้ /read/ — รวม /read/static/* (CSS) ที่ FastAPI mount ไว้
+    @reader path /read /read/*
+    handle @reader {
+        reverse_proxy reader:8090 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up Host {host}
+        }
+    }
+
     # Static landing page (catch-all — handle block ทำให้ exclusive กับ
-    # @mcp_misroute ด้านบน ไม่งั้น file_server จะ serve index.html ทับ redirect)
+    # @mcp_misroute และ @reader ด้านบน ไม่งั้น file_server จะ serve index.html
+    # ทับ redirect/proxy)
     handle {
         root * /var/www/site
         try_files {path} {path}/ /index.html

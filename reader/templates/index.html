@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Browse — Tripiṭaka Reader{% endblock %}
+
+{% block head_extra %}
+<meta name="description" content="Browse the Pāli Tipiṭaka — Sutta, Vinaya, and Abhidhamma. Bilingual Pāli + English reader. Offered as Dhamma Dāna.">
+<link rel="canonical" href="https://tripitaka-mcp.com/read/">
+{% endblock %}
+
+{% block content %}
+<article class="browse">
+  <header class="sutta-head">
+    <h1 class="title-pali">Tipiṭaka</h1>
+    <p class="title-english">The three baskets of the Pāli canon</p>
+    <p class="meta">Pāli + English (Bhikkhu Sujato / Bhikkhu Brahmali). Click a nikāya to see its books and suttas.</p>
+  </header>
+
+  {% for pit in pitakas %}
+  <section class="pitaka-block">
+    <h2 class="pitaka-title">
+      <span class="pi" lang="pi">{{ pit.name_pali }}</span>
+      <span class="en">{{ pit.name_english }}</span>
+    </h2>
+    <ul class="nikaya-list">
+      {% for nik in pit.nikayas %}
+      <li>
+        <a href="/read/browse/{{ nik.code }}">
+          <span class="nik-pali" lang="pi">{{ nik.name_pali }}</span>
+          <span class="nik-en">{{ nik.name_english }}</span>
+          <span class="nik-count">{{ nik.sutta_count }} suttas</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+</article>
+{% endblock %}

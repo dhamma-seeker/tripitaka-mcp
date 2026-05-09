@@ -152,6 +152,60 @@ services:
         max-file: "3"
 
   # --------------------------------------------------------------------------
+  # Bilingual Reader (Pāli + English web viewer)
+  # --------------------------------------------------------------------------
+  # Read-only FastAPI app on apex `/read/*`. Same image as MCP server, just
+  # different command. DB access via tripitaka_ro role (SELECT only).
+  reader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tripitaka-mcp:${APP_VERSION:-latest}
+    container_name: tripitaka-reader
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://tripitaka_ro:${TRIPITAKA_RO_PASSWORD:?TRIPITAKA_RO_PASSWORD must be set}@db:5432/${POSTGRES_DB}
+      TRIPITAKA_SKIP_MIGRATIONS: "true"
+    command:
+      - uvicorn
+      - reader.app:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8090"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - "*"
+    expose:
+      - "8090"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8090/read/healthz\").read()' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # --------------------------------------------------------------------------
   # Caddy reverse proxy + TLS + rate limit
   # --------------------------------------------------------------------------
   # ผู้ใช้ที่มี Cloudflare อยู่หน้า: ตั้ง DNS proxy + Cloudflare rate limit
@@ -165,6 +219,7 @@ services:
     depends_on:
       - mcp-server
       - mcp-server-http
+      - reader
     environment:
       TRIPITAKA_DOMAIN: ${TRIPITAKA_DOMAIN:?TRIPITAKA_DOMAIN must be set (eg. mcp.example.org)}
       # Optional apex domain for the landing page (e.g. example.org).

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ nikaya.name_pali }} — Tripiṭaka Reader{% endblock %}
+
+{% block head_extra %}
+<meta name="description" content="{{ nikaya.name_pali }} ({{ nikaya.name_english }}) — {{ nikaya.total_suttas }} suttas. Bilingual Pāli + English reader.">
+<link rel="canonical" href="https://tripitaka-mcp.com/read/browse/{{ nikaya.code }}">
+{% endblock %}
+
+{% block content %}
+<article class="nikaya">
+  <header class="sutta-head">
+    <p class="breadcrumb">
+      <a href="/read/">{{ nikaya.pitaka.name_pali }}</a>
+      <span class="sep">›</span>
+      <span class="sutta-id">{{ nikaya.code }}</span>
+    </p>
+    <h1 class="title-pali">{{ nikaya.name_pali }}</h1>
+    <p class="title-english">{{ nikaya.name_english }}</p>
+    <p class="meta">{{ nikaya.total_suttas }} suttas · {{ nikaya.books|length }} book{{ 's' if nikaya.books|length != 1 else '' }}</p>
+  </header>
+
+  {% for book in nikaya.books %}
+  <section class="book-block">
+    {% if nikaya.books|length > 1 %}
+    <h2 class="book-title">
+      <span class="pi" lang="pi">{{ book.name_pali or book.code }}</span>
+      {% if book.name_english %}<span class="en">{{ book.name_english }}</span>{% endif %}
+      <span class="book-count">{{ book.suttas|length }}</span>
+    </h2>
+    {% endif %}
+    <ul class="sutta-list">
+      {% for s in book.suttas %}
+      <li>
+        <a href="/read/{{ s.sutta_id }}">
+          <code class="sid">{{ s.sutta_id }}</code>
+          {% if s.title_pali %}<span class="t-pali" lang="pi">{{ s.title_pali }}</span>{% endif %}
+          {% if s.title_english %}<span class="t-en">{{ s.title_english }}</span>{% endif %}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+</article>
+{% endblock %}

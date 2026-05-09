@@ -168,6 +168,170 @@ body {
   font-size: 16px;
 }
 
+/* --- Browse pages (index + nikaya) --- */
+
+.pitaka-block,
+.book-block {
+  margin: 0 0 36px;
+}
+
+.pitaka-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--border);
+}
+
+.pitaka-title .pi {
+  font-style: italic;
+  color: var(--pali-fg);
+  margin-right: 8px;
+}
+
+.pitaka-title .en {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 16px;
+}
+
+.nikaya-list,
+.sutta-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nikaya-list li {
+  border-bottom: 1px solid var(--border);
+}
+
+.nikaya-list li:last-child {
+  border-bottom: none;
+}
+
+.nikaya-list a {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 4px;
+  text-decoration: none;
+  color: var(--fg);
+  transition: background 0.12s ease;
+}
+
+.nikaya-list a:hover {
+  background: var(--highlight);
+}
+
+.nik-pali {
+  font-style: italic;
+  color: var(--pali-fg);
+  font-weight: 500;
+  min-width: 140px;
+}
+
+.nik-en {
+  color: var(--muted);
+  flex: 1;
+  font-size: 14px;
+}
+
+.nik-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+.book-title {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 24px 0 8px;
+  color: var(--muted);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.book-title .pi {
+  font-style: italic;
+  color: var(--pali-fg);
+}
+
+.book-title .en {
+  font-size: 13px;
+  color: var(--muted);
+  font-style: normal;
+}
+
+.book-title .book-count {
+  margin-left: auto;
+  font-size: 11px;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.sutta-list li {
+  border-bottom: 1px solid var(--border);
+}
+
+.sutta-list li:last-child {
+  border-bottom: none;
+}
+
+.sutta-list a {
+  display: grid;
+  grid-template-columns: 110px 1fr 1fr;
+  gap: 12px;
+  align-items: baseline;
+  padding: 8px 4px;
+  text-decoration: none;
+  color: var(--fg);
+  transition: background 0.12s ease;
+}
+
+.sutta-list a:hover {
+  background: var(--highlight);
+}
+
+.sutta-list .sid {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--accent);
+  background: transparent;
+  padding: 0;
+}
+
+.sutta-list .t-pali {
+  font-style: italic;
+  color: var(--pali-fg);
+}
+
+.sutta-list .t-en {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.breadcrumb a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 600px) {
+  .sutta-list a {
+    grid-template-columns: 80px 1fr;
+  }
+  .sutta-list .t-en {
+    grid-column: 1 / -1;
+    margin-left: 92px;
+  }
+}
+
 .site-footer {
   border-top: 1px solid var(--border);
   padding: 24px;
