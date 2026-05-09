@@ -20,11 +20,18 @@ import re
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from reader.queries import fetch_nikaya, fetch_structure, fetch_sutta, search_text
+from reader.queries import (
+    fetch_neighbors,
+    fetch_nikaya,
+    fetch_structure,
+    fetch_sutta,
+    lookup_word,
+    search_text,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -61,6 +68,25 @@ def browse_index(request: Request) -> HTMLResponse:
         request=request,
         name="index.html",
         context={"pitakas": pitakas},
+    )
+
+
+@app.get("/read/api/word")
+def api_word(w: str = "") -> JSONResponse:
+    """Dictionary lookup for the double-click tooltip on Pāli text.
+
+    Tight bounds — `w` is trimmed, lower-cased, capped at 60 chars and must
+    be at least 2 chars. Returns `{word, definitions: [{source, language,
+    text}]}` so the frontend can render a small popup card without further
+    parsing. Cache-Control short to keep responses snappy on repeat clicks.
+    """
+    w = w.strip().lower()[:60]
+    if len(w) < 2:
+        return JSONResponse({"word": w, "definitions": []})
+    defs = lookup_word(w)
+    return JSONResponse(
+        {"word": w, "definitions": defs},
+        headers={"Cache-Control": "public, max-age=300"},
     )
 
 
@@ -111,8 +137,10 @@ def read_sutta(request: Request, sutta_id: str) -> HTMLResponse:
     if data is None:
         raise HTTPException(status_code=404, detail=f"sutta not found: {sutta_id}")
 
+    neighbors = fetch_neighbors(sutta_id)
+
     return templates.TemplateResponse(
         request=request,
         name="sutta.html",
-        context={"sutta": data},
+        context={"sutta": data, "neighbors": neighbors},
     )

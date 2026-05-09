@@ -34,7 +34,19 @@
     </p>
   </header>
 
-  <section class="segments">
+  <div class="in-sutta-filter" data-segment-count="{{ sutta.segments|length }}">
+    <input
+      type="search"
+      id="in-sutta-q"
+      placeholder="Filter segments… (diacritic-insensitive, ESC to clear)"
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Filter segments in this sutta"
+    >
+    <span class="in-sutta-count" id="in-sutta-count" hidden></span>
+  </div>
+
+  <section class="segments" id="segments">
     {% for seg in sutta.segments %}
     <div class="segment" id="{{ seg.segment_id }}">
       <a class="seg-anchor" href="#{{ seg.segment_id }}" title="{{ seg.segment_id }}">{{ seg.segment_id.split(':')[1] if ':' in seg.segment_id else '' }}</a>
@@ -43,5 +55,112 @@
     </div>
     {% endfor %}
   </section>
+
+  {% if neighbors and (neighbors.prev or neighbors.next) %}
+  <nav class="sutta-nav" aria-label="Sibling sutta navigation">
+    {% if neighbors.prev %}
+    <a class="nav-prev" href="/read/{{ neighbors.prev.sutta_id }}" rel="prev">
+      <span class="nav-arrow">←</span>
+      <span class="nav-label">
+        <code class="sid">{{ neighbors.prev.sutta_id }}</code>
+        {% if neighbors.prev.title_pali %}<span class="t-pali" lang="pi">{{ neighbors.prev.title_pali }}</span>{% endif %}
+      </span>
+    </a>
+    {% else %}<span></span>{% endif %}
+    {% if neighbors.next %}
+    <a class="nav-next" href="/read/{{ neighbors.next.sutta_id }}" rel="next">
+      <span class="nav-label">
+        <code class="sid">{{ neighbors.next.sutta_id }}</code>
+        {% if neighbors.next.title_pali %}<span class="t-pali" lang="pi">{{ neighbors.next.title_pali }}</span>{% endif %}
+      </span>
+      <span class="nav-arrow">→</span>
+    </a>
+    {% else %}<span></span>{% endif %}
+  </nav>
+  {% endif %}
 </article>
+
+<script>
+  // In-sutta filter — hides segments that don't match the query.
+  // Diacritic-insensitive: normalises both query and text via NFD + strip
+  // combining marks, so users can type "satipatthana" and match "satipaṭṭhāna".
+  // Wraps matches in <mark class="inline-mark"> for visual hit on each shown segment.
+  (function () {
+    var input = document.getElementById('in-sutta-q');
+    var counter = document.getElementById('in-sutta-count');
+    var section = document.getElementById('segments');
+    if (!input || !section) return;
+
+    function normalize(s) {
+      return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    }
+
+    var segments = Array.prototype.slice.call(section.querySelectorAll('.segment'));
+    var cache = segments.map(function (el) {
+      var pali = el.querySelector('.text-pali');
+      var en = el.querySelector('.text-english');
+      return {
+        el: el,
+        pali: pali,
+        en: en,
+        paliText: pali ? pali.textContent : '',
+        enText: en ? en.textContent : '',
+        paliKey: pali ? normalize(pali.textContent) : '',
+        enKey: en ? normalize(en.textContent) : '',
+      };
+    });
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function highlight(text, key, q) {
+      if (!q) return escapeHtml(text);
+      var out = '';
+      var i = 0;
+      while (i < text.length) {
+        var idx = key.indexOf(q, i);
+        if (idx < 0) { out += escapeHtml(text.slice(i)); break; }
+        out += escapeHtml(text.slice(i, idx));
+        out += '<mark class="inline-mark">' + escapeHtml(text.slice(idx, idx + q.length)) + '</mark>';
+        i = idx + q.length;
+      }
+      return out;
+    }
+
+    function apply() {
+      var q = normalize(input.value.trim());
+      var shown = 0;
+      cache.forEach(function (c) {
+        if (!q) {
+          if (c.pali) c.pali.textContent = c.paliText;
+          if (c.en) c.en.textContent = c.enText;
+          c.el.hidden = false;
+          shown++;
+          return;
+        }
+        var hit = (c.paliKey.indexOf(q) >= 0) || (c.enKey.indexOf(q) >= 0);
+        c.el.hidden = !hit;
+        if (hit) {
+          shown++;
+          if (c.pali) c.pali.innerHTML = highlight(c.paliText, c.paliKey, q);
+          if (c.en) c.en.innerHTML = highlight(c.enText, c.enKey, q);
+        }
+      });
+      if (q) {
+        counter.hidden = false;
+        counter.textContent = shown + ' / ' + cache.length + ' segments';
+      } else {
+        counter.hidden = true;
+      }
+    }
+
+    input.addEventListener('input', apply);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { input.value = ''; apply(); }
+    });
+  })();
+</script>
 {% endblock %}

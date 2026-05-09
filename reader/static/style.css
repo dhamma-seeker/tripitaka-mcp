@@ -222,6 +222,216 @@ body {
   font-size: 16px;
 }
 
+/* --- Word popup (Pāli double-click → dictionary) --- */
+
+.text-pali {
+  cursor: text;
+}
+
+.text-pali::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.word-popup {
+  position: fixed;
+  z-index: 100;
+  max-width: 380px;
+  min-width: 240px;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+.wp-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--code-bg, var(--bg));
+  border-bottom: 1px solid var(--border);
+}
+
+.wp-word {
+  font-style: italic;
+  color: var(--pali-fg);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.wp-close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.wp-close:hover { color: var(--fg); }
+
+.wp-body {
+  padding: 12px 14px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.wp-def + .wp-def {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.wp-source {
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+
+.wp-lang {
+  color: var(--muted);
+  text-transform: lowercase;
+  letter-spacing: 0;
+}
+
+.wp-text {
+  white-space: pre-wrap;
+  font-size: 13px;
+  color: var(--fg);
+}
+
+.wp-empty {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.wp-empty code {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-style: italic;
+  font-size: 12px;
+  background: var(--code-bg, var(--bg));
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+/* --- In-sutta filter --- */
+
+.in-sutta-filter {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  padding: 8px 0;
+  margin: 0 0 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.in-sutta-filter input {
+  flex: 1;
+  background: var(--code-bg, var(--bg));
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 0.12s ease;
+}
+
+.in-sutta-filter input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.in-sutta-count {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  white-space: nowrap;
+}
+
+mark.inline-mark {
+  background: var(--accent);
+  color: var(--bg);
+  padding: 0 2px;
+  border-radius: 2px;
+  font-style: inherit;
+}
+
+/* --- Sutta footer: prev/next nav --- */
+
+.sutta-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 32px 0 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.sutta-nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  text-decoration: none;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.sutta-nav a:hover {
+  background: var(--highlight);
+  border-color: var(--accent);
+}
+
+.sutta-nav .nav-prev { justify-content: flex-start; text-align: left; }
+.sutta-nav .nav-next { justify-content: flex-end; text-align: right; }
+
+.sutta-nav .nav-arrow {
+  color: var(--accent);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sutta-nav .nav-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sutta-nav .sid {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.sutta-nav .t-pali {
+  font-style: italic;
+  color: var(--pali-fg);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* --- Browse pages (index + nikaya) --- */
 
 .pitaka-block,

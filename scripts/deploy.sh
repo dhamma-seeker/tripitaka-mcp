@@ -179,6 +179,13 @@ docker exec tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" \
     -c "ALTER ROLE tripitaka_ro PASSWORD '${TRIPITAKA_RO_PASSWORD}'" >/dev/null
 ok "tripitaka_ro พร้อม"
 
+# --- 6b. unaccent extension + functional indexes for diacritic-insensitive search
+# Idempotent (CREATE EXTENSION IF NOT EXISTS, CREATE INDEX IF NOT EXISTS).
+# Building the two GIN indexes on 444K rows takes ~1-2 minutes the first time.
+log "ตั้งค่า unaccent + functional GIN indexes..."
+docker exec -i tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" < scripts/setup_unaccent.sql >/dev/null
+ok "diacritic-insensitive search พร้อม (f_unaccent + 2 GIN indexes)"
+
 # --- 7. start full stack ---------------------------------------------------
 log "start mcp-server + caddy..."
 docker compose -f docker-compose.prod.yml up -d --build

@@ -38,6 +38,13 @@
       Offered as <em>Dhamma Dāna</em>.
     </p>
   </footer>
+  <div id="word-popup" class="word-popup" hidden role="dialog" aria-label="Word definition">
+    <div class="wp-head">
+      <span class="wp-word" id="wp-word"></span>
+      <button type="button" class="wp-close" aria-label="Close">×</button>
+    </div>
+    <div class="wp-body" id="wp-body"></div>
+  </div>
   <script>
     // Hash navigation: scroll the targeted segment to viewport center
     // (default browser behavior pins it at the top — "focus" reads better
@@ -55,6 +62,74 @@
       }
       focusHash();
       window.addEventListener('hashchange', focusHash);
+    })();
+
+    // Word tooltip — double-click any Pāli word to see dictionary definitions.
+    // Activates only inside .text-pali; English text is left alone (most users
+    // already know it). Looks up via /read/api/word, displays a popup card
+    // anchored to the click position, dismissed on click-outside or ESC.
+    (function () {
+      var popup = document.getElementById('word-popup');
+      var wpWord = document.getElementById('wp-word');
+      var wpBody = document.getElementById('wp-body');
+      var closeBtn = popup ? popup.querySelector('.wp-close') : null;
+      if (!popup) return;
+
+      function escapeHtml(s) {
+        return (s || '').replace(/[&<>"']/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+      }
+
+      function hide() { popup.hidden = true; }
+
+      function show(x, y, word, defs) {
+        wpWord.textContent = word;
+        if (!defs || !defs.length) {
+          wpBody.innerHTML = '<p class="wp-empty">No dictionary entry found. The word may be inflected — try the stem (e.g. <code>appamāda</code> instead of <code>appamādo</code>).</p>';
+        } else {
+          wpBody.innerHTML = defs.map(function (d) {
+            return '<div class="wp-def">' +
+              '<div class="wp-source">' + escapeHtml(d.source) + ' <span class="wp-lang">(' + escapeHtml(d.language) + ')</span></div>' +
+              '<div class="wp-text">' + escapeHtml(d.text) + '</div>' +
+              '</div>';
+          }).join('');
+        }
+        popup.hidden = false;
+        // Position: try to fit within viewport; clamp to 12px from edges.
+        var pw = popup.offsetWidth, ph = popup.offsetHeight;
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var px = Math.max(12, Math.min(x, vw - pw - 12));
+        var py = Math.max(12, Math.min(y + 16, vh - ph - 12));
+        popup.style.left = px + 'px';
+        popup.style.top = py + 'px';
+      }
+
+      document.addEventListener('dblclick', function (e) {
+        if (!e.target.closest('.text-pali')) return;
+        var sel = window.getSelection();
+        var raw = (sel && sel.toString() || '').trim();
+        // Strip leading/trailing punctuation but keep diacritics.
+        var word = raw.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
+        if (!word || word.length < 2 || word.length > 60) return;
+        // Fetch and show. Lowercase before sending — server lowercases too,
+        // but matching the cache key here helps repeat-click latency.
+        fetch('/read/api/word?w=' + encodeURIComponent(word.toLowerCase()))
+          .then(function (r) { return r.json(); })
+          .then(function (data) { show(e.clientX, e.clientY, word, data.definitions); })
+          .catch(function () { /* ignore network errors silently */ });
+      });
+
+      if (closeBtn) closeBtn.addEventListener('click', hide);
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !popup.hidden) hide();
+      });
+      document.addEventListener('click', function (e) {
+        if (popup.hidden) return;
+        if (popup.contains(e.target)) return;
+        if (e.target.closest('.text-pali')) return; // dblclick handler will reposition
+        hide();
+      });
     })();
 
     // Citation copy button on sutta pages.
