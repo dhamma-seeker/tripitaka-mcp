@@ -4,6 +4,11 @@
 # MCP Framework
 fastmcp>=2.0.0
 
+# Reader app (FastAPI + Jinja SSR — separate service)
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+jinja2>=3.1.0
+
 # Database
 psycopg2-binary>=2.9.9
 pgvector>=0.3.0

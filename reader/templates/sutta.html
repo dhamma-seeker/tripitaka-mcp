@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ sutta.title_pali or sutta.sutta_id }} — Tripiṭaka Reader{% endblock %}
+
+{% block head_extra %}
+<meta name="description" content="{{ sutta.title_pali }}{% if sutta.title_english %} — {{ sutta.title_english }}{% endif %}. Pāli + English bilingual reader.">
+<link rel="canonical" href="https://tripitaka-mcp.com/read/{{ sutta.sutta_id }}">
+{% endblock %}
+
+{% block content %}
+<article class="sutta">
+  <header class="sutta-head">
+    <p class="breadcrumb">
+      <span>{{ sutta.pitaka.name_pali }}</span>
+      <span class="sep">›</span>
+      <span>{{ sutta.nikaya.name_pali }}</span>
+      <span class="sep">›</span>
+      <span class="sutta-id">{{ sutta.sutta_id }}</span>
+    </p>
+    <h1 class="title-pali">{{ sutta.title_pali or sutta.sutta_id }}</h1>
+    {% if sutta.title_english %}
+    <p class="title-english">{{ sutta.title_english }}</p>
+    {% endif %}
+    <p class="meta">
+      {{ sutta.segments|length }} segments
+      <span class="sep">·</span>
+      <a href="https://suttacentral.net/{{ sutta.sutta_id }}" rel="external">SuttaCentral</a>
+    </p>
+  </header>
+
+  <section class="segments">
+    {% for seg in sutta.segments %}
+    <div class="segment" id="{{ seg.segment_id }}">
+      <a class="seg-anchor" href="#{{ seg.segment_id }}" title="{{ seg.segment_id }}">{{ seg.segment_id.split(':')[1] if ':' in seg.segment_id else '' }}</a>
+      {% if seg.text_pali %}<p class="text-pali" lang="pi">{{ seg.text_pali }}</p>{% endif %}
+      {% if seg.text_english %}<p class="text-english" lang="en">{{ seg.text_english }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </section>
+</article>
+{% endblock %}

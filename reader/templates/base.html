@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Tripitaka Reader{% endblock %}</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <a href="/" class="brand">Tripiṭaka <span class="brand-sub">— bilingual reader</span></a>
+    <nav class="site-nav">
+      <a href="https://tripitaka-mcp.com/" rel="external">Home</a>
+    </nav>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <p>
+      Source: <a href="https://suttacentral.net/" rel="external">SuttaCentral bilara-data</a> (CC0).
+      Pāli + English (Bhikkhu Sujato / Bhikkhu Brahmali).
+      Offered as <em>Dhamma Dāna</em>.
+    </p>
+  </footer>
+</body>
+</html>
