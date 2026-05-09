@@ -9,6 +9,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from markupsafe import Markup, escape
+
 from db.connection import get_connection, release_connection
 
 
@@ -157,6 +159,89 @@ def fetch_structure() -> list[dict[str, Any]]:
             )
 
         return sorted(pitakas.values(), key=lambda x: x["sort"])
+    finally:
+        cur.close()
+        release_connection(conn)
+
+
+def _highlight(text: str | None, query: str) -> Markup | None:
+    """HTML-escape `text` and wrap case-insensitive matches of `query` in <mark>.
+
+    Returns Markup so Jinja renders the tags directly (escape happens here).
+    """
+    if not text:
+        return None
+    if not query:
+        return Markup(escape(text))
+    parts = re.split(f"({re.escape(query)})", text, flags=re.IGNORECASE)
+    out: list[Markup] = []
+    for i, p in enumerate(parts):
+        if i % 2 == 1:
+            out.append(Markup("<mark>") + escape(p) + Markup("</mark>"))
+        else:
+            out.append(escape(p))
+    return Markup("").join(out)
+
+
+def search_text(query: str, limit: int = 50) -> list[dict[str, Any]]:
+    """Plain substring search on Pāli + English texts.
+
+    Uses ILIKE which can leverage the existing pg_trgm GIN indexes
+    (`idx_segment_text_pali_trgm`, `idx_segment_text_english_trgm`) when
+    the pattern has enough characters. We require >=3 chars to keep
+    queries reasonably indexable.
+
+    Returns up to `limit` matched segments with sutta metadata + snippets
+    that have <mark> tags around the matched substring (Markup-safe).
+    """
+    q = (query or "").strip()
+    if len(q) < 3:
+        return []
+    pattern = f"%{q}%"
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT
+                sec.sutta_id,
+                sec.title_pali,
+                sec.title_english,
+                n.code AS nikaya_code,
+                n.name_pali AS nikaya_pali,
+                seg.segment_id,
+                seg.text_pali,
+                seg.text_english,
+                CASE
+                    WHEN seg.text_pali ILIKE %s THEN 'pali'
+                    ELSE 'english'
+                END AS matched_lang
+            FROM segment seg
+            JOIN section sec ON sec.id = seg.section_id
+            JOIN book b ON b.id = sec.book_id
+            JOIN nikaya n ON n.id = b.nikaya_id
+            WHERE seg.text_pali ILIKE %s OR seg.text_english ILIKE %s
+            ORDER BY seg.id
+            LIMIT %s
+            """,
+            (pattern, pattern, pattern, limit),
+        )
+        rows = cur.fetchall()
+        return [
+            {
+                "sutta_id": r[0],
+                "title_pali": r[1],
+                "title_english": r[2],
+                "nikaya_code": r[3],
+                "nikaya_pali": r[4],
+                "segment_id": r[5],
+                "text_pali": _highlight(r[6], q),
+                "text_english": _highlight(r[7], q),
+                "matched_lang": r[8],
+            }
+            for r in rows
+        ]
     finally:
         cur.close()
         release_connection(conn)

@@ -25,6 +25,12 @@
       {{ sutta.segments|length }} segments
       <span class="sep">·</span>
       <a href="https://suttacentral.net/{{ sutta.sutta_id }}" rel="external">SuttaCentral</a>
+      <span class="sep">·</span>
+      <button
+        type="button"
+        class="cite-btn"
+        data-cite-base="{{ sutta.sutta_id }}|{{ sutta.title_pali or sutta.sutta_id }}|{{ sutta.title_english or '' }}|{{ sutta.nikaya.name_pali }}"
+      >Copy citation</button>
     </p>
   </header>
 

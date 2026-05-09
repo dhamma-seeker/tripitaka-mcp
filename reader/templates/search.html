@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}{% if query %}{{ query }} — Search · Tripiṭaka Reader{% else %}Search — Tripiṭaka Reader{% endif %}{% endblock %}
+
+{% block head_extra %}
+<meta name="description" content="Search the Pāli + English Tipiṭaka by keyword.">
+<meta name="robots" content="noindex">
+{% endblock %}
+
+{% block content %}
+<article class="search-page">
+  <header class="sutta-head">
+    <h1 class="title-pali">Search</h1>
+    <p class="title-english">Find segments by Pāli or English keyword</p>
+  </header>
+
+  <form action="/read/search" method="get" class="search-form" role="search">
+    <input
+      type="search"
+      name="q"
+      value="{{ query }}"
+      placeholder="e.g. appamāda, mindfulness, kosambī…"
+      autofocus
+      autocomplete="off"
+      spellcheck="false"
+      minlength="{{ min_chars }}"
+      maxlength="200"
+      aria-label="Search query"
+    >
+    <button type="submit">Search</button>
+  </form>
+
+  {% if query %}
+    {% if query|length < min_chars %}
+    <p class="search-meta">Query needs at least {{ min_chars }} characters.</p>
+    {% else %}
+    <p class="search-meta">
+      {{ count }} match{% if count != 1 %}es{% endif %} for <strong>"{{ query }}"</strong>
+      {% if count == limit %} <span class="muted">(first {{ limit }} shown — refine your query for more)</span>{% endif %}
+    </p>
+
+    {% if count == 0 %}
+    <p class="search-empty">No matches. Try a different word, or check spelling — Pāli search is case-insensitive but exact-substring (e.g. <code>satipaṭṭhāna</code> matches but <code>satipatthana</code> won't, since the canonical text uses diacritics).</p>
+    {% else %}
+    <ul class="search-results">
+      {% for r in results %}
+      <li>
+        <a href="/read/{{ r.sutta_id }}#{{ r.segment_id }}">
+          <div class="search-result-head">
+            <code class="sid">{{ r.segment_id }}</code>
+            {% if r.title_pali %}<span class="t-pali" lang="pi">{{ r.title_pali }}</span>{% endif %}
+            <span class="t-nik">{{ r.nikaya_pali }}</span>
+          </div>
+          {% if r.text_pali %}<p class="text-pali" lang="pi">{{ r.text_pali }}</p>{% endif %}
+          {% if r.text_english %}<p class="text-english" lang="en">{{ r.text_english }}</p>{% endif %}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% endif %}
+  {% else %}
+    <p class="search-meta">Type a Pāli or English word and press Enter. Searches the full Tipiṭaka (~444K segments) — Pāli + Sujato/Brahmali English.</p>
+  {% endif %}
+</article>
+{% endblock %}

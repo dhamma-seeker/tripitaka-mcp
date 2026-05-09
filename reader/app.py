@@ -24,7 +24,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from reader.queries import fetch_nikaya, fetch_structure, fetch_sutta
+from reader.queries import fetch_nikaya, fetch_structure, fetch_sutta, search_text
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -61,6 +61,24 @@ def browse_index(request: Request) -> HTMLResponse:
         request=request,
         name="index.html",
         context={"pitakas": pitakas},
+    )
+
+
+@app.get("/read/search", response_class=HTMLResponse)
+def search(request: Request, q: str = "") -> HTMLResponse:
+    q = q.strip()[:200]
+    limit = 50
+    results = search_text(q, limit=limit) if q else []
+    return templates.TemplateResponse(
+        request=request,
+        name="search.html",
+        context={
+            "query": q,
+            "results": results,
+            "count": len(results),
+            "limit": limit,
+            "min_chars": 3,
+        },
     )
 
 

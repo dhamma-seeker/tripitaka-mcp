@@ -11,6 +11,18 @@
 <body>
   <header class="site-header">
     <a href="/read/" class="brand">Tripiṭaka <span class="brand-sub">— bilingual reader</span></a>
+    <form action="/read/search" method="get" class="search-mini" role="search">
+      <input
+        type="search"
+        name="q"
+        placeholder="Search…"
+        aria-label="Search"
+        minlength="3"
+        maxlength="200"
+        autocomplete="off"
+        spellcheck="false"
+      >
+    </form>
     <nav class="site-nav">
       <a href="/read/">Browse</a>
       <a href="/" rel="external">Home</a>
@@ -43,6 +55,36 @@
       }
       focusHash();
       window.addEventListener('hashchange', focusHash);
+    })();
+
+    // Citation copy button on sutta pages.
+    // data-cite-base = "{sutta_id}|{title_pali}|{title_english}|{nikaya_pali}"
+    // If the URL has a #segment hash, we append it so academic citations
+    // can pinpoint the line. Format aims to be both human-readable AND
+    // a working URL when pasted bare into chat/email.
+    (function () {
+      var btn = document.querySelector('.cite-btn');
+      if (!btn || !navigator.clipboard) return;
+      btn.addEventListener('click', function () {
+        var parts = (btn.dataset.citeBase || '').split('|');
+        var sid = parts[0], titlePi = parts[1], titleEn = parts[2], nik = parts[3];
+        var origin = window.location.origin || 'https://tripitaka-mcp.com';
+        var url = origin + '/read/' + sid;
+        var hash = location.hash ? location.hash.slice(1) : '';
+        var segNote = '';
+        if (hash) { url += '#' + hash; segNote = ', segment ' + hash; }
+        var label = titleEn ? titlePi + ' (' + titleEn + ')' : titlePi;
+        var text = label + ' [' + sid.toUpperCase() + ', ' + nik + segNote + '] — ' + url;
+        navigator.clipboard.writeText(text).then(function () {
+          var orig = btn.textContent;
+          btn.textContent = 'Copied ✓';
+          btn.classList.add('cite-btn-ok');
+          setTimeout(function () {
+            btn.textContent = orig;
+            btn.classList.remove('cite-btn-ok');
+          }, 1600);
+        });
+      });
     })();
   </script>
 </body>
