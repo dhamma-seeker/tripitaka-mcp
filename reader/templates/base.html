@@ -25,5 +25,24 @@
       Offered as <em>Dhamma Dāna</em>.
     </p>
   </footer>
+  <script>
+    // Hash navigation: scroll the targeted segment to viewport center
+    // (default browser behavior pins it at the top — "focus" reads better
+    // when centered). Runs once on initial load and on hashchange.
+    (function () {
+      function focusHash() {
+        if (!location.hash) return;
+        var id = decodeURIComponent(location.hash.slice(1));
+        var el = document.getElementById(id);
+        if (!el) return;
+        // Defer one frame so layout/font load doesn't fight the scroll.
+        requestAnimationFrame(function () {
+          el.scrollIntoView({ behavior: 'instant', block: 'center' });
+        });
+      }
+      focusHash();
+      window.addEventListener('hashchange', focusHash);
+    })();
+  </script>
 </body>
 </html>

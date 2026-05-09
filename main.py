@@ -89,14 +89,20 @@ def _build_instructions() -> str:
         + coverage_note
         + "\n🔗 **Cross-reference URLs (สำคัญ — surface ในคำตอบเสมอ):**\n"
         "ทุก response มี field `cross_reference` ที่มี URL ไปยังต้นฉบับ:\n"
-        "• `suttacentral` — Pāli canonical, deep-link ระดับ segment ได้\n"
+        "• `tripitaka_mcp_reader` — bilingual reader (Pāli + English) บน "
+        "โดเมนเดียวกับ MCP server — `url` = หน้าสูตรเต็ม, `segment_url` = "
+        "deep-link พร้อม highlight + scroll-center segment ที่อ้าง\n"
+        "• `suttacentral` — Pāli canonical (Mahāsaṅgīti) + Sujato EN\n"
         "  (`url`, `pali_url`, `english_url`, `segment_url`)\n"
         "• `tipitaka_84000` — ฉบับมหาจุฬาฯ ภาษาไทย (homepage + search hint)\n\n"
-        "💡 **AI client เลือก URL ตามภาษาของ user:**\n"
-        "- User คุยภาษาไทย → surface `tipitaka_84000.url` เป็นลิงก์หลัก "
-        "(แนะนำให้ค้นด้วย Pāli title) + suttacentral เป็น secondary\n"
-        "- User คุยภาษาอังกฤษ/อื่น → surface `suttacentral.english_url` "
-        "เป็นลิงก์หลัก + segment_url เมื่ออ้างประโยคเฉพาะ\n"
+        "💡 **AI client เลือก URL ตามสถานการณ์:**\n"
+        "- **Primary verification**: `tripitaka_mcp_reader.url` (full sutta) "
+        "— เมื่ออ้างประโยคเฉพาะให้ใช้ `segment_url` แทน — page จะแสดงทั้ง "
+        "สูตรพร้อม highlight + scroll-center ที่ segment นั้น\n"
+        "- **Canonical secondary** (สำหรับ scholarship): "
+        "`suttacentral.segment_url` — เผื่อ user ต้องการตรวจ Pāli edition\n"
+        "- **Thai users**: เพิ่ม `tipitaka_84000.url` เป็น tertiary (ฉบับ "
+        "มหาจุฬาฯ มีคำแปลไทย แต่ deep-link เป็น volume-level — heuristic)\n"
         "- รวมลิงก์ใน response เป็น markdown clickable เสมอ — เพื่อ user "
         "verify ต้นฉบับได้ทันที (ลด hallucination)\n"
         "\n📚 แหล่งข้อมูล (Data Sources):\n"
@@ -252,6 +258,14 @@ _TEXT_COLUMN_TO_LANG = {
 SUTTACENTRAL_BASE = "https://suttacentral.net"
 TIPITAKA_84000_BASE = "https://84000.org/tipitaka/"
 
+# Tripitaka MCP own bilingual reader (Pāli + English) — same domain as MCP
+# server, so users can verify quotes without leaving our trust boundary.
+# Override per environment via TRIPITAKA_READER_BASE (e.g. http://127.0.0.1:8090
+# for local dev). Defaults to canonical apex.
+TRIPITAKA_READER_BASE = os.getenv(
+    "TRIPITAKA_READER_BASE", "https://tripitaka-mcp.com"
+).rstrip("/")
+
 # Heuristic: nikāya prefix → 84000 volume number (มหาจุฬาฯ 45-volume edition)
 # - Vinaya = vols 1-8
 # - Sutta:  DN = 9-11, MN = 12-14, SN = 15-19, AN = 20-24, KN = 25-33
@@ -393,15 +407,37 @@ def _tipitaka_84000_urls(sutta_id: str) -> dict[str, str]:
     }
 
 
+def _tripitaka_reader_urls(
+    sutta_id: str, segment_id: str | None = None
+) -> dict[str, str]:
+    """สร้าง URL set ของ Tripitaka MCP bilingual reader (Pāli + English)
+    บนโดเมนเดียวกับ MCP server — user verify ได้โดยไม่ออก trust boundary.
+
+    Returns:
+        - url: หน้าสูตรเต็ม (แสดง Pāli + Sujato EN ทุก segment)
+        - segment_url: deep-link พร้อม fragment ที่ highlight + scroll-center
+          segment ที่อ้างถึง (auto-applied โดย CSS `:target` + JS)
+    """
+    base = f"{TRIPITAKA_READER_BASE}/read/{sutta_id}"
+    urls = {"url": base}
+    if segment_id:
+        urls["segment_url"] = f"{base}#{segment_id}"
+    return urls
+
+
 def _cross_reference_urls(sutta_id: str, segment_id: str | None = None) -> dict[str, Any]:
     """รวม URL จากทุกแหล่งสำหรับ AI client surface ใน response.
 
     Returns dict with:
-        - suttacentral: deep-link set (canonical, default)
+        - tripitaka_mcp_reader: bilingual reader บนโดเมนเดียวกับ MCP server
+          (preferred verification target — same trust boundary, ไม่พา user
+          ออกไป external)
+        - suttacentral: deep-link set (canonical reference, segment URL)
         - tipitaka_84000: ฉบับมหาจุฬาฯ ไทย — volume page + Google search
           fallback (deep-link mapping เป็น heuristic, ใช้ search_url ถ้าไม่ตรง)
     """
     return {
+        "tripitaka_mcp_reader": _tripitaka_reader_urls(sutta_id, segment_id),
         "suttacentral": _suttacentral_urls(sutta_id, segment_id),
         "tipitaka_84000": _tipitaka_84000_urls(sutta_id),
     }
