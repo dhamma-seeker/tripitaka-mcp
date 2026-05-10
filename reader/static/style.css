@@ -463,11 +463,56 @@ mark.inline-mark {
   display: block;
   width: 100%;
   height: auto;
-  margin: 0 0 24px;
+  margin: 0 0 14px;
   border-radius: 6px;
   /* The image is dark forest at night — looks natural in dark mode and
      contrasts cleanly with the parchment-ish light bg without needing a
      border. */
+}
+
+/* --- Pacchimavācā cycler — translations of the Buddha's last words ---
+   All <p> children share one CSS grid cell so the container takes the
+   tallest phrase's height and stays stable during transitions (no layout
+   shift). Opacity transitions are the only motion. Multi-script font
+   fallbacks live on .last-words so each lang-tagged child renders cleanly
+   on systems that ship Noto fonts (most macOS / Windows / iOS / Android
+   ≥10); on Linux without Noto, browsers degrade to whatever shapes the
+   script — usually fine for Latin/Thai/CJK, may show tofu for Sinhala /
+   Myanmar / Khmer until system fonts are installed. */
+.last-words {
+  display: grid;
+  margin: 0 0 22px;
+  text-align: center;
+  font-size: 13.5px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--muted);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Sarabun", "Noto Sans Thai",
+    "Noto Sans CJK SC", "Noto Sans CJK JP", "Noto Sans CJK KR",
+    "Noto Sans Devanagari", "Noto Sans Sinhala",
+    "Noto Sans Myanmar", "Padauk",
+    "Noto Sans Khmer",
+    system-ui, sans-serif;
+}
+
+.last-words p {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  padding: 0 12px;
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+  pointer-events: none;
+}
+
+.last-words p.active {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .last-words p { transition: none; }
 }
 
 .hero-title {

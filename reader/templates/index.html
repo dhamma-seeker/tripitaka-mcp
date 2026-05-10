@@ -23,6 +23,27 @@
         decoding="async"
       >
     </picture>
+
+    {# Pacchimavācā — the Buddha's last words. Cycles through 13 languages
+       below the parinibbāna hero. Each <p> is layered in the same grid
+       cell; opacity transitions handle the crossfade. Pāli stays first
+       so non-JS / reduced-motion clients see the canonical form. #}
+    <aside class="last-words" aria-label="The Buddha's last words in many languages">
+      <p lang="pi" class="active">Handa dāni, bhikkhave, āmantayāmi vo, vayadhammā saṅkhārā, appamādena sampādethā ti.</p>
+      <p lang="en">Come now, mendicants, I say to you all: Conditions fall apart. Persist with diligence.</p>
+      <p lang="th">ภิกษุทั้งหลาย บัดนี้ เราขอเตือนเธอทั้งหลายว่า สังขารทั้งหลายมีความเสื่อมไปเป็นธรรมดา เธอทั้งหลายจงทำหน้าที่ให้สำเร็จด้วยความไม่ประมาทเถิด</p>
+      <p lang="zh">是故，比丘！无为放逸，我以不放逸故，自致正觉，无量众善亦由不放逸得。一切万物，无常存者。此是如来末后所说。</p>
+      <p lang="ja">もろもろの事象は過ぎ去るものである。怠ることなく修行を完成しなさい。</p>
+      <p lang="ko">비구들이여, 참으로 이제 그대들에게 당부하노니, 형성된 것들은 소멸하기 마련인 법이다. 방일하지 말고 [해야 할 바를 모두] 성취하라.</p>
+      <p lang="hi">वयधम्मा सङ्खारा, अप्पमादेन सम्पादेथ</p>
+      <p lang="si">වයධම්මා සංඛාරා, අප්පමාදේන සම්පාදේථ</p>
+      <p lang="my">ဝယဓမ္မာ သင်္ခါရာ၊ အပ္ပမာဒေန သမ္ပာဒေထ</p>
+      <p lang="km">វយធម្មា សង្ខារា, អប្បមាទេន សម្បាទេថ</p>
+      <p lang="id">Para bhikkhu, sekarang Saya nyatakan kepada kalian: Segala hal yang terkondisi pasti akan hancur, berjuanglah dengan penuh kesadaran!</p>
+      <p lang="de">Vergänglich sind die Gebilde: Bemüht euch ohne Unterlass!</p>
+      <p lang="fr">Voyez maintenant, bhikkhus, je vous exhorte : toutes les choses composées sont soumises à la disparition. Efforcez-vous avec sérieux !</p>
+    </aside>
+
     <h1 class="hero-title">Tipiṭaka</h1>
     <p class="hero-tagline">The Buddha's teachings — Pāli alongside English, segment by segment.</p>
     <p class="hero-stats">
@@ -141,4 +162,23 @@
   </section>
 
 </article>
+
+<script>
+  // Pacchimavācā — cycle through translations of the Buddha's last words.
+  // Crossfade is opacity-only (no horizontal motion) to keep the page
+  // contemplative. Honours prefers-reduced-motion by leaving the first
+  // line visible and skipping the interval entirely.
+  (function () {
+    var lines = document.querySelectorAll('.last-words p');
+    if (lines.length < 2) return;
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (prefersReduced && prefersReduced.matches) return;
+    var i = 0;
+    setInterval(function () {
+      lines[i].classList.remove('active');
+      i = (i + 1) % lines.length;
+      lines[i].classList.add('active');
+    }, 6500);
+  })();
+</script>
 {% endblock %}
