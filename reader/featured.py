@@ -11,6 +11,7 @@ items to avoid burying the existing browse tree below.
 FEATURED_SUTTAS: list[dict] = [
     {
         "category": "Start here",
+        "emoji": "🌱",
         "items": [
             {
                 "sutta_id": "sn56.11",
@@ -40,6 +41,7 @@ FEATURED_SUTTAS: list[dict] = [
     },
     {
         "category": "Pivotal moments",
+        "emoji": "📜",
         "items": [
             {
                 "sutta_id": "dn16",
@@ -63,6 +65,7 @@ FEATURED_SUTTAS: list[dict] = [
     },
     {
         "category": "Practice",
+        "emoji": "🧘",
         "items": [
             {
                 "sutta_id": "dn22",
@@ -86,6 +89,7 @@ FEATURED_SUTTAS: list[dict] = [
     },
     {
         "category": "Foundations",
+        "emoji": "💎",
         "items": [
             {
                 "sutta_id": "an3.65",

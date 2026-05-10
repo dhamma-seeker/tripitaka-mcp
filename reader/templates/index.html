@@ -37,25 +37,25 @@
   <section class="featured">
     <h2 class="featured-heading">Where to start</h2>
     <p class="featured-sub">A small curated entry into the canon — enough to begin, not so much that you stall on which to pick.</p>
-    {% for cat in featured %}
-    <div class="featured-cat">
-      <h3 class="featured-cat-name">{{ cat.category }}</h3>
-      <ul class="featured-list">
-        {% for s in cat['items'] %}
-        <li>
-          <a href="/read/{{ s.sutta_id }}">
-            <div class="featured-head">
-              <code class="sid">{{ s.sutta_id }}</code>
-              <span class="t-pali" lang="pi">{{ s.title_pali }}</span>
-              <span class="t-en">{{ s.title_en }}</span>
-            </div>
-            <p class="featured-blurb">{{ s.blurb }}</p>
-          </a>
-        </li>
-        {% endfor %}
-      </ul>
+
+    <div class="featured-grid">
+      {% for cat in featured %}{% for s in cat['items'] %}
+      <a class="featured-card" href="/read/{{ s.sutta_id }}" data-cat="{{ cat.category|lower|replace(' ', '-') }}">
+        <div class="featured-card-top">
+          <code class="sid">{{ s.sutta_id }}</code>
+          <span class="featured-badge">
+            {%- if cat.emoji %}<span class="featured-badge-emoji" aria-hidden="true">{{ cat.emoji }}</span>{% endif -%}
+            <span class="featured-badge-text">{{ cat.category }}</span>
+          </span>
+        </div>
+        <div class="featured-card-title">
+          <span class="t-pali" lang="pi">{{ s.title_pali }}</span>
+          <span class="t-en">{{ s.title_en }}</span>
+        </div>
+        <p class="featured-card-blurb">{{ s.blurb }}</p>
+      </a>
+      {% endfor %}{% endfor %}
     </div>
-    {% endfor %}
   </section>
   {% endif %}
 
