@@ -12,8 +12,56 @@
   <header class="sutta-head">
     <h1 class="title-pali">Tipiṭaka</h1>
     <p class="title-english">The three baskets of the Pāli canon</p>
-    <p class="meta">Pāli + English (Bhikkhu Sujato / Bhikkhu Brahmali). Click a nikāya to see its books and suttas.</p>
+    <p class="meta">Pāli + English (Bhikkhu Sujato / Bhikkhu Brahmali). Browse the structure, jump straight to a sutta you know, or pick a starting point below.</p>
   </header>
+
+  <section class="jump-block">
+    <form action="/read/jump" method="get" class="jump-form" role="search">
+      <label for="jump-id">Jump to sutta</label>
+      <input
+        type="text"
+        id="jump-id"
+        name="id"
+        placeholder="mn128, dn22, sn56.11, dhp1-20…"
+        autocomplete="off"
+        spellcheck="false"
+        maxlength="50"
+        pattern="[a-zA-Z0-9.\-]{1,50}"
+      >
+      <button type="submit">Go</button>
+    </form>
+    <p class="jump-hint">Type a SuttaCentral-style ID. Examples: <a href="/read/sn56.11">sn56.11</a>, <a href="/read/mn1">mn1</a>, <a href="/read/pli-tv-bu-pm">pli-tv-bu-pm</a>.</p>
+  </section>
+
+  {% if featured %}
+  <section class="featured">
+    <h2 class="featured-heading">Where to start</h2>
+    <p class="featured-sub">A small curated entry into the canon — enough to begin, not so much that you stall on which to pick.</p>
+    {% for cat in featured %}
+    <div class="featured-cat">
+      <h3 class="featured-cat-name">{{ cat.category }}</h3>
+      <ul class="featured-list">
+        {% for s in cat['items'] %}
+        <li>
+          <a href="/read/{{ s.sutta_id }}">
+            <div class="featured-head">
+              <code class="sid">{{ s.sutta_id }}</code>
+              <span class="t-pali" lang="pi">{{ s.title_pali }}</span>
+              <span class="t-en">{{ s.title_en }}</span>
+            </div>
+            <p class="featured-blurb">{{ s.blurb }}</p>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section class="full-tree">
+    <h2 class="full-tree-heading">Full structure</h2>
+    <p class="full-tree-sub">All three piṭakas, every nikāya with at least one indexed sutta.</p>
 
   {% for pit in pitakas %}
   <section class="pitaka-block">
@@ -34,5 +82,6 @@
     </ul>
   </section>
   {% endfor %}
+  </section>
 </article>
 {% endblock %}

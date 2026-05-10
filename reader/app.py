@@ -24,6 +24,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from reader.featured import FEATURED_SUTTAS
 from reader.queries import (
     fetch_neighbors,
     fetch_nikaya,
@@ -67,8 +68,20 @@ def browse_index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"pitakas": pitakas},
+        context={"pitakas": pitakas, "featured": FEATURED_SUTTAS},
     )
+
+
+@app.get("/read/jump")
+def jump(id: str = "") -> RedirectResponse:
+    """Quick-jump form on /read/ posts here. Validates lazily — invalid IDs
+    fall through to /read/{sid} which 404s with a clear message. Empty input
+    bounces back to landing.
+    """
+    sid = id.strip().lower()[:50]
+    if not sid:
+        return RedirectResponse(url="/read/", status_code=302)
+    return RedirectResponse(url=f"/read/{sid}", status_code=302)
 
 
 @app.get("/read/api/word")
