@@ -15,7 +15,7 @@
       <span class="sep">›</span>
       <span>{{ sutta.nikaya.name_pali }}</span>
       <span class="sep">›</span>
-      <span class="sutta-id">{{ sutta.sutta_id }}</span>
+      <span class="sutta-id" title="{{ sutta.sutta_id|decode_sid }}">{{ sutta.sutta_id }}</span>
     </p>
     <h1 class="title-pali">{{ sutta.title_pali or sutta.sutta_id }}</h1>
     {% if sutta.title_english %}
@@ -59,7 +59,7 @@
   {% if neighbors and (neighbors.prev or neighbors.next) %}
   <nav class="sutta-nav" aria-label="Sibling sutta navigation">
     {% if neighbors.prev %}
-    <a class="nav-prev" href="/read/{{ neighbors.prev.sutta_id }}" rel="prev">
+    <a class="nav-prev" href="/read/{{ neighbors.prev.sutta_id }}" rel="prev" title="{{ neighbors.prev.sutta_id|decode_sid }}">
       <span class="nav-arrow">←</span>
       <span class="nav-label">
         <code class="sid">{{ neighbors.prev.sutta_id }}</code>
@@ -68,7 +68,7 @@
     </a>
     {% else %}<span></span>{% endif %}
     {% if neighbors.next %}
-    <a class="nav-next" href="/read/{{ neighbors.next.sutta_id }}" rel="next">
+    <a class="nav-next" href="/read/{{ neighbors.next.sutta_id }}" rel="next" title="{{ neighbors.next.sutta_id|decode_sid }}">
       <span class="nav-label">
         <code class="sid">{{ neighbors.next.sutta_id }}</code>
         {% if neighbors.next.title_pali %}<span class="t-pali" lang="pi">{{ neighbors.next.title_pali }}</span>{% endif %}

@@ -505,6 +505,119 @@ mark.inline-mark {
 
 .jump-hint a:hover { text-decoration: underline; }
 
+.jump-hint code.sid {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+}
+
+/* --- "How sutta IDs work" expandable help block --- */
+
+.id-help {
+  margin: 14px 0 0;
+  padding: 0;
+  border-top: 1px dashed var(--border);
+}
+
+.id-help[open] {
+  padding-top: 6px;
+}
+
+.id-help summary {
+  margin-top: 10px;
+  padding: 4px 0;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  list-style: none;
+  user-select: none;
+}
+
+.id-help summary::-webkit-details-marker { display: none; }
+
+.id-help summary::before {
+  content: "▶";
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 9px;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.id-help[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.id-help summary:hover { color: var(--accent); }
+
+.id-help-body {
+  padding: 8px 0 4px;
+  font-size: 13px;
+  color: var(--english-fg);
+  line-height: 1.5;
+}
+
+.id-help-body p {
+  margin: 12px 0 6px;
+  font-size: 13px;
+}
+
+.id-help-body p:first-child { margin-top: 4px; }
+
+.id-help-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 8px;
+}
+
+.id-help-table td {
+  padding: 4px 8px 4px 0;
+  font-size: 12.5px;
+  vertical-align: top;
+}
+
+.id-help-table td:first-child {
+  width: 160px;
+  white-space: nowrap;
+}
+
+.id-help-table code {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--bg);
+  padding: 1px 6px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+}
+
+.id-help-note {
+  margin: 16px 0 0 !important;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.id-help-note code {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--code-bg, var(--bg));
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+/* Cursor hint that .sid elements are interactive (have a tooltip) */
+code.sid[title], .sutta-id[title] { cursor: help; }
+
 /* --- Featured suttas — card grid (curated entry points on /read/) --- */
 
 .featured {

@@ -33,7 +33,7 @@
       {% for s in book.suttas %}
       <li>
         <a href="/read/{{ s.sutta_id }}">
-          <code class="sid">{{ s.sutta_id }}</code>
+          <code class="sid" title="{{ s.sutta_id|decode_sid }}">{{ s.sutta_id }}</code>
           {% if s.title_pali %}<span class="t-pali" lang="pi">{{ s.title_pali }}</span>{% endif %}
           {% if s.title_english %}<span class="t-en">{{ s.title_english }}</span>{% endif %}
         </a>

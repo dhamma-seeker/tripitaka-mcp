@@ -33,9 +33,14 @@ from reader.queries import (
     lookup_word,
     search_text,
 )
+from reader.sutta_id_decoder import decode_sutta_id
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+# Pedagogical: every <code class="sid"> tooltip teaches the canonical-ID
+# format by decoding it. New users absorb the system through repeated
+# exposure rather than needing to read a docs page first.
+templates.env.filters["decode_sid"] = decode_sutta_id
 
 # Validate identifiers tightly — DB only has lowercase alphanumerics, dots,
 # and hyphens (e.g. mn128, pli-tv-bu-vb-pj1, mil3.1.1). Reject anything else

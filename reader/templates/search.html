@@ -47,7 +47,7 @@
       <li>
         <a href="/read/{{ r.sutta_id }}#{{ r.segment_id }}">
           <div class="search-result-head">
-            <code class="sid">{{ r.segment_id }}</code>
+            <code class="sid" title="{{ r.sutta_id|decode_sid }}">{{ r.segment_id }}</code>
             {% if r.title_pali %}<span class="t-pali" lang="pi">{{ r.title_pali }}</span>{% endif %}
             <span class="t-nik">{{ r.nikaya_pali }}</span>
           </div>

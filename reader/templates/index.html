@@ -30,7 +30,45 @@
       >
       <button type="submit">Go</button>
     </form>
-    <p class="jump-hint">Type a SuttaCentral-style ID. Examples: <a href="/read/sn56.11">sn56.11</a>, <a href="/read/mn1">mn1</a>, <a href="/read/pli-tv-bu-pm">pli-tv-bu-pm</a>.</p>
+    <p class="jump-hint">Type a SuttaCentral-style ID. Examples: <a href="/read/sn56.11">sn56.11</a>, <a href="/read/mn1">mn1</a>, <a href="/read/pli-tv-bu-pm">pli-tv-bu-pm</a>. Hover any <code class="sid">id</code> on this site to see its breakdown.</p>
+
+    <details class="id-help">
+      <summary>How sutta IDs work</summary>
+      <div class="id-help-body">
+        <p>Most IDs are a <strong>nikāya prefix + number</strong>:</p>
+        <table class="id-help-table">
+          <tr><td><code>dn22</code></td><td>Dīgha Nikāya · sutta 22</td></tr>
+          <tr><td><code>mn128</code></td><td>Majjhima Nikāya · sutta 128</td></tr>
+          <tr><td><code>sn56.11</code></td><td>Saṁyutta Nikāya · saṁyutta 56, sutta 11</td></tr>
+          <tr><td><code>an3.65</code></td><td>Aṅguttara Nikāya · nipāta 3, sutta 65</td></tr>
+        </table>
+
+        <p>Khuddaka Nikāya books — usually <strong>verse-numbered</strong>:</p>
+        <table class="id-help-table">
+          <tr><td><code>dhp1-20</code></td><td>Dhammapada · verses 1–20 (range)</td></tr>
+          <tr><td><code>snp1.8</code></td><td>Sutta Nipāta · vagga 1, sutta 8</td></tr>
+          <tr><td><code>iti85</code></td><td>Itivuttaka · verse 85</td></tr>
+          <tr><td><code>mil3.1.1</code></td><td>Milindapañha · 3.1.1</td></tr>
+        </table>
+
+        <p>Vinaya — <strong>descriptive prefixes</strong>, dash-separated:</p>
+        <table class="id-help-table">
+          <tr><td><code>pli-tv-bu-pm</code></td><td>Pāli · Theravāda · Bhikkhu · Pātimokkha</td></tr>
+          <tr><td><code>pli-tv-bu-vb-pj1</code></td><td>… Bhikkhu · Vibhaṅga · Pārājika 1</td></tr>
+          <tr><td><code>pli-tv-kd1</code></td><td>… Khandhaka 1 (Mahāvagga)</td></tr>
+          <tr><td><code>pli-tv-pvr10</code></td><td>… Parivāra 10</td></tr>
+        </table>
+
+        <p>Abhidhamma — chapter-based:</p>
+        <table class="id-help-table">
+          <tr><td><code>vb1</code></td><td>Vibhaṅga · ch. 1</td></tr>
+          <tr><td><code>kv10.1</code></td><td>Kathāvatthu · kathā 10, subsection 1</td></tr>
+          <tr><td><code>patthana1.1</code></td><td>Paṭṭhāna · section 1, subsection 1</td></tr>
+        </table>
+
+        <p class="id-help-note">A <code>:n.m</code> suffix on any ID points to a specific segment — e.g. <code>mn128:1.1</code> = segment 1.1 of MN 128. Cross-reference URLs from MCP tools use this form to deep-link a quoted line.</p>
+      </div>
+    </details>
   </section>
 
   {% if featured %}
@@ -42,7 +80,7 @@
       {% for cat in featured %}{% for s in cat['items'] %}
       <a class="featured-card" href="/read/{{ s.sutta_id }}" data-cat="{{ cat.category|lower|replace(' ', '-') }}">
         <div class="featured-card-top">
-          <code class="sid">{{ s.sutta_id }}</code>
+          <code class="sid" title="{{ s.sutta_id|decode_sid }}">{{ s.sutta_id }}</code>
           <span class="featured-badge">
             {%- if cat.emoji %}<span class="featured-badge-emoji" aria-hidden="true">{{ cat.emoji }}</span>{% endif -%}
             <span class="featured-badge-text">{{ cat.category }}</span>
