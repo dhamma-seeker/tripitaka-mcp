@@ -16,8 +16,16 @@ apex Caddy site handles `/` (landing) and only proxies `/read/*` to this app.
 
 from __future__ import annotations
 
+import mimetypes
 import re
 from pathlib import Path
+
+# Register MIME types that aren't in the stdlib defaults on every platform.
+# StaticFiles relies on `mimetypes.guess_type()`, and the slim Python image
+# we use in production doesn't ship with .webp registered — without this,
+# the hero image gets served as text/plain and Safari/Firefox refuse to
+# render it. Register before app construction so StaticFiles sees it.
+mimetypes.add_type("image/webp", ".webp")
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
