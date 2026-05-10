@@ -520,6 +520,10 @@ mark.inline-mark {
 }
 
 .lw-phrase {
+  /* All 13 phrases stack into the same grid cell so the cell takes the
+     tallest phrase's height and the frame stays stable as languages
+     cycle. Layout-wise every phrase contributes its full text; only
+     opacity hides the inactive ones. */
   grid-column: 1;
   grid-row: 1;
   margin: 0;
@@ -528,7 +532,9 @@ mark.inline-mark {
   line-height: 1.55;
   color: var(--english-fg);
   text-align: center;
-  display: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI",
     "Sarabun", "Noto Sans Thai",
@@ -540,7 +546,12 @@ mark.inline-mark {
 }
 
 .lw-phrase.active {
-  display: block;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lw-phrase { transition: none; }
 }
 
 .lw-cursor {

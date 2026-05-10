@@ -216,10 +216,14 @@
       return Array.from(text);
     }
 
-    // Read source text once, then blank the DOM nodes — typing fills them in.
+    // Read source text once, but DON'T blank the DOM nodes — every phrase
+    // needs to keep its full text so the shared grid cell measures to the
+    // tallest. Otherwise the frame collapses on short languages and grows
+    // on long ones, dragging surrounding content up and down. Only the
+    // active phrase is blanked (in startType) right before its typewriter
+    // run; the other 12 sit at opacity 0 with their full text in place.
     var data = phrases.map(function (el) {
       var text = el.textContent;
-      el.textContent = '';
       return {
         el: el,
         text: text,
