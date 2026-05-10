@@ -486,35 +486,36 @@ mark.inline-mark {
 }
 
 .lw-frame {
+  /* Single flat box — label sits absolutely in the top-left corner so
+     no separate header strip is needed. The frame is the relative
+     ancestor for both .lw-label (top-left) and .lw-cursor (bottom-right). */
   position: relative;
   border: 1px solid var(--border);
   border-radius: 4px;
   background: var(--code-bg);
-  overflow: hidden;
-}
-
-.lw-header {
-  padding: 4px 12px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
 }
 
 .lw-label {
+  position: absolute;
+  top: 7px;
+  left: 14px;
   font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--accent);
+  pointer-events: none;
 }
 
 .lw-body {
-  /* Top-aligned text + cursor parked at bottom-right gives the iconic
-     RPG-textbox waiting-for-input feel. Grid cell still measures to the
-     tallest phrase, so layout stays put — short phrases just leave the
-     bottom of the body empty (with cursor) instead of floating mid-cell. */
+  /* Top-aligned text + cursor parked at bottom-right = iconic RPG
+     waiting-for-input feel. Padding-top clears the absolute label. Grid
+     cell measures to the tallest phrase so layout stays put across
+     cycles — short phrases leave the bottom of the body empty (with the
+     blinking cursor) instead of floating mid-cell. */
   position: relative;
-  padding: 10px 30px 14px 14px;
+  padding: 26px 30px 12px 14px;
   display: grid;
   align-items: start;
   min-height: 2.4em;
@@ -580,7 +581,7 @@ mark.inline-mark {
 }
 
 @media (max-width: 600px) {
-  .lw-body { padding: 9px 26px 12px 12px; min-height: 2.4em; }
+  .lw-body { padding: 24px 26px 10px 12px; min-height: 2.4em; }
   .lw-phrase { font-size: 13.5px; }
 }
 
