@@ -167,6 +167,46 @@ pre code {
     color: var(--muted);
     font-size: 0.9rem;
 }
+.tracks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.85rem;
+    margin: 0 0 3rem;
+}
+.track {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.1rem 1.25rem 1rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, transform 0.15s;
+}
+.track:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+.track h3 {
+    margin: 0 0 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+}
+.track p {
+    margin: 0 0 0.85rem;
+    font-size: 0.95rem;
+    color: var(--fg);
+    line-height: 1.5;
+}
+.track-cta {
+    font-size: 0.88rem;
+    color: var(--muted);
+}
+.track:hover .track-cta {
+    color: var(--accent);
+}
 .endpoint {
     font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
     background: var(--code-bg);
@@ -217,6 +257,24 @@ footer p { margin: 0.5rem 0; }
 </picture>
 </header>
 
+<section class="tracks" aria-label="Where to begin">
+<a class="track" href="/read/">
+<h3>Read</h3>
+<p>Browse the Pāli canon with English translations side-by-side. No setup needed.</p>
+<span class="track-cta">Open the reader →</span>
+</a>
+<a class="track" href="#connect">
+<h3>Connect</h3>
+<p>Give Claude, Cursor, Codex, or any MCP-compatible AI agent the ability to search and cite.</p>
+<span class="track-cta">Setup guide ↓</span>
+</a>
+<a class="track" href="https://mcp.tripitaka-mcp.com/topics/">
+<h3>Study</h3>
+<p>Curated topic pages — themes, people, places, timeline — with verified canonical citations.</p>
+<span class="track-cta">Browse topics →</span>
+</a>
+</section>
+
 <h2>What it does</h2>
 <p>The server exposes <strong>10 tools and 3 resources</strong> over MCP. Your AI agent can:</p>
 <ul>
@@ -224,6 +282,7 @@ footer p { margin: 0.5rem 0; }
 <li>Fetch any sutta in full with cross-reference URLs to <a href="https://suttacentral.net">SuttaCentral</a> and <a href="https://84000.org">84000.org</a></li>
 <li>Compare translations side-by-side, segment-aligned across editions</li>
 <li>Resolve Pāli words against P. A. Payutto's dictionary, PTS, and DPPN — including inflected forms</li>
+<li>Cite any line back to the bilingual reader with <code>/read/{sutta_id}#{segment_id}</code> — the page opens with the line highlighted and scroll-centered (try <a href="/read/sn56.11#sn56.11:2.4">SN 56.11 segment 2.4</a>)</li>
 </ul>
 
 <h2>Coverage</h2>
@@ -236,14 +295,7 @@ footer p { margin: 0.5rem 0; }
 <div><strong>~444K</strong><span>Total segments<br>indexed + embedded</span></div>
 </div>
 
-<p class="aspiration">— อิทํ เม ปุญฺญํ สพฺพสตฺตานํ เทมิ —</p>
-
-<h2>Read it</h2>
-<p>You don't need an AI client to read the canon — open the bilingual reader directly:</p>
-<p><a class="endpoint" href="/read/">tripitaka-mcp.com/read/</a> &nbsp; <small>browse Pāli + English side-by-side</small></p>
-<p>When AI assistants quote a specific segment via this MCP, they can link straight to that segment with <code>/read/{sutta_id}#{segment_id}</code> — the page opens with the cited line highlighted and centered, so you can verify the quote in its original context without leaving this domain. Try <a href="/read/sn56.11#sn56.11:2.4">SN 56.11 segment 2.4</a> (the Middle Way declaration from the first sermon).</p>
-
-<h2>Try it</h2>
+<h2 id="connect">Connect your AI</h2>
 <p>The hosted server is free and runs at:</p>
 <p><span class="endpoint">https://mcp.tripitaka-mcp.com/mcp</span> &nbsp; (Streamable HTTP, MCP spec 2025-03-26)<br>
 <span class="endpoint">https://mcp.tripitaka-mcp.com/sse</span> &nbsp; (legacy SSE, for older clients)</p>
@@ -268,6 +320,14 @@ footer p { margin: 0.5rem 0; }
 <p><strong>3.</strong> Quit Claude Desktop completely (<kbd>⌘Q</kbd> / right-click tray → Quit), then reopen. The 🔌 indicator in the bottom-left should show <code>tripitaka</code> connected with 10 tools available.</p>
 <p><em>First connection takes 5–10 seconds</em> while <code>npx</code> downloads <code>mcp-remote</code> on demand — give Claude Desktop a moment after restart before assuming it failed. The repo's <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/claude_desktop_config.example.json">annotated example config</a> covers stdio (local install) and both remote transports.</p>
 
+<h3>Other MCP clients</h3>
+<ul>
+<li><strong>Cursor</strong> — add the same <code>npx mcp-remote https://mcp.tripitaka-mcp.com/mcp</code> entry to <code>~/.cursor/mcp.json</code> (or the project-level <code>.cursor/mcp.json</code>). Restart Cursor; the tools appear under the MCP panel.</li>
+<li><strong>Codex CLI &amp; other Streamable-HTTP clients</strong> — point directly at <span class="endpoint">https://mcp.tripitaka-mcp.com/mcp</span>. No bridge needed.</li>
+<li><strong>Legacy SSE clients</strong> — use <span class="endpoint">https://mcp.tripitaka-mcp.com/sse</span> instead.</li>
+</ul>
+<p>The <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/claude_desktop_config.example.json">example config in the repo</a> documents the full set of transports.</p>
+
 <h3>Try asking</h3>
 <p>Once connected, ask Claude things like:</p>
 <ul>
@@ -282,7 +342,7 @@ footer p { margin: 0.5rem 0; }
 <h3>Optional research skill</h3>
 <p>Drop <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/skills/tipitaka-research.md"><code>skills/tipitaka-research.md</code></a> into <code>~/.claude/skills/</code> to activate a multi-step research workflow (clarify → verify coverage → search → drill → cite) tailored to scriptural research.</p>
 
-<h2>Read</h2>
+<h2>Resources</h2>
 <ul>
 <li><a href="https://github.com/dhamma-seeker/tripitaka-mcp"><strong>Source code</strong></a> — MIT-licensed, fork-friendly</li>
 <li><a href="https://mcp.tripitaka-mcp.com/topics/"><strong>Topic pages</strong></a> — six curated markdown pages: canon overview, getting-started + tool selection, places (Mahājanapada + holy sites), themes (10 foundational teachings with locus classicus), people (~30 major figures), timeline (phase-based chronology of the 45-year mission). Sutta IDs verified against live data so AI agents can cite directly.</li>
@@ -290,6 +350,7 @@ footer p { margin: 0.5rem 0; }
 </ul>
 
 <footer>
+<p class="aspiration">— อิทํ เม ปุญฺญํ สพฺพสตฺตานํ เทมิ —</p>
 <p>Offered as <strong>Dhamma Dāna</strong> — please use freely for learning, research, and practice. Not for commercial use.</p>
 <p>Source data from <a href="https://suttacentral.net">SuttaCentral</a>, <a href="https://www.watnyanaves.net">Wat Nyanavesakavan</a> (Payutto dictionary), and the <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/CREDITS.md">contributors and translators credited here</a>.</p>
 <p>If you find an error, please open an <a href="https://github.com/dhamma-seeker/tripitaka-mcp/issues">issue</a> — verifying the canon is a community effort.</p>
