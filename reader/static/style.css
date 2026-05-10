@@ -494,7 +494,7 @@ mark.inline-mark {
 }
 
 .lw-header {
-  padding: 5px 12px;
+  padding: 4px 12px;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
@@ -509,14 +509,15 @@ mark.inline-mark {
 }
 
 .lw-body {
+  /* Top-aligned text + cursor parked at bottom-right gives the iconic
+     RPG-textbox waiting-for-input feel. Grid cell still measures to the
+     tallest phrase, so layout stays put — short phrases just leave the
+     bottom of the body empty (with cursor) instead of floating mid-cell. */
   position: relative;
-  padding: 14px 36px 18px 16px;
-  /* min-height keeps the frame steady while phrases of very different
-     lengths cycle through (Devanagari ~30 chars vs French ~130). Grid
-     of one cell ensures the active phrase is the only one taking layout. */
-  min-height: 4.6em;
+  padding: 10px 30px 14px 14px;
   display: grid;
-  align-items: center;
+  align-items: start;
+  min-height: 2.4em;
 }
 
 .lw-phrase {
@@ -579,7 +580,7 @@ mark.inline-mark {
 }
 
 @media (max-width: 600px) {
-  .lw-body { padding: 12px 30px 16px 12px; min-height: 5.5em; }
+  .lw-body { padding: 9px 26px 12px 12px; min-height: 2.4em; }
   .lw-phrase { font-size: 13.5px; }
 }
 
