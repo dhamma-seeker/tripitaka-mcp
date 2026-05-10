@@ -456,7 +456,18 @@ mark.inline-mark {
 
 .hero {
   text-align: center;
-  padding: 8px 0 4px;
+  padding: 0 0 4px;
+}
+
+.hero-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 0 24px;
+  border-radius: 6px;
+  /* The image is dark forest at night — looks natural in dark mode and
+     contrasts cleanly with the parchment-ish light bg without needing a
+     border. */
 }
 
 .hero-title {
