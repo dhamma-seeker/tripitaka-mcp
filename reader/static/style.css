@@ -7,6 +7,14 @@
   --english-fg: #4a4a4a;
   --border: #e2dfd5;
   --highlight: #fff4d6;
+  --code-bg: #f0ede5;
+  /* Category tints — low-saturation so the page stays scholarly. Each is
+     a slightly darker shade than --accent (light mode) so left rails
+     register at a glance without competing with the gold accent. */
+  --cat-start:    #5e8a5e;   /* sage green — beginnings */
+  --cat-pivotal:  #8b6914;   /* same as --accent — biographical anchor */
+  --cat-practice: #5d7da0;   /* dusty blue — calm */
+  --cat-foundation:#8067a0;  /* muted violet — philosophical depth */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,6 +27,11 @@
     --english-fg: #b8b4a8;
     --border: #2e2a22;
     --highlight: #3a2f15;
+    --code-bg: #221f17;
+    --cat-start:    #8db58d;
+    --cat-pivotal:  #d4b04a;
+    --cat-practice: #9bb4d4;
+    --cat-foundation:#b89dd4;
   }
 }
 
@@ -432,14 +445,77 @@ mark.inline-mark {
   text-overflow: ellipsis;
 }
 
-/* --- Jump form (quick sutta_id lookup on /read/) --- */
+/* --- /read/ landing — hero strip --------------------------------------- */
 
-.jump-block {
-  margin: 0 0 32px;
-  padding: 16px 18px;
-  background: var(--code-bg, var(--bg));
+.read-home > * + * {
+  /* Major rhythm between the four sections (hero, featured, jump, full-tree).
+     Each new section section uses this margin-top — easier than per-section
+     overrides. */
+  margin-top: 56px;
+}
+
+.hero {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+
+.hero-title {
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+  color: var(--pali-fg);
+  font-style: italic;
+  line-height: 1.1;
+}
+
+.hero-tagline {
+  font-size: 17px;
+  color: var(--english-fg);
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.hero-stats {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.hero-stats .hero-sep { margin: 0 8px; opacity: 0.5; }
+.hero-stats em { color: var(--accent); font-style: italic; }
+
+/* --- Section headings (unified across /read/ sections) ----------------- */
+
+.section-heading {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--fg);
+  letter-spacing: -0.005em;
+}
+
+.section-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.section-sub code.sid {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 2px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+}
+
+/* --- Jump form (compact utility — single line on /read/) --------------- */
+
+.jump {
+  /* Uses the .read-home > * + * margin from above. */
 }
 
 .jump-form {
@@ -447,26 +523,29 @@ mark.inline-mark {
   align-items: center;
   gap: 10px;
   margin: 0;
+  padding: 10px 14px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
 }
 
 .jump-form label {
   font-size: 13px;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   font-weight: 500;
   white-space: nowrap;
 }
 
 .jump-form input {
   flex: 1;
+  min-width: 0;
   background: var(--bg);
   color: var(--fg);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 8px 12px;
+  padding: 7px 11px;
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
   transition: border-color 0.12s ease;
 }
@@ -481,7 +560,7 @@ mark.inline-mark {
   color: var(--bg);
   border: 1px solid var(--accent);
   border-radius: 4px;
-  padding: 8px 18px;
+  padding: 7px 16px;
   font: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -491,45 +570,20 @@ mark.inline-mark {
 
 .jump-form button:hover { opacity: 0.85; }
 
-.jump-hint {
-  margin: 8px 0 0;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.jump-hint a {
-  color: var(--accent);
-  text-decoration: none;
-  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
-}
-
-.jump-hint a:hover { text-decoration: underline; }
-
-.jump-hint code.sid {
-  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
-  font-size: 11px;
-  color: var(--accent);
-  background: var(--bg);
-  padding: 1px 5px;
-  border-radius: 2px;
-  border: 1px solid var(--border);
-}
-
-/* --- "How sutta IDs work" expandable help block --- */
+/* --- "How sutta IDs work" expandable help (standalone under jump form) --- */
 
 .id-help {
-  margin: 14px 0 0;
-  padding: 0;
-  border-top: 1px dashed var(--border);
+  margin: 12px 0 0;
+  padding: 0 4px;
 }
 
 .id-help[open] {
-  padding-top: 6px;
+  padding: 0 14px 4px;
+  background: transparent;
 }
 
 .id-help summary {
-  margin-top: 10px;
-  padding: 4px 0;
+  padding: 6px 0;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
@@ -620,21 +674,7 @@ code.sid[title], .sutta-id[title] { cursor: help; }
 
 /* --- Featured suttas — card grid (curated entry points on /read/) --- */
 
-.featured {
-  margin: 0 0 40px;
-}
-
-.featured-heading {
-  font-size: 22px;
-  font-weight: 600;
-  margin: 0 0 4px;
-}
-
-.featured-sub {
-  font-size: 13px;
-  color: var(--muted);
-  margin: 0 0 20px;
-}
+.featured { margin: 0; }
 
 .featured-grid {
   display: grid;
@@ -651,17 +691,24 @@ code.sid[title], .sutta-id[title] { cursor: help; }
   color: var(--fg);
   text-decoration: none;
   border: 1px solid var(--border);
-  border-left: 3px solid var(--border);
+  /* Default rail uses border colour; per-category overrides below tint
+     it according to the data-cat attribute set by the template. */
+  border-left: 3px solid var(--cat-rail, var(--border));
   border-radius: 6px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
+/* Category-specific rail colours (data-cat values come from the
+   template's slugified category name). */
+.featured-card[data-cat="start-here"]       { --cat-rail: var(--cat-start); }
+.featured-card[data-cat="pivotal-moments"]  { --cat-rail: var(--cat-pivotal); }
+.featured-card[data-cat="practice"]         { --cat-rail: var(--cat-practice); }
+.featured-card[data-cat="foundations"]      { --cat-rail: var(--cat-foundation); }
+
 .featured-card:hover {
-  border-color: var(--accent);
-  border-left-color: var(--accent);
+  border-color: var(--cat-rail, var(--accent));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
-  background: var(--bg);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -703,8 +750,8 @@ code.sid[title], .sutta-id[title] { cursor: help; }
 }
 
 .featured-card:hover .featured-badge {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--cat-rail, var(--accent));
+  color: var(--cat-rail, var(--accent));
 }
 
 .featured-badge-emoji {
@@ -747,22 +794,93 @@ code.sid[title], .sutta-id[title] { cursor: help; }
   .jump-form label { margin-bottom: 4px; }
 }
 
-/* --- Full-tree section heading --- */
+/* --- Full-tree: 3-column grid (one per piṭaka) ------------------------- */
 
-.full-tree {
-  margin: 0;
+.full-tree { margin: 0; }
+
+.pitaka-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
 }
 
-.full-tree-heading {
-  font-size: 22px;
+.pitaka-col {
+  min-width: 0;
+}
+
+.pitaka-col-title {
+  font-size: 15px;
   font-weight: 600;
-  margin: 0 0 4px;
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
-.full-tree-sub {
-  font-size: 13px;
+.pitaka-col-title .pi {
+  font-style: italic;
+  color: var(--pali-fg);
+  letter-spacing: -0.005em;
+}
+
+.pitaka-col-title .en {
+  font-size: 11px;
+  font-weight: 500;
   color: var(--muted);
-  margin: 0 0 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pitaka-col-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pitaka-col-list li {
+  border-bottom: 1px solid var(--border);
+}
+
+.pitaka-col-list li:last-child { border-bottom: none; }
+
+.pitaka-col-list a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 4px;
+  text-decoration: none;
+  color: var(--fg);
+  font-size: 13px;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.pitaka-col-list a:hover {
+  background: var(--highlight);
+  color: var(--accent);
+}
+
+.pitaka-col-list .nik-pali {
+  font-style: italic;
+  color: var(--pali-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pitaka-col-list a:hover .nik-pali { color: var(--accent); }
+
+.pitaka-col-list .nik-count {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .pitaka-cols { grid-template-columns: 1fr; gap: 18px; }
 }
 
 /* --- Browse pages (index + nikaya) --- */

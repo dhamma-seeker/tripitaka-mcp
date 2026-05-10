@@ -24,7 +24,7 @@
       >
     </form>
     <nav class="site-nav">
-      <a href="/read/">Browse</a>
+      {% if request and request.url.path != '/read/' %}<a href="/read/">Browse</a>{% endif %}
       <a href="/" rel="external">Home</a>
     </nav>
   </header>

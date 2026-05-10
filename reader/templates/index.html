@@ -8,21 +8,54 @@
 {% endblock %}
 
 {% block content %}
-<article class="browse">
-  <header class="sutta-head">
-    <h1 class="title-pali">Tipiṭaka</h1>
-    <p class="title-english">The three baskets of the Pāli canon</p>
-    <p class="meta">Pāli + English (Bhikkhu Sujato / Bhikkhu Brahmali). Browse the structure, jump straight to a sutta you know, or pick a starting point below.</p>
+<article class="read-home">
+
+  <header class="hero">
+    <h1 class="hero-title">Tipiṭaka</h1>
+    <p class="hero-tagline">The Buddha's teachings — Pāli alongside English, segment by segment.</p>
+    <p class="hero-stats">
+      <span>Three piṭakas</span>
+      <span class="hero-sep">·</span>
+      <span>~444,000 segments</span>
+      <span class="hero-sep">·</span>
+      <span>Free as <em>Dhamma Dāna</em></span>
+    </p>
   </header>
 
-  <section class="jump-block">
+  {% if featured %}
+  <section class="featured">
+    <h2 class="section-heading">Where to start</h2>
+    <p class="section-sub">Twelve curated entry points across the canon — pick a thread that calls you. Hover any <code class="sid">id</code> for its breakdown.</p>
+
+    <div class="featured-grid">
+      {% for cat in featured %}{% for s in cat['items'] %}
+      <a class="featured-card" href="/read/{{ s.sutta_id }}" data-cat="{{ cat.category|lower|replace(' ', '-') }}">
+        <div class="featured-card-top">
+          <code class="sid" title="{{ s.sutta_id|decode_sid }}">{{ s.sutta_id }}</code>
+          <span class="featured-badge">
+            {%- if cat.emoji %}<span class="featured-badge-emoji" aria-hidden="true">{{ cat.emoji }}</span>{% endif -%}
+            <span class="featured-badge-text">{{ cat.category }}</span>
+          </span>
+        </div>
+        <div class="featured-card-title">
+          <span class="t-pali" lang="pi">{{ s.title_pali }}</span>
+          <span class="t-en">{{ s.title_en }}</span>
+        </div>
+        <p class="featured-card-blurb">{{ s.blurb }}</p>
+      </a>
+      {% endfor %}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="jump">
     <form action="/read/jump" method="get" class="jump-form" role="search">
-      <label for="jump-id">Jump to sutta</label>
+      <label for="jump-id">Know the ID?</label>
       <input
         type="text"
         id="jump-id"
         name="id"
-        placeholder="mn128, dn22, sn56.11, dhp1-20…"
+        placeholder="mn128, sn56.11, pli-tv-bu-pm…"
         autocomplete="off"
         spellcheck="false"
         maxlength="50"
@@ -30,7 +63,6 @@
       >
       <button type="submit">Go</button>
     </form>
-    <p class="jump-hint">Type a SuttaCentral-style ID. Examples: <a href="/read/sn56.11">sn56.11</a>, <a href="/read/mn1">mn1</a>, <a href="/read/pli-tv-bu-pm">pli-tv-bu-pm</a>. Hover any <code class="sid">id</code> on this site to see its breakdown.</p>
 
     <details class="id-help">
       <summary>How sutta IDs work</summary>
@@ -71,55 +103,30 @@
     </details>
   </section>
 
-  {% if featured %}
-  <section class="featured">
-    <h2 class="featured-heading">Where to start</h2>
-    <p class="featured-sub">A small curated entry into the canon — enough to begin, not so much that you stall on which to pick.</p>
-
-    <div class="featured-grid">
-      {% for cat in featured %}{% for s in cat['items'] %}
-      <a class="featured-card" href="/read/{{ s.sutta_id }}" data-cat="{{ cat.category|lower|replace(' ', '-') }}">
-        <div class="featured-card-top">
-          <code class="sid" title="{{ s.sutta_id|decode_sid }}">{{ s.sutta_id }}</code>
-          <span class="featured-badge">
-            {%- if cat.emoji %}<span class="featured-badge-emoji" aria-hidden="true">{{ cat.emoji }}</span>{% endif -%}
-            <span class="featured-badge-text">{{ cat.category }}</span>
-          </span>
-        </div>
-        <div class="featured-card-title">
-          <span class="t-pali" lang="pi">{{ s.title_pali }}</span>
-          <span class="t-en">{{ s.title_en }}</span>
-        </div>
-        <p class="featured-card-blurb">{{ s.blurb }}</p>
-      </a>
-      {% endfor %}{% endfor %}
+  <section class="full-tree">
+    <h2 class="section-heading">Full structure</h2>
+    <p class="section-sub">All three piṭakas. Counts are sections with at least one indexed segment.</p>
+    <div class="pitaka-cols">
+      {% for pit in pitakas %}
+      <section class="pitaka-col" data-pitaka="{{ pit.code }}">
+        <h3 class="pitaka-col-title">
+          <span class="pi" lang="pi">{{ pit.name_pali }}</span>
+          <span class="en">{{ pit.name_english }}</span>
+        </h3>
+        <ul class="pitaka-col-list">
+          {% for nik in pit.nikayas %}
+          <li>
+            <a href="/read/browse/{{ nik.code }}">
+              <span class="nik-pali" lang="pi">{{ nik.name_pali }}</span>
+              <span class="nik-count">{{ nik.sutta_count }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endfor %}
     </div>
   </section>
-  {% endif %}
 
-  <section class="full-tree">
-    <h2 class="full-tree-heading">Full structure</h2>
-    <p class="full-tree-sub">All three piṭakas, every nikāya with at least one indexed sutta.</p>
-
-  {% for pit in pitakas %}
-  <section class="pitaka-block">
-    <h2 class="pitaka-title">
-      <span class="pi" lang="pi">{{ pit.name_pali }}</span>
-      <span class="en">{{ pit.name_english }}</span>
-    </h2>
-    <ul class="nikaya-list">
-      {% for nik in pit.nikayas %}
-      <li>
-        <a href="/read/browse/{{ nik.code }}">
-          <span class="nik-pali" lang="pi">{{ nik.name_pali }}</span>
-          <span class="nik-en">{{ nik.name_english }}</span>
-          <span class="nik-count">{{ nik.sutta_count }} suttas</span>
-        </a>
-      </li>
-      {% endfor %}
-    </ul>
-  </section>
-  {% endfor %}
-  </section>
 </article>
 {% endblock %}
