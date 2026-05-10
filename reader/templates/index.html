@@ -24,24 +24,34 @@
       >
     </picture>
 
-    {# Pacchimavācā — the Buddha's last words. Cycles through 13 languages
-       below the parinibbāna hero. Each <p> is layered in the same grid
-       cell; opacity transitions handle the crossfade. Pāli stays first
-       so non-JS / reduced-motion clients see the canonical form. #}
+    {# Pacchimavācā — the Buddha's last words, RPG-textbox style.
+       Frame + small language label tab + body that types each phrase
+       grapheme-by-grapheme + a blinking cursor when fully typed. Hover
+       pauses the cycle. The 13 <p> elements carry the source text
+       (server-rendered for no-JS / SEO / a11y); JS reads them on init,
+       blanks the text, then types into the active one. #}
     <aside class="last-words" aria-label="The Buddha's last words in many languages">
-      <p lang="pi" class="active">Handa dāni, bhikkhave, āmantayāmi vo, vayadhammā saṅkhārā, appamādena sampādethā ti.</p>
-      <p lang="en">Come now, mendicants, I say to you all: Conditions fall apart. Persist with diligence.</p>
-      <p lang="th">ภิกษุทั้งหลาย บัดนี้ เราขอเตือนเธอทั้งหลายว่า สังขารทั้งหลายมีความเสื่อมไปเป็นธรรมดา เธอทั้งหลายจงทำหน้าที่ให้สำเร็จด้วยความไม่ประมาทเถิด</p>
-      <p lang="zh">是故，比丘！无为放逸，我以不放逸故，自致正觉，无量众善亦由不放逸得。一切万物，无常存者。此是如来末后所说。</p>
-      <p lang="ja">もろもろの事象は過ぎ去るものである。怠ることなく修行を完成しなさい。</p>
-      <p lang="ko">비구들이여, 참으로 이제 그대들에게 당부하노니, 형성된 것들은 소멸하기 마련인 법이다. 방일하지 말고 [해야 할 바를 모두] 성취하라.</p>
-      <p lang="hi">वयधम्मा सङ्खारा, अप्पमादेन सम्पादेथ</p>
-      <p lang="si">වයධම්මා සංඛාරා, අප්පමාදේන සම්පාදේථ</p>
-      <p lang="my">ဝယဓမ္မာ သင်္ခါရာ၊ အပ္ပမာဒေန သမ္ပာဒေထ</p>
-      <p lang="km">វយធម្មា សង្ខារា, អប្បមាទេន សម្បាទេថ</p>
-      <p lang="id">Para bhikkhu, sekarang Saya nyatakan kepada kalian: Segala hal yang terkondisi pasti akan hancur, berjuanglah dengan penuh kesadaran!</p>
-      <p lang="de">Vergänglich sind die Gebilde: Bemüht euch ohne Unterlass!</p>
-      <p lang="fr">Voyez maintenant, bhikkhus, je vous exhorte : toutes les choses composées sont soumises à la disparition. Efforcez-vous avec sérieux !</p>
+      <div class="lw-frame">
+        <div class="lw-header">
+          <span class="lw-label">Pāli</span>
+        </div>
+        <div class="lw-body">
+          <p lang="pi" data-label="Pāli" class="lw-phrase active">Handa dāni, bhikkhave, āmantayāmi vo, vayadhammā saṅkhārā, appamādena sampādethā ti.</p>
+          <p lang="en" data-label="English" class="lw-phrase">Come now, mendicants, I say to you all: Conditions fall apart. Persist with diligence.</p>
+          <p lang="th" data-label="ไทย" class="lw-phrase">ภิกษุทั้งหลาย บัดนี้ เราขอเตือนเธอทั้งหลายว่า สังขารทั้งหลายมีความเสื่อมไปเป็นธรรมดา เธอทั้งหลายจงทำหน้าที่ให้สำเร็จด้วยความไม่ประมาทเถิด</p>
+          <p lang="zh" data-label="中文" class="lw-phrase">是故，比丘！无为放逸，我以不放逸故，自致正觉，无量众善亦由不放逸得。一切万物，无常存者。此是如来末后所说。</p>
+          <p lang="ja" data-label="日本語" class="lw-phrase">もろもろの事象は過ぎ去るものである。怠ることなく修行を完成しなさい。</p>
+          <p lang="ko" data-label="한국어" class="lw-phrase">비구들이여, 참으로 이제 그대들에게 당부하노니, 형성된 것들은 소멸하기 마련인 법이다. 방일하지 말고 [해야 할 바를 모두] 성취하라.</p>
+          <p lang="hi" data-label="Devanāgarī" class="lw-phrase">वयधम्मा सङ्खारा, अप्पमादेन सम्पादेथ</p>
+          <p lang="si" data-label="සිංහල" class="lw-phrase">වයධම්මා සංඛාරා, අප්පමාදේන සම්පාදේථ</p>
+          <p lang="my" data-label="မြန်မာ" class="lw-phrase">ဝယဓမ္မာ သင်္ခါရာ၊ အပ္ပမာဒေန သမ္ပာဒေထ</p>
+          <p lang="km" data-label="ខ្មែរ" class="lw-phrase">វយធម្មា សង្ខារា, អប្បមាទេន សម្បាទេថ</p>
+          <p lang="id" data-label="Bahasa" class="lw-phrase">Para bhikkhu, sekarang Saya nyatakan kepada kalian: Segala hal yang terkondisi pasti akan hancur, berjuanglah dengan penuh kesadaran!</p>
+          <p lang="de" data-label="Deutsch" class="lw-phrase">Vergänglich sind die Gebilde: Bemüht euch ohne Unterlass!</p>
+          <p lang="fr" data-label="Français" class="lw-phrase">Voyez maintenant, bhikkhus, je vous exhorte : toutes les choses composées sont soumises à la disparition. Efforcez-vous avec sérieux !</p>
+          <span class="lw-cursor" aria-hidden="true">▼</span>
+        </div>
+      </div>
     </aside>
 
     <h1 class="hero-title">Tipiṭaka</h1>
@@ -164,21 +174,128 @@
 </article>
 
 <script>
-  // Pacchimavācā — cycle through translations of the Buddha's last words.
-  // Crossfade is opacity-only (no horizontal motion) to keep the page
-  // contemplative. Honours prefers-reduced-motion by leaving the first
-  // line visible and skipping the interval entirely.
+  // Pacchimavācā — RPG-textbox typewriter cycler.
+  // Each phrase types out grapheme-by-grapheme (Intl.Segmenter handles
+  // Devanagari / Sinhala / Myanmar / Khmer ligatures so we never paint
+  // a half-formed glyph), holds while the user reads, then advances.
+  // Hovering the frame pauses both the typing and the post-type hold,
+  // so a careful reader can dwell on any phrase. prefers-reduced-motion
+  // bypasses typing — the full text appears instantly and the language
+  // still cycles on a fixed interval.
   (function () {
-    var lines = document.querySelectorAll('.last-words p');
-    if (lines.length < 2) return;
-    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (prefersReduced && prefersReduced.matches) return;
-    var i = 0;
-    setInterval(function () {
-      lines[i].classList.remove('active');
-      i = (i + 1) % lines.length;
-      lines[i].classList.add('active');
-    }, 6500);
+    var phrases = Array.prototype.slice.call(
+      document.querySelectorAll('.lw-phrase')
+    );
+    if (phrases.length < 2) return;
+
+    var labelEl = document.querySelector('.lw-label');
+    var cursorEl = document.querySelector('.lw-cursor');
+    var frame = document.querySelector('.lw-frame');
+    if (!labelEl || !cursorEl || !frame) return;
+
+    var reduced = false;
+    try {
+      reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (_) {}
+
+    function getGraphemes(text) {
+      // Intl.Segmenter widely available since 2021; falls back to
+      // Array.from() (code-point split) on older runtimes — visual
+      // imperfections in complex scripts are tolerable on legacy.
+      if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
+        var seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+        var out = [];
+        var iter = seg.segment(text);
+        var entries = (typeof iter[Symbol.iterator] === 'function')
+          ? iter
+          : Array.from(iter);
+        var arr = Array.from(entries);
+        for (var k = 0; k < arr.length; k++) out.push(arr[k].segment);
+        return out;
+      }
+      return Array.from(text);
+    }
+
+    // Read source text once, then blank the DOM nodes — typing fills them in.
+    var data = phrases.map(function (el) {
+      var text = el.textContent;
+      el.textContent = '';
+      return {
+        el: el,
+        text: text,
+        label: el.dataset.label || el.lang || '',
+        graphemes: getGraphemes(text),
+      };
+    });
+
+    var idx = 0;
+    var charIdx = 0;
+    var typeTimer = null;
+    var holdTimer = null;
+    var paused = false;
+
+    var TYPE_MS = 30;
+    var HOLD_BASE = 2400;
+    var HOLD_PER_CHAR = 35;
+
+    function setActive(i) {
+      for (var k = 0; k < data.length; k++) {
+        data[k].el.classList.toggle('active', k === i);
+      }
+      labelEl.textContent = data[i].label;
+    }
+
+    function showCursor() { cursorEl.classList.add('show'); }
+    function hideCursor() { cursorEl.classList.remove('show'); }
+
+    function typeStep() {
+      if (paused) return;
+      var d = data[idx];
+      if (charIdx < d.graphemes.length) {
+        d.el.textContent = d.graphemes.slice(0, ++charIdx).join('');
+      } else {
+        clearInterval(typeTimer);
+        typeTimer = null;
+        showCursor();
+        scheduleAdvance(Math.max(HOLD_BASE, d.graphemes.length * HOLD_PER_CHAR));
+      }
+    }
+
+    function startType() {
+      hideCursor();
+      charIdx = 0;
+      data[idx].el.textContent = '';
+      if (reduced) {
+        // Reduced motion: skip the typewriter entirely. Show full text,
+        // then advance on a fixed dwell.
+        data[idx].el.textContent = data[idx].text;
+        showCursor();
+        scheduleAdvance(6500);
+        return;
+      }
+      if (typeTimer) clearInterval(typeTimer);
+      typeTimer = setInterval(typeStep, TYPE_MS);
+    }
+
+    function scheduleAdvance(ms) {
+      if (holdTimer) clearTimeout(holdTimer);
+      holdTimer = setTimeout(function () {
+        if (paused) {
+          // Re-check shortly — keeps the cursor blinking until user leaves.
+          scheduleAdvance(200);
+          return;
+        }
+        idx = (idx + 1) % data.length;
+        setActive(idx);
+        startType();
+      }, ms);
+    }
+
+    frame.addEventListener('mouseenter', function () { paused = true; });
+    frame.addEventListener('mouseleave', function () { paused = false; });
+
+    setActive(0);
+    startType();
   })();
 </script>
 {% endblock %}

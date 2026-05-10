@@ -470,23 +470,65 @@ mark.inline-mark {
      border. */
 }
 
-/* --- Pacchimavācā cycler — translations of the Buddha's last words ---
-   All <p> children share one CSS grid cell so the container takes the
-   tallest phrase's height and stays stable during transitions (no layout
-   shift). Opacity transitions are the only motion. Multi-script font
-   fallbacks live on .last-words so each lang-tagged child renders cleanly
-   on systems that ship Noto fonts (most macOS / Windows / iOS / Android
-   ≥10); on Linux without Noto, browsers degrade to whatever shapes the
+/* --- Pacchimavācā cycler — RPG textbox style -------------------------
+   The Buddha's last words type out grapheme-by-grapheme inside a small
+   bordered frame, with a language label at the top-left and a blinking
+   "▼" cursor at the bottom-right when the line is fully typed. Hovering
+   pauses. Multi-script font fallbacks live on .lw-phrase so each
+   lang-tagged child renders cleanly on systems that ship Noto fonts
+   (most modern macOS / Windows / iOS / Android / ChromeOS); on bare-
+   bones Linux without Noto, browsers degrade to whatever shapes the
    script — usually fine for Latin/Thai/CJK, may show tofu for Sinhala /
    Myanmar / Khmer until system fonts are installed. */
+
 .last-words {
-  display: grid;
   margin: 0 0 22px;
-  text-align: center;
-  font-size: 13.5px;
+}
+
+.lw-frame {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--code-bg);
+  overflow: hidden;
+}
+
+.lw-header {
+  padding: 5px 12px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.lw-label {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.lw-body {
+  position: relative;
+  padding: 14px 36px 18px 16px;
+  /* min-height keeps the frame steady while phrases of very different
+     lengths cycle through (Devanagari ~30 chars vs French ~130). Grid
+     of one cell ensures the active phrase is the only one taking layout. */
+  min-height: 4.6em;
+  display: grid;
+  align-items: center;
+}
+
+.lw-phrase {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  font-size: 14px;
   font-style: italic;
-  line-height: 1.5;
-  color: var(--muted);
+  line-height: 1.55;
+  color: var(--english-fg);
+  text-align: center;
+  display: none;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI",
     "Sarabun", "Noto Sans Thai",
@@ -497,22 +539,37 @@ mark.inline-mark {
     system-ui, sans-serif;
 }
 
-.last-words p {
-  grid-column: 1;
-  grid-row: 1;
-  margin: 0;
-  padding: 0 12px;
+.lw-phrase.active {
+  display: block;
+}
+
+.lw-cursor {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  font-size: 11px;
+  color: var(--accent);
   opacity: 0;
-  transition: opacity 0.8s ease-in-out;
+  transition: opacity 0.18s ease;
   pointer-events: none;
 }
 
-.last-words p.active {
-  opacity: 1;
+.lw-cursor.show {
+  opacity: 0.85;
+  animation: lw-blink 0.85s steps(2, jump-none) infinite;
+}
+
+@keyframes lw-blink {
+  to { opacity: 0.2; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .last-words p { transition: none; }
+  .lw-cursor.show { animation: none; opacity: 0.6; }
+}
+
+@media (max-width: 600px) {
+  .lw-body { padding: 12px 30px 16px 12px; min-height: 5.5em; }
+  .lw-phrase { font-size: 13.5px; }
 }
 
 .hero-title {
