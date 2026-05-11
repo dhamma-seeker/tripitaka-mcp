@@ -235,11 +235,11 @@ body {
   font-size: 16px;
 }
 
-/* --- Floating segment navigation (prev/next arrows) --------------------
-   Visible only when a segment is focused. Sits bottom-right so it doesn't
-   block reading flow. Touch targets are 44×44 (Apple HIG minimum) so it
-   works as a primary mobile control. Desktop users have keyboard ↑/↓/Esc
-   as faster alternatives.
+/* --- Floating page navigation -------------------------------------------
+   Always-visible top/bottom-of-page buttons with segment prev/next
+   sliding in between when a segment is focused. Bottom-right placement;
+   44×44 touch targets (Apple HIG minimum). Desktop users have keyboard
+   shortcuts (↑/↓/Home/End/Esc) as faster alternatives.
    ----------------------------------------------------------------------- */
 
 .segment-nav {
@@ -253,9 +253,9 @@ body {
 }
 
 /* Same specificity pitfall as .dict-hint-banner — author `display: flex`
-   ties with UA `[hidden] { display: none }`, so we need an explicit attr
-   selector for `hidden` to win. (Lesson logged in PROGRESS.md 2026-05-11.) */
-.segment-nav[hidden] {
+   on the buttons ties with UA `[hidden] { display: none }`, so an explicit
+   attr selector is needed to win. (Lesson logged in PROGRESS.md 2026-05-11.) */
+.segment-nav button[hidden] {
   display: none;
 }
 
@@ -555,6 +555,28 @@ body {
   color: var(--muted);
   font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
   white-space: nowrap;
+}
+
+/* Reading-progress bar — overlays the bottom border of the sticky filter
+   row. Absolute positioning keeps it out of flex flow; sticky parents
+   establish a positioning context so left/right/bottom anchor correctly.
+   pointer-events: none so the bar doesn't intercept clicks meant for the
+   filter input below. */
+.reading-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: transparent;
+  pointer-events: none;
+}
+
+.reading-progress-bar {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 120ms linear;
 }
 
 mark.inline-mark {

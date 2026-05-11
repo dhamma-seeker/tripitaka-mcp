@@ -54,6 +54,16 @@
       aria-label="Filter segments in this sutta"
     >
     <span class="in-sutta-count" id="in-sutta-count" hidden></span>
+    <div
+      class="reading-progress"
+      role="progressbar"
+      aria-label="Reading position"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="0"
+    >
+      <div class="reading-progress-bar" id="reading-progress-bar"></div>
+    </div>
   </div>
 
   <section class="segments" id="segments">
@@ -66,9 +76,11 @@
     {% endfor %}
   </section>
 
-  <nav id="segment-nav" class="segment-nav" hidden aria-label="Segment navigation">
-    <button type="button" id="segment-nav-up" aria-label="Previous segment" title="Previous segment (↑)">↑</button>
-    <button type="button" id="segment-nav-down" aria-label="Next segment" title="Next segment (↓)">↓</button>
+  <nav class="segment-nav" aria-label="Page navigation">
+    <button type="button" id="scroll-top" aria-label="Scroll to top" title="Top of page (Home)">⤒</button>
+    <button type="button" id="segment-nav-up" aria-label="Previous segment" title="Previous segment (↑)" hidden>↑</button>
+    <button type="button" id="segment-nav-down" aria-label="Next segment" title="Next segment (↓)" hidden>↓</button>
+    <button type="button" id="scroll-bottom" aria-label="Scroll to bottom" title="Bottom of page (End)">⤓</button>
   </nav>
 
   {% if neighbors and (neighbors.prev or neighbors.next) %}
@@ -251,17 +263,19 @@
     window.addEventListener('hashchange', focusFromHash);
   })();
 
-  // Floating segment-nav — prev/next arrow buttons + keyboard arrow keys.
-  // Visible only when a segment is focused. Disabled state on the button
-  // pointing at the edge (first or last segment). Esc unfocuses entirely
-  // for desktop users who want a quick escape hatch.
+  // Floating page-nav — always-visible top/bottom-of-page buttons, with
+  // segment prev/next buttons appearing in between when a segment is
+  // focused. Desktop also gets keyboard shortcuts (↑/↓ for segment nav,
+  // Esc to unfocus, Home/End for page top/bottom).
   (function () {
-    var nav = document.getElementById('segment-nav');
-    if (!nav) return;
+    var btnTop = document.getElementById('scroll-top');
+    var btnBottom = document.getElementById('scroll-bottom');
     var btnUp = document.getElementById('segment-nav-up');
     var btnDown = document.getElementById('segment-nav-down');
+    var progressBar = document.getElementById('reading-progress-bar');
+    var progressEl = progressBar && progressBar.parentElement;
     var segmentsRoot = document.getElementById('segments');
-    if (!btnUp || !btnDown || !segmentsRoot) return;
+    if (!btnTop || !btnBottom || !btnUp || !btnDown || !segmentsRoot) return;
 
     function getCurrent() {
       return segmentsRoot.querySelector('.segment.is-focused');
@@ -278,18 +292,20 @@
       return next || null;
     }
 
-    function updateNav() {
+    function updateSegmentButtons() {
       var cur = getCurrent();
       if (!cur) {
-        nav.hidden = true;
+        btnUp.hidden = true;
+        btnDown.hidden = true;
         return;
       }
-      nav.hidden = false;
+      btnUp.hidden = false;
+      btnDown.hidden = false;
       btnUp.disabled = !siblingSegment(cur, -1);
       btnDown.disabled = !siblingSegment(cur, 1);
     }
 
-    function navigate(dir) {
+    function navigateSegment(dir) {
       var cur = getCurrent();
       if (!cur) return;
       var target = siblingSegment(cur, dir);
@@ -304,26 +320,72 @@
       }
     }
 
-    btnUp.addEventListener('click', function () { navigate(-1); });
-    btnDown.addEventListener('click', function () { navigate(1); });
+    // Reading progress + scroll-button enable/disable. One rAF-throttled
+    // scroll handler drives both — progress bar tracks scrollY / maxScroll,
+    // and the top/bottom buttons gray out when their target is already in
+    // view (within a 50px tolerance so they're not flapping at exact 0).
+    var rafPending = false;
+    function updateScrollState() {
+      rafPending = false;
+      var docEl = document.documentElement;
+      var scrollY = window.scrollY || docEl.scrollTop;
+      var maxScroll = (docEl.scrollHeight - window.innerHeight) || 1;
+      var pct = Math.max(0, Math.min(100, (scrollY / maxScroll) * 100));
+      if (progressBar) progressBar.style.width = pct + '%';
+      if (progressEl) progressEl.setAttribute('aria-valuenow', Math.round(pct));
+      btnTop.disabled = scrollY < 50;
+      btnBottom.disabled = scrollY > maxScroll - 50;
+    }
+    function onScroll() {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(updateScrollState);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    updateScrollState();
 
-    segmentsRoot.addEventListener('segmentfocus', updateNav);
-    segmentsRoot.addEventListener('segmentblur', updateNav);
+    // Click handlers
+    btnTop.addEventListener('click', function () {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    btnBottom.addEventListener('click', function () {
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth',
+      });
+    });
+    btnUp.addEventListener('click', function () { navigateSegment(-1); });
+    btnDown.addEventListener('click', function () { navigateSegment(1); });
+
+    segmentsRoot.addEventListener('segmentfocus', updateSegmentButtons);
+    segmentsRoot.addEventListener('segmentblur', updateSegmentButtons);
 
     document.addEventListener('keydown', function (e) {
-      // Don't hijack arrow keys when the user is typing in the in-sutta
-      // filter, the search bar, or any other input/textarea.
+      // Don't hijack keys when the user is typing in the in-sutta filter,
+      // the search bar, or any other input/textarea.
       var t = e.target;
       if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
       if (t && t.isContentEditable) return;
       if (e.key === 'ArrowUp' && getCurrent()) {
         e.preventDefault();
-        navigate(-1);
+        navigateSegment(-1);
       } else if (e.key === 'ArrowDown' && getCurrent()) {
         e.preventDefault();
-        navigate(1);
+        navigateSegment(1);
       } else if (e.key === 'Escape' && getCurrent()) {
         window.__tipitakaFocusSegment(null);
+      } else if (e.key === 'Home' && !e.ctrlKey && !e.metaKey) {
+        // Home / End scroll the page (browser default does this, but we
+        // smooth-scroll for consistency with the buttons).
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (e.key === 'End' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: 'smooth',
+        });
       }
     });
   })();
