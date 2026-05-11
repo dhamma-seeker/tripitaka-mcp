@@ -235,6 +235,63 @@ body {
   font-size: 16px;
 }
 
+/* --- Floating segment navigation (prev/next arrows) --------------------
+   Visible only when a segment is focused. Sits bottom-right so it doesn't
+   block reading flow. Touch targets are 44×44 (Apple HIG minimum) so it
+   works as a primary mobile control. Desktop users have keyboard ↑/↓/Esc
+   as faster alternatives.
+   ----------------------------------------------------------------------- */
+
+.segment-nav {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Same specificity pitfall as .dict-hint-banner — author `display: flex`
+   ties with UA `[hidden] { display: none }`, so we need an explicit attr
+   selector for `hidden` to win. (Lesson logged in PROGRESS.md 2026-05-11.) */
+.segment-nav[hidden] {
+  display: none;
+}
+
+.segment-nav button {
+  width: 44px;
+  height: 44px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--fg);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+
+.segment-nav button:hover:not(:disabled) {
+  background: var(--code-bg, var(--bg));
+  border-color: var(--fg);
+}
+
+.segment-nav button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.segment-nav button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 /* --- Per-segment focus + lemma indicator -------------------------------
    Click any segment to focus it. The lemma-indicator handler wraps Pāli
    words that have a dict entry in <span class="word-has-entry">. The
