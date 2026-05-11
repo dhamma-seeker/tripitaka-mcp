@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Tripitaka Reader{% endblock %}</title>
   <link rel="icon" href="/read/static/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/read/static/style.css?v=7">
+  <link rel="stylesheet" href="/read/static/style.css?v=8">
   {% block head_extra %}{% endblock %}
 </head>
 <body>
@@ -83,12 +83,26 @@
 
       function hide() { popup.hidden = true; }
 
-      function show(x, y, word, defs) {
+      function show(x, y, word, data) {
         wpWord.textContent = word;
-        if (!defs || !defs.length) {
+        var defs = (data && data.definitions) || [];
+        var lemma = data && data.lemma;
+        if (!defs.length) {
           wpBody.innerHTML = '<p class="wp-empty">No dictionary entry found. The word may be inflected — try the stem (e.g. <code>appamāda</code> instead of <code>appamādo</code>).</p>';
         } else {
-          wpBody.innerHTML = defs.map(function (d) {
+          // Lemma block first (if fallback resolved an inflected form) so the
+          // user sees the lookup-path BEFORE the definitions — teaches the
+          // case while delivering the result.
+          var lemmaHtml = '';
+          if (lemma && lemma.lemma && lemma.lemma !== word.toLowerCase()) {
+            lemmaHtml =
+              '<div class="wp-lemma">' +
+                'Looked up as <strong>' + escapeHtml(lemma.lemma) + '</strong> ' +
+                '<span class="wp-case">(−' + escapeHtml(lemma.stripped_suffix) +
+                ', ' + escapeHtml(lemma.case) + ')</span>' +
+              '</div>';
+          }
+          wpBody.innerHTML = lemmaHtml + defs.map(function (d) {
             return '<div class="wp-def">' +
               '<div class="wp-source">' + escapeHtml(d.source) + ' <span class="wp-lang">(' + escapeHtml(d.language) + ')</span></div>' +
               '<div class="wp-text">' + escapeHtml(d.text) + '</div>' +
@@ -116,7 +130,7 @@
         // but matching the cache key here helps repeat-click latency.
         fetch('/read/api/word?w=' + encodeURIComponent(word.toLowerCase()))
           .then(function (r) { return r.json(); })
-          .then(function (data) { show(e.clientX, e.clientY, word, data.definitions); })
+          .then(function (data) { show(e.clientX, e.clientY, word, data); })
           .catch(function () { /* ignore network errors silently */ });
       });
 

@@ -130,19 +130,74 @@ def fetch_sutta(sutta_id: str) -> dict[str, Any] | None:
         release_connection(conn)
 
 
-def lookup_word(word: str) -> list[dict[str, Any]]:
-    """Plain dictionary lookup for a single word. Returns one row per source.
+# Pāli noun inflection table — covers common case endings only (no verbs,
+# no compounds, no sandhi). Each entry: (suffix, stem_vowel, case_label).
+# Sorted longest-suffix-first at module load to ensure the longest match wins
+# during ranking (e.g. `dhammānaṃ` strips `-ānaṃ` not `-ā`).
+#
+# Coverage rationale: ~70-80% of inflected nouns in canonical Pāli use these
+# 18 forms. Verbs, past participles (-ita/-ta), and compounds intentionally
+# excluded — they'd produce more false positives than they'd resolve. The
+# `try the stem` UX hint in the popup still catches what this table misses.
+_PALI_INFLECTIONS: list[tuple[str, str, str]] = sorted(
+    [
+        # (suffix, stem_vowel, case_label) — case_label is shown in the popup
+        ("ānaṃ", "a", "gen./dat. pl."),
+        ("āsu",  "ā", "loc. pl. (f.)"),
+        ("assa", "a", "gen./dat. sg."),
+        ("āhi",  "ā", "inst./abl. pl. (f.)"),
+        ("āya",  "ā", "dat./gen. sg. (f.)"),
+        ("āyaṃ", "ā", "loc. sg. (f.)"),
+        ("āyo",  "ā", "nom./acc. pl. (f.)"),
+        ("ehi",  "a", "inst./abl. pl."),
+        ("esu",  "a", "loc. pl."),
+        ("ena",  "a", "inst. sg."),
+        ("iyā",  "i", "inst./gen. sg. (f.)"),
+        ("iyo",  "i", "nom./acc. pl. (f.)"),
+        ("īhi",  "ī", "inst./abl. pl. (f.)"),
+        ("īnaṃ", "ī", "gen./dat. pl. (f.)"),
+        ("īsu",  "ī", "loc. pl. (f.)"),
+        ("aṃ",   "a", "acc. sg."),
+        ("ā",    "a", "nom. pl. / inst. sg."),
+        ("e",    "a", "loc. sg. / nom. pl."),
+        ("o",    "a", "nom. sg."),
+    ],
+    key=lambda x: -len(x[0]),
+)
 
+
+def _candidate_lemmas(word: str) -> list[tuple[str, str, str]]:
+    """Generate plausible lemmas for an inflected word, ranked longest-suffix-first.
+
+    Each returned tuple is (lemma, suffix, case_label). Caller queries the
+    DB once for `word IN (lemmas)` then picks the longest-suffix match from
+    the rows it gets back. Minimum stem length of 2 chars to avoid generating
+    single-letter false positives like stripping `o` from `do`.
+    """
+    out: list[tuple[str, str, str]] = []
+    for suffix, stem_vowel, case_label in _PALI_INFLECTIONS:
+        if word.endswith(suffix) and len(word) - len(suffix) >= 2:
+            lemma = word[: -len(suffix)] + stem_vowel
+            out.append((lemma, suffix, case_label))
+    return out
+
+
+def lookup_word(word: str) -> tuple[list[dict[str, Any]], dict[str, str] | None]:
+    """Dictionary lookup with rule-based Pāli noun-lemma fallback.
+
+    Returns (definitions, lemma_info). `lemma_info` is None on exact match
+    or no-match; populated when fallback resolved an inflected form.
     Backs the /read/api/word endpoint that powers the double-click tooltip.
-    No context examples or lemma fallback (kept light — payload should be
-    fast and small for tooltip latency).
     """
     w = (word or "").lower().strip()
     if not w or len(w) > 60:
-        return []
+        return [], None
+
     conn = get_connection()
     try:
         cur = conn.cursor()
+
+        # 1. Exact match — fast path, identical cost to the pre-fallback impl
         cur.execute(
             """
             SELECT source, language, text
@@ -152,10 +207,54 @@ def lookup_word(word: str) -> list[dict[str, Any]]:
             """,
             (w,),
         )
-        return [
-            {"source": r[0], "language": r[1], "text": r[2]}
-            for r in cur.fetchall()
-        ]
+        rows = cur.fetchall()
+        if rows:
+            return (
+                [{"source": r[0], "language": r[1], "text": r[2]} for r in rows],
+                None,
+            )
+
+        # 2. Lemma fallback — generate candidate stems, query in one shot
+        candidates = _candidate_lemmas(w)
+        if not candidates:
+            return [], None
+
+        # ANY(%s) uses the same b-tree idx_dictionary_word as exact match;
+        # PG turns this into a bitmap-OR of index scans — ~1ms even with
+        # ~15 candidates. One round-trip, no per-candidate latency cost.
+        lemma_list = [c[0] for c in candidates]
+        cur.execute(
+            """
+            SELECT word, source, language, text
+            FROM dictionary
+            WHERE word = ANY(%s)
+            ORDER BY source
+            """,
+            (lemma_list,),
+        )
+        matched_rows = cur.fetchall()
+        if not matched_rows:
+            return [], None
+
+        # Pick the longest-suffix candidate that actually has rows.
+        # `candidates` is already sorted longest-first via _PALI_INFLECTIONS.
+        matched_lemmas = {r[0] for r in matched_rows}
+        for lemma, suffix, case_label in candidates:
+            if lemma in matched_lemmas:
+                return (
+                    [
+                        {"source": r[1], "language": r[2], "text": r[3]}
+                        for r in matched_rows
+                        if r[0] == lemma
+                    ],
+                    {
+                        "lemma": lemma,
+                        "original": w,
+                        "stripped_suffix": suffix,
+                        "case": case_label,
+                    },
+                )
+        return [], None
     finally:
         cur.close()
         release_connection(conn)

@@ -369,6 +369,33 @@ body {
   overflow-y: auto;
 }
 
+/* Lemma-fallback breadcrumb — shown when the popup resolved an inflected
+   form via stem-strip. Sits at the top of wp-body to teach the case before
+   the definitions appear. Padding compensates for wp-body's own padding so
+   the breadcrumb reads as a header strip, not an indented note. */
+.wp-lemma {
+  margin: -12px -14px 12px;
+  padding: 8px 14px;
+  background: var(--code-bg, var(--bg));
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.wp-lemma strong {
+  color: var(--pali-fg);
+  font-style: italic;
+  font-weight: 600;
+}
+
+.wp-lemma .wp-case {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-style: normal;
+  white-space: nowrap;
+}
+
 .wp-def + .wp-def {
   margin-top: 12px;
   padding-top: 12px;

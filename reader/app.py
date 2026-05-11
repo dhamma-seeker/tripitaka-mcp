@@ -19,6 +19,7 @@ from __future__ import annotations
 import mimetypes
 import re
 from pathlib import Path
+from typing import Any
 
 # Register MIME types that aren't in the stdlib defaults on every platform.
 # StaticFiles relies on `mimetypes.guess_type()`, and the slim Python image
@@ -102,16 +103,20 @@ def api_word(w: str = "") -> JSONResponse:
     """Dictionary lookup for the double-click tooltip on Pāli text.
 
     Tight bounds — `w` is trimmed, lower-cased, capped at 60 chars and must
-    be at least 2 chars. Returns `{word, definitions: [{source, language,
-    text}]}` so the frontend can render a small popup card without further
-    parsing. Cache-Control short to keep responses snappy on repeat clicks.
+    be at least 2 chars. Returns `{word, definitions, lemma?}` — the optional
+    `lemma` object is populated when `lookup_word` resolved an inflected
+    form via stem-fallback, so the popup can show "looked up as X (-ena,
+    instrumental sg.)" and teach the case while delivering the result.
     """
     w = w.strip().lower()[:60]
     if len(w) < 2:
         return JSONResponse({"word": w, "definitions": []})
-    defs = lookup_word(w)
+    defs, lemma_info = lookup_word(w)
+    payload: dict[str, Any] = {"word": w, "definitions": defs}
+    if lemma_info is not None:
+        payload["lemma"] = lemma_info
     return JSONResponse(
-        {"word": w, "definitions": defs},
+        payload,
         headers={"Cache-Control": "public, max-age=300"},
     )
 
