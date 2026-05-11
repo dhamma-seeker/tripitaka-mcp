@@ -285,6 +285,14 @@ body {
   color: var(--fg);
 }
 
+/* Author class selector + UA [hidden] rule have the same specificity (0,1,0).
+   Author stylesheet wins source-order, so display:flex above keeps the
+   banner visible even after `banner.hidden = true`. Add an attribute
+   selector — specificity (0,2,0) — to force `hidden` to actually hide. */
+.dict-hint-banner[hidden] {
+  display: none;
+}
+
 .dict-hint-banner p {
   margin: 0;
   flex: 1;
