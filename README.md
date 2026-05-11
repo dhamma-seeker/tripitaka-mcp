@@ -6,7 +6,7 @@
 [![Hosted](https://img.shields.io/badge/hosted-tripitaka--mcp.com-8b6914)](https://tripitaka-mcp.com/)
 [![Dhamma Dāna](https://img.shields.io/badge/offered%20as-Dhamma%20D%C4%81na-8b6914?labelColor=fafaf7&color=8b6914)](./NOTICE.md)
 [![Glama](https://glama.ai/mcp/servers/dhamma-seeker/tripitaka-mcp/badges/score.svg)](https://glama.ai/mcp/servers/dhamma-seeker/tripitaka-mcp)
-[![Smithery](https://smithery.ai/badge/tripitaka-mcp/dhamma-seeker)](https://smithery.ai/server/tripitaka-mcp/dhamma-seeker)
+[![Smithery](https://smithery.ai/badge/dhamma-seeker/tripitaka-mcp)](https://smithery.ai/server/dhamma-seeker/tripitaka-mcp)
 
 An MCP Server for searching and citing content from the Pāli Tipiṭaka.
 Gives AI agents (such as Claude or Cursor) the ability to look up suttas, quote the teachings, and compare translations across languages.
