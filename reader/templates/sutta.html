@@ -15,7 +15,17 @@
       <span class="sep">›</span>
       <span>{{ sutta.nikaya.name_pali }}</span>
       <span class="sep">›</span>
+      {% if neighbors and neighbors.prev %}
+      <a class="bc-sutta-nav" href="/read/{{ neighbors.prev.sutta_id }}" rel="prev"
+         title="Previous: {{ neighbors.prev.sutta_id }}{% if neighbors.prev.title_pali %} — {{ neighbors.prev.title_pali }}{% endif %}"
+         aria-label="Previous sutta">‹</a>
+      {% endif %}
       <span class="sutta-id" title="{{ sutta.sutta_id|decode_sid }}">{{ sutta.sutta_id }}</span>
+      {% if neighbors and neighbors.next %}
+      <a class="bc-sutta-nav" href="/read/{{ neighbors.next.sutta_id }}" rel="next"
+         title="Next: {{ neighbors.next.sutta_id }}{% if neighbors.next.title_pali %} — {{ neighbors.next.title_pali }}{% endif %}"
+         aria-label="Next sutta">›</a>
+      {% endif %}
     </p>
     <h1 class="title-pali">{{ sutta.title_pali or sutta.sutta_id }}</h1>
     {% if sutta.title_english %}
@@ -45,6 +55,13 @@
   </div>
 
   <div class="in-sutta-filter" data-segment-count="{{ sutta.segments|length }}">
+    {% if neighbors and neighbors.prev %}
+    <a class="filter-sutta-nav" href="/read/{{ neighbors.prev.sutta_id }}" rel="prev"
+       title="Previous: {{ neighbors.prev.sutta_id }}{% if neighbors.prev.title_pali %} — {{ neighbors.prev.title_pali }}{% endif %} ([)"
+       aria-label="Previous sutta">←</a>
+    {% else %}
+    <span class="filter-sutta-nav is-disabled" aria-hidden="true">←</span>
+    {% endif %}
     <input
       type="search"
       id="in-sutta-q"
@@ -54,6 +71,13 @@
       aria-label="Filter segments in this sutta"
     >
     <span class="in-sutta-count" id="in-sutta-count" hidden></span>
+    {% if neighbors and neighbors.next %}
+    <a class="filter-sutta-nav" href="/read/{{ neighbors.next.sutta_id }}" rel="next"
+       title="Next: {{ neighbors.next.sutta_id }}{% if neighbors.next.title_pali %} — {{ neighbors.next.title_pali }}{% endif %} (])"
+       aria-label="Next sutta">→</a>
+    {% else %}
+    <span class="filter-sutta-nav is-disabled" aria-hidden="true">→</span>
+    {% endif %}
     <div
       class="reading-progress"
       role="progressbar"
@@ -386,6 +410,16 @@
           top: document.documentElement.scrollHeight,
           behavior: 'smooth',
         });
+      } else if (e.key === '[' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // [ / ] navigate to prev/next sutta. We just grab the first
+        // element on the page carrying rel="prev|next" — breadcrumb,
+        // filter row, and bottom nav all set it, so this stays in sync
+        // automatically whenever any of them are present.
+        var prev = document.querySelector('a[rel="prev"]');
+        if (prev) { e.preventDefault(); window.location.href = prev.href; }
+      } else if (e.key === ']' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        var next = document.querySelector('a[rel="next"]');
+        if (next) { e.preventDefault(); window.location.href = next.href; }
       }
     });
   })();
