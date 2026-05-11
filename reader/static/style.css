@@ -235,6 +235,29 @@ body {
   font-size: 16px;
 }
 
+/* --- Per-segment focus + lemma indicator -------------------------------
+   Click any segment to focus it. The lemma-indicator handler wraps Pāli
+   words that have a dict entry in <span class="word-has-entry">. The
+   underline only appears when the parent segment has .is-focused, so
+   unfocused segments stay visually quiet — user sees indicators only
+   where they've shown intent to study.
+   ----------------------------------------------------------------------- */
+
+.segment.is-focused {
+  background: var(--code-bg, transparent);
+  border-radius: 4px;
+}
+
+/* Subtle dotted underline — low contrast so it doesn't distract from
+   reading. Offset shifts the line below the diacritic descenders so it
+   doesn't collide with marks like ṅ ñ ṭ ḍ ṇ ḷ. */
+.segment.is-focused .word-has-entry {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--muted);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
 /* --- Word popup (Pāli double-click → dictionary) --- */
 
 .text-pali {

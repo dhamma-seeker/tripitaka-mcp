@@ -166,6 +166,14 @@ _PALI_INFLECTIONS: list[tuple[str, str, str]] = sorted(
 )
 
 
+# bilara-data uses `ṁ` (U+1E41, dot-above) for anusvara; the dictionary
+# table inherits multiple sources and stores `ṃ` (U+1E43, dot-below).
+# Normalise the dot-above variant to dot-below at every entry point so the
+# user can dblclick text from either tradition and still hit the DB.
+def _normalize_pali(word: str) -> str:
+    return (word or "").replace("ṁ", "ṃ")
+
+
 def _candidate_lemmas(word: str) -> list[tuple[str, str, str]]:
     """Generate plausible lemmas for an inflected word, ranked longest-suffix-first.
 
@@ -189,7 +197,7 @@ def lookup_word(word: str) -> tuple[list[dict[str, Any]], dict[str, str] | None]
     or no-match; populated when fallback resolved an inflected form.
     Backs the /read/api/word endpoint that powers the double-click tooltip.
     """
-    w = (word or "").lower().strip()
+    w = _normalize_pali((word or "").lower().strip())
     if not w or len(w) > 60:
         return [], None
 
@@ -258,6 +266,101 @@ def lookup_word(word: str) -> tuple[list[dict[str, Any]], dict[str, str] | None]
     finally:
         cur.close()
         release_connection(conn)
+
+
+def fetch_segment_pali(segment_id: str) -> str | None:
+    """Just the Pāli text of one segment — used by the segment-focus
+    indicator pre-flight. Tight + cacheable: segment text is immutable."""
+    sid = (segment_id or "").lower().strip()
+    if not sid or len(sid) > 80:
+        return None
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT text_pali FROM segment WHERE segment_id = %s LIMIT 1",
+            (sid,),
+        )
+        row = cur.fetchone()
+        return row[0] if row else None
+    finally:
+        cur.close()
+        release_connection(conn)
+
+
+# Punctuation/symbols stripped from token edges. Keep diacritics — they're
+# part of the Pāli alphabet. Includes the curly quotes / em-dash that appear
+# in some translations and the question/em marks used by editorial commas.
+_TOKEN_TRIM_RE = re.compile(r"^[\W_]+|[\W_]+$", flags=re.UNICODE)
+
+
+def tokenize_pali(text: str) -> list[str]:
+    """Split Pāli text into lowercased word tokens. Strips edge punctuation
+    but preserves all letter chars (including ā ī ū ṃ ṅ ñ ṭ ḍ ṇ ḷ etc.).
+    Returns unique tokens preserving first-occurrence order — duplicates
+    waste DB roundtrip space."""
+    seen: dict[str, None] = {}
+    for raw in (text or "").split():
+        word = _normalize_pali(_TOKEN_TRIM_RE.sub("", raw).lower())
+        if word and len(word) >= 2 and word not in seen:
+            seen[word] = None
+    return list(seen.keys())
+
+
+def check_words_have_entries(words: list[str]) -> dict[str, dict[str, Any]]:
+    """Batch lemma-check for many words at once. ONE DB query regardless
+    of input size (~10ms for a 30-word segment) — the API endpoint that
+    backs the per-segment indicator can hit this without worrying about
+    N+1 patterns.
+
+    Returns `{word: {has_entry: bool, lemma: str|None}}`. `lemma` is set
+    only when the resolution went through stem-fallback (same semantics
+    as `lookup_word`). Empty input → empty dict.
+    """
+    if not words:
+        return {}
+    # Cap inputs — defensive against malformed segment text that might
+    # tokenize into thousands of fragments. 200 tokens covers any real
+    # segment (longest sutta segments observed are ~120 words).
+    words = [w for w in words if w and len(w) <= 60][:200]
+    if not words:
+        return {}
+
+    # Build candidate set: each input word itself + its lemma candidates.
+    # `word_candidates` keeps insertion order (longest-suffix-first per word)
+    # so the resolver below picks the strongest match.
+    all_candidates: set[str] = set()
+    word_candidates: dict[str, list[tuple[str, str | None, str | None]]] = {}
+    for w in words:
+        cands: list[tuple[str, str | None, str | None]] = [(w, None, None)]
+        cands.extend(_candidate_lemmas(w))
+        word_candidates[w] = cands
+        for c, _, _ in cands:
+            all_candidates.add(c)
+
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT DISTINCT word FROM dictionary WHERE word = ANY(%s)",
+            (list(all_candidates),),
+        )
+        existing = {r[0] for r in cur.fetchall()}
+    finally:
+        cur.close()
+        release_connection(conn)
+
+    out: dict[str, dict[str, Any]] = {}
+    for w, cands in word_candidates.items():
+        resolved = None
+        for candidate, suffix, _case in cands:
+            if candidate in existing:
+                resolved = candidate if suffix else None
+                out[w] = {"has_entry": True, "lemma": resolved}
+                break
+        else:
+            out[w] = {"has_entry": False, "lemma": None}
+    return out
 
 
 def fetch_neighbors(sutta_id: str) -> dict[str, dict[str, Any] | None]:

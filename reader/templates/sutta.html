@@ -173,6 +173,125 @@
     });
   })();
 
+  // Segment-focus dispatcher — turns "user shows interest in segment X" into
+  // a single CustomEvent that any feature can subscribe to. Currently only
+  // the lemma-indicator handler listens, but the dispatcher is intentionally
+  // generic so future per-segment features (notes, related, study panel)
+  // can plug in without rewriting the focus logic.
+  //
+  // Trigger: any click inside a .segment (broad — works on mobile, includes
+  // tapping anywhere in the text). Also fires on initial load if URL has a
+  // segment hash — the user deep-linked to study this segment.
+  (function () {
+    var segments = document.getElementById('segments');
+    if (!segments) return;
+    var currentFocused = null;
+
+    function focusSegment(segEl) {
+      if (!segEl || segEl === currentFocused) return;
+      if (currentFocused) currentFocused.classList.remove('is-focused');
+      currentFocused = segEl;
+      segEl.classList.add('is-focused');
+      segEl.dispatchEvent(new CustomEvent('segmentfocus', {
+        bubbles: true,
+        detail: { segmentId: segEl.id },
+      }));
+    }
+
+    segments.addEventListener('click', function (e) {
+      // Ignore clicks on the seg-anchor link (it has its own hash-nav
+      // behavior) and on word-popup elements that overlay segments.
+      if (e.target.closest('.seg-anchor')) return;
+      if (e.target.closest('.word-popup')) return;
+      var seg = e.target.closest('.segment');
+      if (seg) focusSegment(seg);
+    });
+
+    // Initial focus from URL hash — user deep-linked to a specific segment,
+    // so they're showing intent before any click.
+    function focusFromHash() {
+      if (!location.hash) return;
+      var id = decodeURIComponent(location.hash.slice(1));
+      var seg = document.getElementById(id);
+      if (seg && seg.classList.contains('segment')) focusSegment(seg);
+    }
+    focusFromHash();
+    window.addEventListener('hashchange', focusFromHash);
+  })();
+
+  // Lemma indicator — subscribes to segmentfocus and overlays a dotted
+  // underline on Pāli words that have a dictionary entry (either exact
+  // or via lemma fallback). Words without entries stay neutral — false
+  // negatives are too high to risk a "missing" signal.
+  //
+  // Cache strategy: once a segment's words are fetched + DOM-wrapped, the
+  // result is sticky on that element (data-words-loaded). Refocusing the
+  // same segment is instant — no fetch, no re-wrap. CSS hides indicators
+  // on non-focused segments via .segment.is-focused selector, so the user
+  // only sees them where they're paying attention.
+  (function () {
+    var segmentsRoot = document.getElementById('segments');
+    if (!segmentsRoot) return;
+
+    function escapeHtml(s) {
+      return (s || '').replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    // Token regex must match the server-side tokenizer in queries.py:
+    // server splits on whitespace, trims edge punctuation, lowercases,
+    // and normalizes ṁ → ṃ. We do the same here so the lookup map keys
+    // match the original-case tokens we wrap in the DOM.
+    function normalizeKey(s) {
+      return s.replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '').toLowerCase().replace(/ṁ/g, 'ṃ');
+    }
+
+    function wrapWords(paliEl, hasEntryMap) {
+      // Preserve original whitespace + punctuation by splitting on
+      // (capture-group whitespace) — the captured separators come back
+      // in the array so we can reassemble verbatim.
+      var text = paliEl.textContent;
+      var parts = text.split(/(\s+)/);
+      paliEl.innerHTML = parts.map(function (part) {
+        if (!part || /^\s+$/.test(part)) return escapeHtml(part);
+        // Trim edge punctuation for lookup; keep punctuation visible in output.
+        var key = normalizeKey(part);
+        if (key && hasEntryMap[key]) {
+          return '<span class="word-has-entry">' + escapeHtml(part) + '</span>';
+        }
+        return escapeHtml(part);
+      }).join('');
+    }
+
+    function loadAndApply(segEl) {
+      if (segEl.dataset.wordsLoaded === '1') return; // cache hit
+      var paliEl = segEl.querySelector('.text-pali');
+      if (!paliEl) return;
+      // Mark immediately to dedupe concurrent focus events (e.g. hashchange
+      // + click firing back-to-back). Failure paths reset below.
+      segEl.dataset.wordsLoaded = 'pending';
+      fetch('/read/api/segment-words?id=' + encodeURIComponent(segEl.id))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (!data || !data.words) {
+            segEl.dataset.wordsLoaded = '';
+            return;
+          }
+          var map = {};
+          data.words.forEach(function (w) { if (w.has_entry) map[w.word] = true; });
+          wrapWords(paliEl, map);
+          segEl.dataset.wordsLoaded = '1';
+        })
+        .catch(function () { segEl.dataset.wordsLoaded = ''; });
+    }
+
+    segmentsRoot.addEventListener('segmentfocus', function (e) {
+      var seg = document.getElementById(e.detail.segmentId);
+      if (seg) loadAndApply(seg);
+    });
+  })();
+
   // Dictionary hint banner — show once per browser, dismiss on button click
   // OR auto-dismiss on first dblclick (they've found the gesture, no nag).
   (function () {

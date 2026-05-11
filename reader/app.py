@@ -35,12 +35,15 @@ from fastapi.templating import Jinja2Templates
 
 from reader.featured import FEATURED_SUTTAS
 from reader.queries import (
+    check_words_have_entries,
     fetch_neighbors,
     fetch_nikaya,
+    fetch_segment_pali,
     fetch_structure,
     fetch_sutta,
     lookup_word,
     search_text,
+    tokenize_pali,
 )
 from reader.sutta_id_decoder import decode_sutta_id
 
@@ -56,6 +59,9 @@ templates.env.filters["decode_sid"] = decode_sutta_id
 # at the route boundary so we never form ill-formed SQL parameters.
 _SUTTA_ID_RE = re.compile(r"^[a-z0-9.\-]{1,50}$")
 _NIKAYA_CODE_RE = re.compile(r"^[a-z0-9\-]{1,30}$")
+# Segments add `:n.m[.k]` suffix on top of sutta_id (e.g. sn56.11:0.2,
+# pli-tv-kd1:79.4.131). Cap at 80 chars to cover the deepest known refs.
+_SEGMENT_ID_RE = re.compile(r"^[a-z0-9.:\-]{1,80}$")
 
 app = FastAPI(title="Tripitaka Reader", docs_url=None, redoc_url=None)
 app.mount(
@@ -118,6 +124,43 @@ def api_word(w: str = "") -> JSONResponse:
     return JSONResponse(
         payload,
         headers={"Cache-Control": "public, max-age=300"},
+    )
+
+
+@app.get("/read/api/segment-words")
+def api_segment_words(id: str = "") -> JSONResponse:
+    """Per-word entry status for one segment's Pāli text.
+
+    Drives the on-demand indicator that highlights words with a dictionary
+    entry — only fires when the user focuses a segment (click/deep-link),
+    so a 60-segment sutta on a passive scroll-through costs zero queries.
+
+    Response: `{segment_id, words: [{word, has_entry, lemma?}, ...]}`.
+    Aggressive Cache-Control because segment Pāli text is immutable — CDN
+    and browser can cache for a long time. CF fronts this so repeat-clicks
+    by different users on the same segment hit the edge, not origin.
+    """
+    sid = id.strip().lower()[:80]
+    if not _SEGMENT_ID_RE.match(sid):
+        return JSONResponse({"segment_id": sid, "words": []})
+    text = fetch_segment_pali(sid)
+    if not text:
+        return JSONResponse({"segment_id": sid, "words": []})
+    tokens = tokenize_pali(text)
+    if not tokens:
+        return JSONResponse({"segment_id": sid, "words": []})
+    status = check_words_have_entries(tokens)
+    words_payload = [
+        {
+            "word": w,
+            "has_entry": status[w]["has_entry"],
+            **({"lemma": status[w]["lemma"]} if status[w]["lemma"] else {}),
+        }
+        for w in tokens
+    ]
+    return JSONResponse(
+        {"segment_id": sid, "words": words_payload},
+        headers={"Cache-Control": "public, max-age=86400, immutable"},
     )
 
 
