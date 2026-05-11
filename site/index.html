@@ -207,6 +207,55 @@ pre code {
 .track:hover .track-cta {
     color: var(--accent);
 }
+.install-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0 1.75rem;
+}
+.install-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.95rem 1.1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+    background: var(--bg);
+    transition: border-color 0.15s, transform 0.15s, background 0.15s;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+}
+.install-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+.install-card-title {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+}
+.install-card-sub {
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+.install-card-sub code {
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.92em;
+    color: var(--fg);
+}
+.install-card.copied .install-card-title::after {
+    content: " — copied ✓";
+    color: var(--accent);
+    font-weight: 400;
+    font-size: 0.85em;
+}
 .endpoint {
     font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
     background: var(--code-bg);
@@ -300,6 +349,24 @@ footer p { margin: 0.5rem 0; }
 <p><span class="endpoint">https://mcp.tripitaka-mcp.com/mcp</span> &nbsp; (Streamable HTTP, MCP spec 2025-03-26)<br>
 <span class="endpoint">https://mcp.tripitaka-mcp.com/sse</span> &nbsp; (legacy SSE, for older clients)</p>
 
+<h3>Quick install</h3>
+<p>For clients that support one-click install or simple paste:</p>
+<div class="install-grid">
+<a class="install-card" href="cursor://anysphere.cursor-deeplink/mcp/install?name=tripitaka&amp;config=eyJ1cmwiOiJodHRwczovL21jcC50cmlwaXRha2EtbWNwLmNvbS9tY3AifQ==">
+<span class="install-card-title">Cursor</span>
+<span class="install-card-sub">Click to open Cursor → confirm → connected. Requires Cursor with MCP support.</span>
+</a>
+<button class="install-card" type="button" data-copy="claude mcp add --transport http tripitaka https://mcp.tripitaka-mcp.com/mcp">
+<span class="install-card-title">Claude Code</span>
+<span class="install-card-sub">Click to copy: <code>claude mcp add --transport http tripitaka …</code> then paste in your terminal.</span>
+</button>
+<a class="install-card" href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">
+<span class="install-card-title">Claude.ai (Pro/Team)</span>
+<span class="install-card-sub">Opens Settings → Connectors → add URL: <code>mcp.tripitaka-mcp.com/mcp</code></span>
+</a>
+</div>
+<p style="font-size: 0.88rem; color: var(--muted); margin: -0.5rem 0 1.5rem;">No one-click for Claude Desktop yet — see the manual config below. Discover and install in other editors via <a href="https://cursor.directory">Cursor Directory</a>, <a href="https://glama.ai/mcp/servers/dhamma-seeker/tripitaka-mcp">Glama</a>, or <a href="https://smithery.ai">Smithery</a>.</p>
+
 <h3>Claude Desktop</h3>
 <p>You'll need <a href="https://nodejs.org/">Node.js</a> installed (any recent version). The config below routes Claude Desktop to the remote server through the <a href="https://www.npmjs.com/package/mcp-remote"><code>mcp-remote</code></a> bridge.</p>
 <p><strong>1.</strong> Find your absolute <code>npx</code> path — Claude Desktop doesn't read your shell profile, so generic <code>npx</code> won't resolve. Open a terminal and run:</p>
@@ -357,5 +424,30 @@ footer p { margin: 0.5rem 0; }
 </footer>
 
 </main>
+<script>
+// Click-to-copy for the "Claude Code" install card (data-copy attribute).
+// Uses the modern clipboard API with a fallback execCommand path for older
+// browsers. Visual confirmation via .copied class for ~1.6s.
+(function () {
+  document.querySelectorAll('.install-card[data-copy]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var cmd = el.getAttribute('data-copy');
+      function done() {
+        el.classList.add('copied');
+        setTimeout(function () { el.classList.remove('copied'); }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cmd).then(done).catch(function () {
+          // Fallback if clipboard API blocked (e.g. non-HTTPS): use textarea hack
+          var ta = document.createElement('textarea');
+          ta.value = cmd; document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); done(); } catch (e) {}
+          document.body.removeChild(ta);
+        });
+      }
+    });
+  });
+})();
+</script>
 </body>
 </html>
