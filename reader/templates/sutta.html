@@ -32,7 +32,17 @@
         data-cite-base="{{ sutta.sutta_id }}|{{ sutta.title_pali or sutta.sutta_id }}|{{ sutta.title_english or '' }}|{{ sutta.nikaya.name_pali }}"
       >Copy citation</button>
     </p>
+    <p class="reader-tip">Tip — <kbd>double-click</kbd> any Pāli word to look it up in the dictionary.</p>
   </header>
+
+  <div id="dict-hint-banner" class="dict-hint-banner" hidden role="note">
+    <p>
+      <strong>New here?</strong> Try double-clicking a Pāli word like
+      <em>dhamma</em>, <em>nibbāna</em>, or <em>appamāda</em> to see its
+      dictionary definitions. Works on any italicised Pāli line below.
+    </p>
+    <button type="button" class="dict-hint-dismiss" id="dict-hint-dismiss">Got it</button>
+  </div>
 
   <div class="in-sutta-filter" data-segment-count="{{ sutta.segments|length }}">
     <input
@@ -160,6 +170,30 @@
     input.addEventListener('input', apply);
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') { input.value = ''; apply(); }
+    });
+  })();
+
+  // Dictionary hint banner — show once per browser, dismiss on button click
+  // OR auto-dismiss on first dblclick (they've found the gesture, no nag).
+  (function () {
+    var KEY = 'tipitaka:dict-hint-dismissed';
+    var banner = document.getElementById('dict-hint-banner');
+    var btn = document.getElementById('dict-hint-dismiss');
+    if (!banner) return;
+    // localStorage can throw in private mode / disabled storage — fail open
+    // (show banner; better than silently breaking the feature).
+    var dismissed = false;
+    try { dismissed = localStorage.getItem(KEY) === '1'; } catch (e) {}
+    if (!dismissed) banner.hidden = false;
+
+    function dismiss() {
+      banner.hidden = true;
+      try { localStorage.setItem(KEY, '1'); } catch (e) {}
+    }
+    if (btn) btn.addEventListener('click', dismiss);
+    document.addEventListener('dblclick', function (e) {
+      if (banner.hidden) return;
+      if (e.target.closest('.text-pali')) dismiss();
     });
   })();
 </script>

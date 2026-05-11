@@ -238,12 +238,77 @@ body {
 /* --- Word popup (Pāli double-click → dictionary) --- */
 
 .text-pali {
-  cursor: text;
+  /* `help` (?-cursor) signals "info available" without breaking text
+     selection — browsers switch to the I-beam while dragging anyway. */
+  cursor: help;
 }
 
 .text-pali::selection {
   background: var(--accent);
   color: var(--bg);
+}
+
+/* --- Dictionary discoverability hints (persistent + one-time) --- */
+
+.reader-tip {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.reader-tip kbd {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-style: normal;
+  background: var(--code-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0 4px;
+  color: var(--fg);
+}
+
+.dict-hint-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  background: var(--code-bg, #fafaf7);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+.dict-hint-banner p {
+  margin: 0;
+  flex: 1;
+}
+
+.dict-hint-banner em {
+  font-style: italic;
+  color: var(--pali-fg);
+}
+
+.dict-hint-dismiss {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dict-hint-dismiss:hover {
+  color: var(--fg);
+  border-color: var(--fg);
 }
 
 .word-popup {
