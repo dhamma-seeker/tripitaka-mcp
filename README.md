@@ -1,4 +1,8 @@
-# 🛕 Tripitaka MCP Server
+# Tripitaka MCP Server
+
+<p align="center">
+  <img src="https://tripitaka-mcp.com/favicon-192.png" alt="Tripitaka MCP logo — folded hands over a dhammacakka in pixel art" width="160" height="160">
+</p>
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![MCP Spec](https://img.shields.io/badge/MCP-2025--03--26-8b6914)](https://spec.modelcontextprotocol.io/)
