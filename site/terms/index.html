@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Terms of Service — Tripitaka MCP</title>
+<meta name="description" content="Terms of service for the Tripitaka MCP server. Free, non-commercial, offered as Dhamma Dāna.">
+<link rel="canonical" href="https://tripitaka-mcp.com/terms/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<style>
+:root {
+    --bg: #fafaf7;
+    --fg: #1c1c1c;
+    --muted: #6b6b6b;
+    --accent: #8b6914;
+    --code-bg: #f0ede5;
+    --border: #e2dfd5;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Sarabun", "Noto Sans Thai", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+}
+.back-home { display: inline-block; color: var(--muted); text-decoration: none; font-size: 0.9rem; margin-bottom: 1.5rem; }
+.back-home:hover { color: var(--accent); }
+h1 { font-size: 2rem; margin: 0 0 0.4rem; line-height: 1.2; }
+.subtitle { color: var(--muted); margin: 0 0 2rem; font-size: 0.95rem; }
+h2 { font-size: 1.2rem; margin: 2rem 0 0.6rem; }
+p, ul { margin: 0.7rem 0; }
+ul { padding-left: 1.4rem; }
+li { margin: 0.35rem 0; }
+a { color: var(--accent); }
+a:hover { text-decoration: underline; }
+code {
+    background: var(--code-bg);
+    padding: 0.15em 0.45em;
+    border-radius: 4px;
+    font-size: 0.92em;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+.tldr {
+    background: var(--code-bg);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.3rem;
+    border-radius: 4px;
+    margin: 1.5rem 0;
+}
+.tldr strong { color: var(--accent); }
+.last-updated { color: var(--muted); font-size: 0.88rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<main>
+
+<a href="/" class="back-home">← Tripitaka MCP</a>
+
+<h1>Terms of Service</h1>
+<p class="subtitle">For use of the hosted Tripitaka MCP server at <code>mcp.tripitaka-mcp.com</code>, the apex site at <code>tripitaka-mcp.com</code>, and the bilingual reader at <code>tripitaka-mcp.com/read/*</code>.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> Free. Non-commercial. Offered as Dhamma Dāna. Use at your own risk for study, research, and practice. No warranties, no SLA. The Pāli canon text is sourced from SuttaCentral (CC0) and the dictionary from the Payutto edition; treat returned content as scholarly material to verify, not pronouncements. Code is MIT; data follows the licences listed in NOTICE.md.
+</div>
+
+<h2>1. Acceptance</h2>
+<p>By connecting an MCP client to <code>mcp.tripitaka-mcp.com/mcp</code> (or the legacy SSE endpoint at <code>/sse</code>), browsing <code>tripitaka-mcp.com</code>, or using the bilingual reader at <code>/read/*</code>, you agree to these terms. If you do not agree, please do not use the service.</p>
+
+<h2>2. The service</h2>
+<p>The service provides programmatic access (via the Model Context Protocol) to the Pāli Tipiṭaka — approximately 444,000 segments at parity with SuttaCentral's <code>bilara-data</code>, covering Sutta, Vinaya, and Abhidhamma — plus a Pāli–Thai dictionary derived from the P. A. Payutto edition. The service exposes the following surfaces:</p>
+<ul>
+<li>An MCP server (Streamable HTTP + legacy SSE transport) for AI assistants to call.</li>
+<li>A static landing site and bilingual web reader for direct browsing.</li>
+<li>An open-source repository at <a href="https://github.com/dhamma-seeker/tripitaka-mcp">github.com/dhamma-seeker/tripitaka-mcp</a>.</li>
+</ul>
+<p>The service is operated by a single maintainer as a Dhamma Dāna (gift of teaching). There is no business entity, no commercial offering, and no paid tier.</p>
+
+<h2>3. Acceptable use</h2>
+<p>You may use the service for:</p>
+<ul>
+<li>Study, research, and personal practice involving the Pāli Canon.</li>
+<li>Scholarly work, citations, and academic publications (please credit the project and the underlying source data appropriately).</li>
+<li>Building open-source or non-commercial applications that draw on canonical Buddhist texts.</li>
+</ul>
+<p>You may <strong>not</strong> use the service to:</p>
+<ul>
+<li>Resell, repackage, or monetise the canon data or dictionary content.</li>
+<li>Make excessive automated requests that degrade availability for other users — please respect the public rate limit (currently 10 requests per 10 seconds and 60 requests per minute per IP).</li>
+<li>Attempt to circumvent the rate limit, abuse the service, or use it for any unlawful purpose under the law applicable to you.</li>
+<li>Misrepresent the source of returned content (e.g. claim the project endorses a particular interpretation).</li>
+</ul>
+
+<h2>4. No warranty</h2>
+<p>The service is provided <strong>"as is"</strong>, without warranty of any kind, express or implied. The maintainer makes no guarantee of accuracy, completeness, fitness for any particular purpose, or continuous availability. This is a personal project run on a single modest server; outages, bugs, and content errors are possible.</p>
+<p>The Pāli canon is a closed but heavily-edited textual tradition with thousands of years of editorial history. Translations vary widely in interpretation. <strong>Do not rely on returned content for ritual, legal, medical, or other consequential decisions without consulting authoritative printed editions and qualified teachers.</strong></p>
+
+<h2>5. Limitation of liability</h2>
+<p>To the maximum extent permitted by law, the maintainer is not liable for any direct, indirect, incidental, consequential, or other damages arising from your use of the service, the data it returns, or your inability to use it. This includes (but is not limited to) loss of data, lost time, missed deadlines, doctrinal disagreements, or interpretive errors.</p>
+
+<h2>6. Intellectual property and data licences</h2>
+<ul>
+<li><strong>Code:</strong> MIT licensed — see <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/LICENSE">LICENSE</a>.</li>
+<li><strong>Pāli canon and English translations:</strong> sourced from <a href="https://github.com/suttacentral/bilara-data">SuttaCentral bilara-data</a> under CC0 (public domain).</li>
+<li><strong>P. A. Payutto dictionary content:</strong> offered as Dhamma Dāna by the author; please honour the non-commercial use intent (see <a href="https://www.watnyanaves.net">watnyanaves.net</a> for the original work).</li>
+<li><strong>Full per-source attribution and licence terms:</strong> see <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/NOTICE.md">NOTICE.md</a> in the repository.</li>
+</ul>
+<p>When you cite or republish material returned by the service, please credit the original source (SuttaCentral, the translator, the dictionary author) — not just "Tripitaka MCP".</p>
+
+<h2>7. Availability and changes</h2>
+<p>The service may be unavailable from time to time for maintenance, infrastructure changes, or unplanned outages. Schemas, tool names, and endpoint behaviour may change without notice — clients should treat the MCP server as evolving software, not a stable production API. Changes to this Terms of Service will be reflected at this URL with the "Last updated" date below.</p>
+
+<h2>8. Termination</h2>
+<p>You may stop using the service at any time by disconnecting your MCP client. The maintainer reserves the right to block individual IPs, suspend specific tools, or take down the service entirely at any time, without prior notice, particularly to prevent abuse or because the project is winding down.</p>
+
+<h2>9. Governing law</h2>
+<p>These terms are governed by the laws of Thailand, where the maintainer is based. Any disputes that cannot be resolved informally will be resolved by mutual agreement, and only if that fails, by the appropriate Thai court — but realistically, this is a free non-commercial Buddhist scripture project, so disputes are not expected.</p>
+
+<h2>10. Contact</h2>
+<p>Questions, bug reports, or concerns: please <a href="https://github.com/dhamma-seeker/tripitaka-mcp/issues">open a GitHub issue</a>. There is no business support channel; the project is offered as <em>Dhamma Dāna</em>.</p>
+
+<p class="last-updated">Last updated: 12 May 2026</p>
+
+</main>
+</body>
+</html>
