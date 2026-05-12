@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Install Tripitaka MCP — 1-click setup for any AI client</title>
+<meta name="description" content="One-click install for Cursor, VS Code, Claude Code, Claude Desktop, Claude.ai. Connect your AI to the Pāli Canon. Free, offered as Dhamma Dāna.">
+<link rel="canonical" href="https://tripitaka-mcp.com/install/">
+<meta property="og:title" content="Install Tripitaka MCP — 1-click setup">
+<meta property="og:description" content="Pick your AI client. Get the Pāli Canon connected in seconds.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tripitaka-mcp.com/install/">
+<meta property="og:image" content="https://tripitaka-mcp.com/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+:root {
+    --bg: #fafaf7;
+    --fg: #1c1c1c;
+    --muted: #6b6b6b;
+    --accent: #8b6914;
+    --accent-dark: #6e520f;
+    --code-bg: #f0ede5;
+    --border: #e2dfd5;
+    --card-hover-bg: #fcfbf6;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Sarabun", "Noto Sans Thai", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+}
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--accent-dark); }
+.back-home {
+    display: inline-block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+.back-home:hover { color: var(--accent); }
+.install-header h1 {
+    font-size: 2.2rem;
+    margin: 0 0 0.65rem;
+    line-height: 1.15;
+}
+.install-header .lead {
+    font-size: 1.05rem;
+    color: var(--fg);
+    margin: 0 0 0.5rem;
+}
+.install-header code {
+    background: var(--code-bg);
+    padding: 0.15em 0.45em;
+    border-radius: 4px;
+    font-size: 0.94em;
+}
+.endpoint-summary {
+    color: var(--muted);
+    font-size: 0.92rem;
+    margin: 0 0 2.25rem;
+}
+
+/* --- Client card grid (the whole point of this page) ----------------------
+   Larger touch targets than the apex Quick install — this page is THE
+   install page so cards take centre stage. 2-up on desktop, 1-up on mobile,
+   each ~120px tall with clear hierarchy: client name (largest) → action
+   (accent) → hint (muted). */
+.install-clients {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.85rem;
+    margin: 0 0 2.5rem;
+}
+.client-card {
+    display: block;
+    padding: 1.4rem 1.4rem 1.25rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
+    width: 100%;
+}
+.client-card:hover {
+    border-color: var(--accent);
+    background: var(--card-hover-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+.client-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--fg);
+    margin: 0 0 0.35rem;
+    letter-spacing: -0.005em;
+}
+.client-action {
+    font-size: 0.95rem;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+}
+.client-hint {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.5;
+}
+.client-hint code {
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.92em;
+    color: var(--fg);
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+.client-card.copied .client-action::after {
+    content: " — copied ✓";
+    color: var(--accent-dark);
+}
+
+/* --- Help accordion + escape hatches -------------------------------------*/
+.install-help {
+    background: var(--code-bg);
+    border-radius: 8px;
+    padding: 1rem 1.4rem;
+    margin: 0 0 2rem;
+    font-size: 0.95rem;
+}
+.install-help summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--fg);
+    user-select: none;
+    padding: 0.2rem 0;
+}
+.install-help summary:hover { color: var(--accent); }
+.install-help[open] summary { margin-bottom: 0.8rem; }
+.install-help p { margin: 0.5rem 0; color: var(--muted); }
+.install-help ul { margin: 0.5rem 0 0.5rem 1.25rem; padding: 0; color: var(--muted); }
+.install-help li { margin: 0.35rem 0; }
+.install-help code, .install-help pre {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+}
+.install-help code {
+    padding: 1px 5px;
+    font-size: 0.92em;
+    color: var(--fg);
+}
+.install-help pre {
+    padding: 0.75rem 1rem;
+    overflow-x: auto;
+    font-size: 0.88rem;
+    margin: 0.5rem 0;
+}
+.install-help a { color: var(--accent); }
+
+.install-footer {
+    color: var(--muted);
+    font-size: 0.95rem;
+    text-align: center;
+    margin: 2.5rem 0 0;
+    line-height: 1.8;
+}
+.install-footer a { color: var(--muted); text-decoration: underline; }
+.install-footer a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+
+<a href="/" class="back-home">← Tripitaka MCP</a>
+
+<header class="install-header">
+<h1>Install in 1 click</h1>
+<p class="lead">Pick your AI client below. Each one connects to <code>mcp.tripitaka-mcp.com/mcp</code> — no API key, no signup, completely free.</p>
+<p class="endpoint-summary">10 tools · ~444K Pāli segments at parity with SuttaCentral · offered as <em>Dhamma Dāna</em></p>
+</header>
+
+<section class="install-clients" aria-label="Install for your AI client">
+
+<a class="client-card" href="cursor://anysphere.cursor-deeplink/mcp/install?name=tripitaka&amp;config=eyJ1cmwiOiJodHRwczovL21jcC50cmlwaXRha2EtbWNwLmNvbS9tY3AifQ==">
+<div class="client-name">Cursor</div>
+<div class="client-action">Click to install →</div>
+<div class="client-hint">Opens Cursor, prompts confirm, you're connected. Requires Cursor with MCP support.</div>
+</a>
+
+<a class="client-card" href="vscode:mcp/install?%7B%22name%22%3A%20%22tripitaka%22%2C%20%22type%22%3A%20%22http%22%2C%20%22url%22%3A%20%22https%3A//mcp.tripitaka-mcp.com/mcp%22%7D">
+<div class="client-name">VS Code</div>
+<div class="client-action">Click to install →</div>
+<div class="client-hint">Opens VS Code, prompts confirm, server appears under MCP panel. Works with GitHub Copilot.</div>
+</a>
+
+<button class="client-card" type="button" data-copy="claude mcp add --transport http tripitaka https://mcp.tripitaka-mcp.com/mcp">
+<div class="client-name">Claude Code</div>
+<div class="client-action">Click to copy command →</div>
+<div class="client-hint">Paste in terminal: <code>claude mcp add --transport http tripitaka …</code></div>
+</button>
+
+<button class="client-card" type="button" data-copy='{
+  "mcpServers": {
+    "tripitaka": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.tripitaka-mcp.com/mcp"]
+    }
+  }
+}'>
+<div class="client-name">Claude Desktop</div>
+<div class="client-action">Click to copy config →</div>
+<div class="client-hint">Paste into <code>claude_desktop_config.json</code> then restart Claude Desktop. Requires Node.js installed.</div>
+</button>
+
+<a class="client-card" href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">
+<div class="client-name">Claude.ai (Pro/Team)</div>
+<div class="client-action">Open Connectors settings →</div>
+<div class="client-hint">In settings: Add custom connector → paste URL <code>mcp.tripitaka-mcp.com/mcp</code></div>
+</a>
+
+<a class="client-card" href="https://smithery.ai/server/dhamma-seeker/tripitaka-mcp" target="_blank" rel="noopener">
+<div class="client-name">Other clients (Cline, Continue, Zed, Roo…)</div>
+<div class="client-action">Get install command via Smithery →</div>
+<div class="client-hint">Smithery generates the right snippet for any MCP-compatible editor.</div>
+</a>
+
+</section>
+
+<details class="install-help">
+<summary>Need help? Common issues + manual setup</summary>
+
+<p><strong>Claude Desktop on Windows / nvm-using macOS</strong> — the copy-config above uses a generic <code>npx</code>. If Claude Desktop says "couldn't connect to server", it likely couldn't find <code>npx</code> on its PATH. See the <a href="/#connect">full Claude Desktop walkthrough</a> on the main page for the absolute-path + env-PATH variant.</p>
+
+<p><strong>VS Code didn't open?</strong> Make sure VS Code is installed and you've enabled MCP in settings: <code>chat.mcp.enabled: true</code>. VS Code Insiders users: replace <code>vscode:</code> with <code>vscode-insiders:</code> in the link target.</p>
+
+<p><strong>Behind a corporate firewall?</strong> The server speaks Streamable HTTP at <code>https://mcp.tripitaka-mcp.com/mcp</code> and legacy SSE at <code>https://mcp.tripitaka-mcp.com/sse</code>. Whitelist whichever your client uses.</p>
+
+<p><strong>Want a self-hosted copy?</strong> The full source is on <a href="https://github.com/dhamma-seeker/tripitaka-mcp">GitHub</a> with a Docker Compose setup. Free for non-commercial use; see <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/NOTICE.md">NOTICE.md</a> for data licences.</p>
+
+<p><strong>Discovery / browse on directories:</strong></p>
+<ul>
+<li><a href="https://glama.ai/mcp/servers/dhamma-seeker/tripitaka-mcp" target="_blank" rel="noopener">Glama</a> — score 4.4/5.0, full tool list</li>
+<li><a href="https://smithery.ai/server/dhamma-seeker/tripitaka-mcp" target="_blank" rel="noopener">Smithery</a> — install commands for any client</li>
+<li><a href="https://cursor.directory/plugins/tripitaka-mcp" target="_blank" rel="noopener">Cursor Directory</a> · <a href="https://mcp.so/server/tripitaka-mcp/dhamma-seeker" target="_blank" rel="noopener">MCP.so</a></li>
+</ul>
+
+</details>
+
+<p class="install-footer">
+Just want to read the canon? <a href="/read/">Open the bilingual reader →</a><br>
+Want the full project background? <a href="/">Back to the main page →</a>
+</p>
+
+</main>
+
+<script>
+// Click-to-copy for cards that carry a `data-copy` attribute (Claude Code,
+// Claude Desktop). Uses navigator.clipboard with execCommand fallback so
+// older browsers and non-HTTPS contexts still work. Visual confirmation
+// via .copied class for ~1.6s.
+(function () {
+  document.querySelectorAll('.client-card[data-copy]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var cmd = el.getAttribute('data-copy');
+      function done() {
+        el.classList.add('copied');
+        setTimeout(function () { el.classList.remove('copied'); }, 1600);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(cmd).then(done).catch(function () {
+          var ta = document.createElement('textarea');
+          ta.value = cmd; document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); done(); } catch (e) {}
+          document.body.removeChild(ta);
+        });
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

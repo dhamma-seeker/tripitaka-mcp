@@ -256,6 +256,42 @@ pre code {
     font-weight: 400;
     font-size: 0.85em;
 }
+.hero-cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.1rem 1.25rem;
+    margin: 1.4rem 0 1.6rem;
+}
+.hero-cta {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+    font-size: 1.05rem;
+    padding: 0.85rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    border: 1px solid var(--accent);
+    transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+    line-height: 1.2;
+}
+.hero-cta:hover {
+    background: #6e520f;
+    border-color: #6e520f;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 12px rgba(139, 105, 20, 0.18);
+}
+.hero-cta-secondary {
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+.hero-cta-secondary a {
+    color: var(--muted);
+}
+.hero-cta-secondary a:hover {
+    color: var(--accent);
+}
 .endpoint {
     font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
     background: var(--code-bg);
@@ -300,6 +336,10 @@ footer p { margin: 0.5rem 0; }
 <h1>Tripitaka MCP</h1>
 <p class="tagline-th">บริการพระไตรปิฎกบาลีผ่าน MCP protocol — เผยแผ่เป็นธรรมทาน</p>
 <p class="lead">The Pāli Canon, accessible to your AI assistant. This MCP server lets Claude — or any MCP-compatible client — search, cite, and compare translations of the Buddha's discourses with segment-level precision. Offered freely as <em>Dhamma Dāna</em> for study, research, and practice.</p>
+<p class="hero-cta-row">
+<a class="hero-cta" href="/install/">Install in 1 click →</a>
+<span class="hero-cta-secondary">or <a href="/read/">browse the canon</a> · <a href="#what-it-does">learn what it does ↓</a></span>
+</p>
 <picture>
 <source srcset="/cover.webp" type="image/webp">
 <img class="cover" src="/cover.png" width="1376" height="768" alt="The Buddha teaching a small group of monastic disciples in a forest clearing, with a stream and snow-capped mountains in the distance" loading="eager" decoding="async">
@@ -312,10 +352,10 @@ footer p { margin: 0.5rem 0; }
 <p>Browse the Pāli canon with English translations side-by-side. No setup needed.</p>
 <span class="track-cta">Open the reader →</span>
 </a>
-<a class="track" href="#connect">
+<a class="track" href="/install/">
 <h3>Connect</h3>
 <p>Give Claude, Cursor, Codex, or any MCP-compatible AI agent the ability to search and cite.</p>
-<span class="track-cta">Setup guide ↓</span>
+<span class="track-cta">Install in 1 click →</span>
 </a>
 <a class="track" href="https://mcp.tripitaka-mcp.com/topics/">
 <h3>Study</h3>
@@ -324,7 +364,7 @@ footer p { margin: 0.5rem 0; }
 </a>
 </section>
 
-<h2>What it does</h2>
+<h2 id="what-it-does">What it does</h2>
 <p>The server exposes <strong>10 tools and 3 resources</strong> over MCP. Your AI agent can:</p>
 <ul>
 <li>Search the canon by keyword (trigram), meaning (vector), or both (RRF hybrid)</li>
