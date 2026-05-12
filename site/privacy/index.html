@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy Policy — Tripitaka MCP</title>
+<meta name="description" content="Privacy policy for Tripitaka MCP — what we collect (almost nothing), what we don't (everything else). Offered as Dhamma Dāna.">
+<link rel="canonical" href="https://tripitaka-mcp.com/privacy/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<style>
+:root {
+    --bg: #fafaf7;
+    --fg: #1c1c1c;
+    --muted: #6b6b6b;
+    --accent: #8b6914;
+    --code-bg: #f0ede5;
+    --border: #e2dfd5;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Sarabun", "Noto Sans Thai", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+}
+.back-home { display: inline-block; color: var(--muted); text-decoration: none; font-size: 0.9rem; margin-bottom: 1.5rem; }
+.back-home:hover { color: var(--accent); }
+h1 { font-size: 2rem; margin: 0 0 0.4rem; line-height: 1.2; }
+.subtitle { color: var(--muted); margin: 0 0 2rem; font-size: 0.95rem; }
+h2 { font-size: 1.2rem; margin: 2rem 0 0.6rem; }
+p, ul { margin: 0.7rem 0; }
+ul { padding-left: 1.4rem; }
+li { margin: 0.35rem 0; }
+a { color: var(--accent); }
+a:hover { text-decoration: underline; }
+code {
+    background: var(--code-bg);
+    padding: 0.15em 0.45em;
+    border-radius: 4px;
+    font-size: 0.92em;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+}
+.tldr {
+    background: var(--code-bg);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.3rem;
+    border-radius: 4px;
+    margin: 1.5rem 0;
+}
+.tldr strong { color: var(--accent); }
+.last-updated { color: var(--muted); font-size: 0.88rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<main>
+
+<a href="/" class="back-home">← Tripitaka MCP</a>
+
+<h1>Privacy Policy</h1>
+<p class="subtitle">For the hosted Tripitaka MCP server at <code>mcp.tripitaka-mcp.com</code> and the apex site at <code>tripitaka-mcp.com</code>.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> No accounts. No cookies. No analytics. No tracking. No personal data is stored beyond the IP-based rate limit counter, which is kept in memory and not logged. Queries are not persisted. This is a Dhamma Dāna service — there is no business interest in your data.
+</div>
+
+<h2>What we do not collect</h2>
+<ul>
+<li><strong>User accounts</strong> — there are none. No sign-up, no login, no email required to use the service.</li>
+<li><strong>Cookies</strong> — the site sets no cookies. The MCP endpoint sets no cookies.</li>
+<li><strong>Analytics</strong> — no Google Analytics, no Plausible, no Fathom, no Posthog, no event tracking of any kind. Server access logs are kept short-term for operational debugging only and never linked to identity.</li>
+<li><strong>Query content</strong> — the actual text of the suttas you search for, the tools you call, or the responses you receive are not retained on our servers beyond the duration of the request itself. Standard process-level logs do not include request bodies.</li>
+<li><strong>Personal information</strong> — we do not request, store, or process names, email addresses, payment information, location, or any other personally identifying data. The MCP protocol's design and our tool set do not require it.</li>
+</ul>
+
+<h2>What we do collect (and why)</h2>
+<ul>
+<li><strong>IP address — transiently, for rate limiting.</strong> The server enforces a per-IP rate limit (10 requests per 10 seconds, 60 requests per minute) to prevent abuse and keep the service available for everyone. The counter lives in memory at the proxy layer (Caddy) and expires per the rate-limit window; it is not persisted to disk or aggregated into a profile.</li>
+<li><strong>Standard HTTP access logs — short-term, operational only.</strong> Like any web server, our infrastructure (Caddy reverse proxy + the upstream MCP container) records access lines containing IP, timestamp, method, path, status code, response size, and User-Agent. These are retained for short-term debugging (defaulting to the container's log rotation, typically a few days) and are never aggregated, shared, sold, or used to build profiles.</li>
+</ul>
+
+<h2>Third parties</h2>
+<ul>
+<li><strong>Cloudflare</strong> sits in front of the apex and MCP server for TLS termination and basic DDoS protection. Cloudflare may process your IP and request metadata under its own privacy policy as part of providing this service. We do not enable any Cloudflare analytics, tracking, or device-fingerprinting features.</li>
+<li><strong>SuttaCentral, 84000.org, watnyanaves.net</strong> — the responses returned by tools include canonical cross-reference URLs to these external sites. We do not load resources from them in your name; following any of those links is your own browser request, governed by those sites' own privacy policies.</li>
+<li><strong>No third-party generative AI, no third-party data ingestion, no third-party advertising networks.</strong> The server reads only from its own Postgres database (the Pāli canon and the Payutto dictionary, both bundled with the deployment) and emits canonical reference URLs as text in responses.</li>
+</ul>
+
+<h2>Your rights</h2>
+<p>Because we hold no identifiable record of any user — no account, no profile, no cookie, no persistent identifier — there is no personal data we can retrieve, export, or delete on request. If you believe an interaction has produced data that should be deleted, please email the address below and we will investigate the relevant log window.</p>
+
+<h2>Children</h2>
+<p>The service is not directed at children under 13 and we do not knowingly collect data from anyone. Given that we collect almost nothing from any user, this is a low-risk surface in practice.</p>
+
+<h2>Changes to this policy</h2>
+<p>If this policy changes materially, the updated version will be published at this URL and the "Last updated" date below will change. Users who want a stable archived view can use the Internet Archive Wayback Machine. We will not retroactively use data we never collected.</p>
+
+<h2>Contact</h2>
+<p>For privacy questions, open a public issue at <a href="https://github.com/dhamma-seeker/tripitaka-mcp/issues">github.com/dhamma-seeker/tripitaka-mcp/issues</a> or email the maintainer through their GitHub profile. The project is <strong>offered as Dhamma Dāna</strong> — non-commercial, no business behind it, no marketing team.</p>
+
+<p class="last-updated">Last updated: 12 May 2026</p>
+
+</main>
+</body>
+</html>
