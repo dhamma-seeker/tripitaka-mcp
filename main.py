@@ -172,11 +172,11 @@ LANGUAGE_COLUMNS = {
 # แสดงในทุก response เพื่อให้เป็นไปตามเงื่อนไขของผู้เรียบเรียง
 DICTIONARY_ATTRIBUTIONS = {
     "payutto": {
-        "title": "พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์",
-        "author": "สมเด็จพระพุทธโฆษาจารย์ (ป. อ. ปยุตฺโต)",
-        "license": "ธรรมทาน (Dhamma Dāna) — ห้ามใช้เชิงพาณิชย์",
+        "title": "พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์ (Buddhist Dictionary, Concept-Glossary edition)",
+        "author": "Somdet Phra Buddhaghosacariya (P. A. Payutto)",
+        "license": "Dhamma Dāna — non-commercial use only",
         "source_url": "https://www.watnyanaves.net",
-        "note": "ควรตรวจสอบกับหนังสือฉบับพิมพ์ล่าสุดสำหรับการอ้างอิงทางการ",
+        "note": "Verify against the latest printed edition for authoritative citation",
     },
     "pts": {
         "title": "The Pali Text Society's Pali-English Dictionary",
@@ -199,8 +199,8 @@ DICTIONARY_ATTRIBUTIONS = {
 }
 
 PROJECT_NOTICE = (
-    "โครงการนี้เผยแผ่เป็นธรรมทาน — "
-    "โปรดใช้เพื่อการศึกษาเท่านั้น และไม่ใช้ในเชิงพาณิชย์"
+    "This project is offered as Dhamma Dāna — "
+    "please use for study purposes only, not for commercial use."
 )
 
 # Whitelists สำหรับ validate input ที่จะถูกใช้ใน SQL / filter
@@ -415,21 +415,22 @@ def _tipitaka_84000_urls(sutta_id: str) -> dict[str, str]:
     if volume:
         volume_url = f"https://84000.org/tipitaka/read/r.php?B={volume}&A=1"
         note = (
-            f"เปิดที่หน้าแรกของเล่ม {volume} (ฉบับ มจร 45 เล่ม) — "
-            "เลื่อน/ค้นชื่อสูตรในเล่มเอง. ใช้ search_url เพื่อค้นใน 84000 ตรง"
+            f"Opens at the start of volume {volume} of the 45-volume "
+            f"Mahāchula edition — scroll or search for the sutta within "
+            f"the volume. Use search_url to query 84000.org directly."
         )
         return {
             "url": volume_url,
             "search_url": google_search,
             "note": note,
         }
-    # Fallback: paracanonical (Mil, Ne, Pe) หรือ id ที่ไม่อยู่ใน mapping
+    # Fallback: paracanonical (Mil, Ne, Pe) or IDs outside the volume mapping
     return {
         "url": TIPITAKA_84000_BASE,
         "search_url": google_search,
         "note": (
-            "Sutta นี้อยู่นอก 45 เล่มหลัก (paracanonical) — "
-            "ใช้ search_url เพื่อหาในไซต์"
+            "This sutta is outside the 45-volume main canon "
+            "(paracanonical) — use search_url to find it on the site."
         ),
     }
 
@@ -497,43 +498,46 @@ def search_by_keyword(
     pitaka: str | None = None,
     limit: int = 10,
 ) -> list[dict[str, Any]]:
-    """ค้นหาข้อความในพระไตรปิฎกด้วย keyword
+    """Keyword search across the Pāli Tipiṭaka (trigram word-similarity).
 
-    ค้นหาแบบ trigram (word similarity) บนภาษาที่เปิดใช้งานในเซิร์ฟเวอร์.
-    สามารถกรองผลลัพธ์ตามปิฎกและฉบับแปลได้.
+    Searches the configured enabled language(s) on the server. Filterable
+    by pitaka and translation edition.
 
-    💡 **คำแนะนำสำหรับ AI client:**
-    Canonical reference ของระบบคือบาลีโรมัน (จาก SuttaCentral). ถ้า user
-    ถามเป็นภาษาที่ปิด (หรือไม่อยู่ใน supported set) ให้แปล keyword เป็น
-    บาลีโรมัน (preferred) หรืออังกฤษก่อนเรียก tool นี้ — เช่น
-    "ทุกข์" → "dukkha", "อานาปานสติ" → "ānāpānassati".
-    ดูภาษาที่ใช้ได้ใน server instructions ด้านบน.
+    💡 **Hints for the AI client:**
+    The system's canonical reference is Romanised Pāli (from SuttaCentral).
+    If the user asks in a disabled or unsupported language, translate the
+    keyword to **Romanised Pāli (preferred) or English** before calling this
+    tool — e.g. "suffering" → "dukkha", "mindfulness of breathing" →
+    "ānāpānassati". See the server instructions for the enabled language set.
 
-    🔍 **เลือก tool ค้นหาให้เหมาะกับงาน:**
-    - **หาคำเป๊ะ (term lookup)** — เช่น "appearances of `ānāpānassati`":
-      ใช้ tool นี้ ดี เพราะ trigram match ตรงคำสุด
-    - **หา "เนื้อหาเรื่อง X" (concept search)** — เช่น "discourses about
-      mindfulness of breathing": **ใช้ `search_hybrid` แทน** เพราะ
-      canonical Pāli มีลักษณะที่ keyword search หา concept ได้ไม่ครบ:
-        • คำสำคัญในชื่อหมวด (`Ānāpānapabba`) ไม่ได้อยู่ในเนื้อหาคำสอน
-          ที่ใช้ verb อื่น (`assasati`, `passasati`, `dīghaṁ`, `rassaṁ`) —
-          เช่น DN22 Ānāpānapabba มี 16 segments แต่คำว่า `ānāpāna`
-          ปรากฏแค่ 2 ที่ (header + footer) — เนื้อหาจริงจะหาไม่เจอ
-        • Stock phrases (เช่น `So satova assasati, satova passasati`)
-          ปรากฏซ้ำใน 10+ สูตร — keyword จะ rank ผลกว้าง ไม่ชี้สูตรเฉพาะ
-    - **ค้นทั่วไปจาก keyword เดียว** — ใช้ `limit≥30` แล้วกรองเอง
-      หรือเรียกหลายคำที่เกี่ยวข้อง (root verb + noun + compound)
+    🔍 **Pick the right search tool for the question shape:**
+    - **Term lookup (exact word appearances)** — e.g. "occurrences of
+      `ānāpānassati`": this tool is best (trigram nails the exact word).
+    - **Concept search ("discourses about X")** — e.g. "discourses about
+      mindfulness of breathing": **use `search_hybrid` instead.** Canonical
+      Pāli has two quirks that hurt keyword search for concepts:
+        • Section headings (`Ānāpānapabba`) often use a different word than
+          the teaching body, which uses verb forms (`assasati`, `passasati`,
+          `dīghaṁ`, `rassaṁ`). E.g. DN22's Ānāpānapabba has 16 segments but
+          the word `ānāpāna` appears in only 2 (header + footer) — the
+          actual teaching segments won't match.
+        • Stock phrases (e.g. `So satova assasati, satova passasati`)
+          recur in 10+ suttas, so a keyword query ranks broadly and won't
+          pinpoint the canonical reference.
+    - **General keyword survey** — set `limit≥30` and filter client-side,
+      or call multiple related forms (root verb + noun + compound).
 
     Args:
-        keyword: คำที่ต้องการค้นหา
-        language: ภาษาที่ค้นหา — ต้องอยู่ใน ENABLED_LANGUAGES ของเซิร์ฟเวอร์
-                  (default: "pali"). ภาษาที่ปิดอยู่จะ return error.
-        edition: ฉบับแปลภาษาไทย — "dhiranandi", "jayasaro", "mbu", "royal" หรือ None
-                  (ใช้เฉพาะเมื่อ language="thai" และ Thai เปิดอยู่)
-        pitaka: กรองตามปิฎก — "vinaya", "sutta", "abhidhamma" หรือ None (ค้นทั้งหมด)
-                ✅ v1.1+: ทั้ง 3 ปิฎกครบ (Sutta + Vinaya + Abhidhamma) เทียบเท่า
-                SuttaCentral bilara — ดู list_structure ตัวเลขสด
-        limit: จำนวนผลลัพธ์สูงสุด (default: 10, max: 50)
+        keyword: The word/phrase to search for.
+        language: Search language — must be in the server's ENABLED_LANGUAGES
+                  (default: "pali"). Disabled languages return an error.
+        edition: Thai translation edition — "dhiranandi", "jayasaro", "mbu",
+                  "royal" or None. Only used when language="thai" and Thai is
+                  enabled on the server.
+        pitaka: Filter by pitaka — "vinaya", "sutta", "abhidhamma" or None
+                (all). ✅ v1.1+: all three pitakas at parity with SuttaCentral
+                bilara — see list_structure for live counts.
+        limit: Maximum results (default: 10, max: 50).
     """
     try:
         language = _validate_choice(language, VALID_LANGUAGES_SEARCH, "language")
@@ -611,7 +615,7 @@ def search_by_keyword(
 
         if not results:
             hint = f" (edition: {edition})" if edition else ""
-            return [{"message": f"ไม่พบผลลัพธ์สำหรับ '{keyword}' ในภาษา {language}{hint}"}]
+            return [{"message": f"No results for '{keyword}' in {language}{hint}"}]
 
         return [
             _strip_disabled_text_fields({
@@ -622,7 +626,7 @@ def search_by_keyword(
         ]
 
     except Exception as e:
-        return [{"error": f"เกิดข้อผิดพลาดในการค้นหา: {str(e)}"}]
+        return [{"error": f"Search error: {str(e)}"}]
     finally:
         cur.close()
         release_connection(conn)
@@ -634,52 +638,60 @@ def get_sutta(
     language: str = "pali",
     edition: str | None = None,
 ) -> dict[str, Any]:
-    """ดึงเนื้อหาสูตร/กัณฑ์ตาม ID — return เนื้อหาเต็มทุก segment
+    """Fetch the full content of a sutta/section by ID — returns every segment.
 
-    ใช้รหัสมาตรฐาน SuttaCentral เช่น:
-    - `mn1` = มัชฌิมนิกาย สูตรที่ 1 (Mūlapariyāyasutta — มูลปริยายสูตร, 334 segments)
-    - `dn22` = ทีฆนิกาย สูตรที่ 22 (Mahāsatipaṭṭhānasutta — มหาสติปัฏฐาน, 454 segments)
-    - `dn16` = ทีฆนิกาย สูตรที่ 16 (Mahāparinibbānasutta — สูตรยาวที่สุด 1,664 segments)
-    - `sn56.11` = สังยุตต์ 56.11 (Dhammacakkappavattana — ธัมมจักกัปปวัตตนะ)
-    - `mn62` = มัชฌิมนิกาย 62 (Mahārāhulovāda — สอนพระราหุล)
-    - `dhp1-20` = Dhammapada verses 1-20 (KN ใช้ range format)
-    - `mil3.1.1` = Milindapañha 3.1.1 (paracanonical, 3-4 level id)
+    Uses standard SuttaCentral IDs, e.g.:
+    - `mn1` = Majjhima Nikāya sutta 1 (Mūlapariyāyasutta, 334 segments)
+    - `dn22` = Dīgha Nikāya sutta 22 (Mahāsatipaṭṭhānasutta, 454 segments)
+    - `dn16` = Dīgha Nikāya sutta 16 (Mahāparinibbānasutta — the longest
+      sutta in the canon, 1,664 segments)
+    - `sn56.11` = Saṃyutta 56.11 (Dhammacakkappavattana)
+    - `mn62` = Majjhima Nikāya 62 (Mahārāhulovāda — advice to Rāhula)
+    - `dhp1-20` = Dhammapada verses 1-20 (KN uses range format)
+    - `mil3.1.1` = Milindapañha 3.1.1 (paracanonical, 3–4 level id)
 
-    💡 **คำแนะนำสำหรับ AI client:**
-    - **Quote text_pali / text_english โดยตรงจาก segment** — อย่าดึงจาก
-      training memory. ระบบ verify ได้, AI หลายครั้งจำผิดได้
-    - Segment สั้นๆ ลงท้ายด้วย `:0.1` หรือ `:0.2` มักเป็น **header** (ชื่อ
-      นิกาย/สูตร) ไม่ใช่เนื้อหา teaching จริง — เริ่ม content จาก `:1.1`
-    - Segment ที่ลงท้ายด้วย "...niṭṭhitaṁ" (เช่น `mn1:194.10` =
-      "Mūlapariyāyasuttaṁ niṭṐhitaṁ paṭhamaṁ") เป็น **colophon** ปิดสูตร
-    - Segments ที่มี `…pe…` (peyyāla = เปยยาล) คือ **abbreviated repetition**
-      ไม่ใช่ข้อมูลขาดหาย — ตำราบาลีย่อด้วยวิธีนี้
-    - response มี `cross_reference` field — render เป็น markdown clickable
-      ใน reply เพื่อให้ user verify ต้นฉบับได้
+    💡 **Hints for the AI client:**
+    - **Quote `text_pali` / `text_english` directly from the returned
+      segments** — do not rely on training memory. The system is
+      verifiable; AI recall is often wrong.
+    - Short segments ending in `:0.1` or `:0.2` are usually **headers**
+      (nikāya/sutta names), not the teaching itself — actual content
+      starts around `:1.1`.
+    - Segments ending in "...niṭṭhitaṁ" (e.g. `mn1:194.10` =
+      "Mūlapariyāyasuttaṁ niṭṭhitaṁ paṭhamaṁ") are **colophons**
+      marking the close of the sutta.
+    - Segments containing `…pe…` (peyyāla) are **abbreviated repetitions**
+      — not missing data. Pāli texts use this convention for repeated
+      stock phrases.
+    - The response includes a `cross_reference` field — render the URLs
+      as clickable markdown in your reply so users can verify the source.
 
-    ✅ **Coverage (v1.1+):** ครบ 3 ปิฎก เทียบเท่า SuttaCentral bilara-data
-    - Sutta Piṭaka (DN/MN/SN/AN/KN): ✅ ครบ Pāli + Sujato EN (5,791 sections)
-    - Vinaya Piṭaka: ✅ ครบ Pāli + Brahmali EN — ใช้ SC codes เช่น
-      `pli-tv-bu-vb-pj1` (ปาราชิก ๑), `pli-tv-bi-vb-pj1` (ภิกขุนี),
-      `pli-tv-kd1` (มหาวรรค), `pli-tv-pvr10` (ปริวาร), `pli-tv-bu-pm`
-      (ภิกขุปาฏิโมกข์)
-    - Abhidhamma Piṭaka: ✅ ครบ 7 books (ds, vb, dt, pp, kv, ya, patthana)
-      — Pāli only (bilara ไม่มี EN ทุก translator)
+    ✅ **Coverage (v1.1+):** all three pitakas at parity with SuttaCentral
+    `bilara-data`:
+    - Sutta Piṭaka (DN/MN/SN/AN/KN): Pāli + Sujato EN (5,791 sections)
+    - Vinaya Piṭaka: Pāli + Brahmali EN — SC codes e.g.
+      `pli-tv-bu-vb-pj1` (Bhikkhu Pārājika 1), `pli-tv-bi-vb-pj1`
+      (Bhikkhunī), `pli-tv-kd1` (Mahāvagga), `pli-tv-pvr10` (Parivāra),
+      `pli-tv-bu-pm` (Bhikkhu Pātimokkha)
+    - Abhidhamma Piṭaka: 7 books (ds, vb, dt, pp, kv, ya, patthana) —
+      Pāli only (bilara has no English translator for any Abhidhamma book)
 
     Args:
-        sutta_id: รหัสสูตร เช่น "mn1", "dn22", "sn56.11", "dhp1-20"
-        language: ภาษาที่ต้องการ — "pali", "thai", "english", หรือ "all"
-                  (default: "pali"). Thai ปิดอยู่ใน server ปัจจุบัน → return null
-        edition: ฉบับแปลภาษาไทย — "dhiranandi", "jayasaro", "mbu", "royal"
-                 หรือ None. ถ้าไม่ระบุ จะใช้ text_thai จาก bilara-data
-                 ⚠️ ปัจจุบัน DB ไม่มีฉบับแปลไทย → ทุกค่ามักเป็น null
+        sutta_id: Sutta ID, e.g. "mn1", "dn22", "sn56.11", "dhp1-20".
+        language: Which language to return — "pali", "thai", "english",
+                  or "all" (default: "pali"). Thai is currently disabled
+                  on the server, so Thai fields return null.
+        edition: Thai translation edition — "dhiranandi", "jayasaro",
+                 "mbu", "royal", or None. If None, uses `text_thai` from
+                 bilara-data. ⚠️ The DB has no Thai editions loaded yet,
+                 so most values return null.
 
     Returns:
-        ข้อมูลสูตรประกอบด้วย:
+        Sutta data including:
         - sutta_id, title{pali,thai,english}, nikaya, pitaka, edition
-        - segment_count, segments[] (เรียงตาม id, ครบทุก segment)
-        - cross_reference: SuttaCentral URLs (sutta + Pāli + English) +
-          84000 link สำหรับ Thai user routing
+        - segment_count, segments[] (id-sorted, every segment included)
+        - cross_reference: SuttaCentral URLs (sutta + Pāli + English) plus
+          84000.org link for Thai-user routing.
     """
     try:
         sutta_id = _validate_sutta_id(sutta_id)
@@ -718,7 +730,7 @@ def get_sutta(
         section_row = cur.fetchone()
 
         if not section_row:
-            return {"error": f"ไม่พบสูตร: {sutta_id}"}
+            return {"error": f"Sutta not found: {sutta_id}"}
 
         section_id = section_row[0]
 
@@ -813,7 +825,7 @@ def get_sutta(
         }
 
     except Exception as e:
-        return {"error": f"เกิดข้อผิดพลาด: {str(e)}"}
+        return {"error": f"Error: {str(e)}"}
     finally:
         cur.close()
         release_connection(conn)
@@ -826,38 +838,41 @@ def search_semantic(
     limit: int = 5,
     threshold: float = 0.7,
 ) -> list[dict[str, Any]]:
-    """ค้นหาแบบ semantic — ค้นหาตามความหมาย ไม่จำเป็นต้องตรงคำ
+    """Semantic search — match by meaning, not exact words.
 
-    ใช้ vector similarity search (cosine distance) บน `text_pali` ที่ embed
-    ด้วย multilingual MiniLM model.
+    Uses vector similarity (cosine distance) over `text_pali` embedded with
+    a multilingual MiniLM model.
 
-    🤔 **ส่วนใหญ่คุณควรใช้ `search_hybrid` แทน** — มันรวม semantic นี้กับ
-    keyword search แล้ว ranking ดีกว่า. ใช้ tool นี้เฉพาะเมื่อ:
-    - ต้องการ pure semantic (ไม่ต้องการ keyword influence)
-    - อยาก tune `threshold` ละเอียด (hybrid ใช้ RRF ปรับยาก)
-    - debug ดูว่า semantic จับอะไรได้บ้างเทียบกับ keyword
+    🤔 **In most cases you should use `search_hybrid` instead** — it
+    combines this semantic search with keyword search and ranks better.
+    Use this tool only when you need:
+    - Pure semantic results (no keyword influence)
+    - Fine-grained `threshold` tuning (hybrid uses RRF which is harder
+      to tune)
+    - To debug what semantic alone picks up vs keyword
 
-    ⚠️ ข้อจำกัดที่ทราบ:
-    - Index = บาลีเท่านั้น (English/Thai ใช้ได้แต่ผ่าน multilingual embedding
-      ที่ไม่ได้ tune บน Pāli)
-    - English query มัก embed ดีกว่าไทย (model tune EN เป็นหลัก)
-    - คำเฉพาะตัว (`appamāda`, `dukkha`) ที่ค้นแบบ exact ดีกว่า → ใช้
-      `search_by_keyword`
-    - Stock phrases บาลีปรากฏในหลายสูตร → similarity score กระจัดกระจาย,
-      อ่าน top 10 อย่ายึดแค่ rank 1
+    ⚠️ Known limitations:
+    - The index is **Pāli only** (English/Thai queries pass through the
+      multilingual embedding but the model isn't tuned on Pāli)
+    - English queries usually embed better than Thai (model is EN-primary)
+    - For specific Pāli terms (`appamāda`, `dukkha`), exact match is
+      better — use `search_by_keyword` instead
+    - Pāli stock phrases recur in many suttas → similarity scores
+      cluster; read the top 10, don't trust rank 1 alone
 
     Args:
-        query: ข้อความ (อังกฤษให้ผลดีสุด, รองมาเป็นบาลี, ไทยอ่อน)
-        language: ภาษา output — "pali", "thai", "english", หรือ "all"
-                  (Thai disabled → null)
-        limit: จำนวนผลลัพธ์สูงสุด (default: 5, max: 20)
-        threshold: cosine distance สูงสุด (น้อย=ตรงเผง). default 0.7;
-                   ลดเป็น 0.5 ถ้าอยากเข้มงวด, เพิ่มเป็น 0.9 ถ้าอยากกว้าง
+        query: Query text (English works best, then Pāli, Thai is weakest).
+        language: Output language — "pali", "thai", "english", or "all"
+                  (Thai disabled → null).
+        limit: Maximum results (default: 5, max: 20).
+        threshold: Maximum cosine distance (smaller = stricter match).
+                   Default 0.7; lower to 0.5 for tighter matches, raise
+                   to 0.9 for broader.
 
     Returns:
-        list ผลลัพธ์เรียงตาม distance (น้อยไปมาก) แต่ละรายการมี:
-        - segment_id, sutta_id, text_pali/text_english (ตาม language flag),
-          distance, cross_reference URLs
+        Results sorted by ascending distance. Each item:
+        - segment_id, sutta_id, text_pali/text_english (per language flag),
+          distance, cross_reference URLs.
     """
     limit = min(max(1, limit), 20)
 
@@ -867,9 +882,9 @@ def search_semantic(
 
         query_embedding = generate_embedding(query)
     except ImportError:
-        return [{"error": "Embedding module ยังไม่ได้ติดตั้ง — กรุณาใช้ search_by_keyword แทน"}]
+        return [{"error": "Embedding module not installed — please use search_by_keyword instead"}]
     except Exception as e:
-        return [{"error": f"ไม่สามารถสร้าง embeddingได้: {str(e)}"}]
+        return [{"error": f"Could not create embedding: {str(e)}"}]
 
     conn = get_connection()
     try:
@@ -901,7 +916,7 @@ def search_semantic(
         results = [_build_context(row, columns) for row in cur.fetchall()]
 
         if not results:
-            return [{"message": f"ไม่พบผลลัพธ์ที่ตรงกับความหมาย (ระยะวิเคราะห์ < {threshold}) — ทดลองคลาย threshold เพื่อค้นหาแบบกว้าง"}]
+            return [{"message": f"No semantic matches found (distance < {threshold}). Try a higher threshold for a broader search."}]
 
         return [
             _strip_disabled_text_fields({
@@ -912,7 +927,7 @@ def search_semantic(
         ]
 
     except Exception as e:
-        return [{"error": f"เกิดข้อผิดพลาดในการค้นหา: {str(e)}"}]
+        return [{"error": f"Search error: {str(e)}"}]
     finally:
         cur.close()
         release_connection(conn)
@@ -924,33 +939,35 @@ def search_hybrid(
     language: str = "pali",
     limit: int = 5,
 ) -> list[dict[str, Any]]:
-    """ค้นหาแบบผสมผสาน (Hybrid Search) — รวมพลัง Keyword + Semantic
+    """Hybrid search — combines keyword + semantic search via RRF.
 
-    ใช้เทคนิค RRF (Reciprocal Rank Fusion) เพื่อนำผลลัพธ์จาก
-    การค้นหาคำตรงๆ มารวมกับผลลัพธ์จากการค้นหาความหมาย —
-    **เป็น tool ที่แนะนำสำหรับ "หาเนื้อหาเรื่อง X"** เพราะ semantic ช่วย
-    จับสูตรที่พูดถึง concept เดียวกันแม้ใช้คำต่างกัน (เช่น คำสอน
-    อานาปานสติบางสูตรใช้ `assasati/passasati/dīghaṁ` แทน `ānāpānassati`).
+    Uses Reciprocal Rank Fusion (RRF) to merge exact-word results with
+    meaning-based results. **This is the recommended tool for "discourses
+    about X" / concept queries**, because the semantic side catches suttas
+    that discuss a concept using different vocabulary (e.g. some
+    mindfulness-of-breathing suttas use `assasati/passasati/dīghaṁ`
+    instead of `ānāpānassati`).
 
-    💡 **คำแนะนำสำหรับ AI client:**
-    - Query ภาษาอังกฤษมักได้ผลดี (เช่น `mindfulness of breathing`)
-      เพราะ embedding model เป็น multilingual แต่ tuned สำหรับ EN เป็นหลัก
-    - Stop word ภาษาไทยอ่อน — ถ้า query ไทยไม่ได้ผลดี ให้ AI client
-      แปลเป็นบาลี/อังกฤษก่อน (ดู server instructions)
-    - default `limit=5` มักน้อยเกินสำหรับ topic survey — ถ้าต้องการ
-      coverage ดี ใช้ `limit=15-20` (max 20)
-    - Ranking ตาม similarity ไม่ใช่ canonical importance — สูตรหลัก
-      (locus classicus) เช่น MN118, DN22 อาจ rank ต่ำกว่าสูตรเล็ก
-      ถ้าสูตรเล็กมีคำเป๊ะกว่า. ใช้ผลลัพธ์เป็น "starting point"
-      แล้วต่อด้วย `get_sutta` สำหรับสูตรเฉพาะที่เป็น canonical reference
+    💡 **Hints for the AI client:**
+    - English queries usually work best (e.g. `mindfulness of breathing`)
+      because the embedding model is multilingual but EN-primary.
+    - Thai stop-word handling is weak. If a Thai query underperforms, the
+      AI client should translate to Pāli/English first (see server
+      instructions).
+    - The default `limit=5` is often too small for a topic survey — use
+      `limit=15-20` (max 20) for good coverage.
+    - Ranking is by similarity, NOT canonical importance — locus
+      classicus suttas (e.g. MN118, DN22) may rank below smaller suttas
+      that happen to use the exact vocabulary. Treat results as a
+      starting point, then call `get_sutta` for the canonical references.
 
     Args:
-        query: ข้อความ (ภาษาไทย, บาลี หรืออังกฤษ — อังกฤษให้ผลดีสุด)
-        language: ภาษาที่ต้องการให้แสดงในผลลัพธ์ ("pali", "thai", "english", "all")
-        limit: จำนวนข้อความที่ต้องการค้นพบ (default 5, max 20)
+        query: Query text (Thai, Pāli, or English — English works best).
+        language: Output language — "pali", "thai", "english", or "all".
+        limit: Maximum results (default: 5, max: 20).
 
     Returns:
-        รายการประโยคจากพระไตรปิฎกที่มีค่า rrf_score สูงที่สุด
+        Sutta segments ranked by descending rrf_score.
     """
     limit = min(max(1, limit), 20)
     
@@ -958,7 +975,7 @@ def search_hybrid(
         from embedding.model import generate_embedding
         query_embedding = generate_embedding(query)
     except Exception as e:
-        return [{"error": f"ไม่สามารถสร้าง embedding ได้: {str(e)}"}]
+        return [{"error": f"Could not create embedding: {str(e)}"}]
         
     conn = get_connection()
     try:
@@ -1040,7 +1057,7 @@ def search_hybrid(
         top_ids = sorted(rrf_scores.keys(), key=lambda x: rrf_scores[x], reverse=True)[:limit]
         
         if not top_ids:
-            return [{"message": "ไม่พบผลลัพธ์จาก Hybrid Search"}]
+            return [{"message": "No results from hybrid search"}]
             
         # Fetch actual segment content
         format_strings = ','.join(['%s'] * len(top_ids))
@@ -1078,7 +1095,7 @@ def search_hybrid(
         return results
 
     except Exception as e:
-        return [{"error": f"เกิดข้อผิดพลาดในการค้นหา hybrid: {str(e)}"}]
+        return [{"error": f"Hybrid search error: {str(e)}"}]
     finally:
         cur.close()
         release_connection(conn)
@@ -1086,39 +1103,44 @@ def search_hybrid(
 
 @mcp.tool()
 def list_structure() -> dict[str, Any]:
-    """แสดงโครงสร้างพระไตรปิฎกทั้ง 3 ปิฎก พร้อมสถิติ coverage
+    """Show the structure of all three pitakas with coverage statistics.
 
-    💡 **ใช้ tool นี้เมื่อ:**
-    - User ถามภาพรวมพระไตรปิฎก (มีอะไรบ้าง / นิกายอะไร)
-    - ตรวจ coverage ก่อนสัญญาว่าจะค้นได้ — ดู segment_count > 0 เป็นตัว
-      ตัดสินว่า sub-collection นั้นโหลดแล้ว
-    - Verify scope สำหรับการ compile artifact
+    💡 **Use this tool when:**
+    - The user asks for an overview of the Tipiṭaka (what's in it / which
+      collections).
+    - You need to check coverage before promising a search will find
+      something — `segment_count > 0` is the active-loaded signal.
+    - Verifying scope when compiling an artifact.
 
-    📊 **State ปัจจุบัน v1.1+ (เทียบเท่า SuttaCentral bilara-data):**
-    - **Sutta Piṭaka** ครบ: DN 37, MN 155, SN 1,829, AN 1,419, KN 2,351 sections
-      (~284,702 segments รวม) — Pāli + Sujato EN
-    - **Vinaya Piṭaka** ครบ: Bhikkhu Vibhaṅga 222, Bhikkhunī Vibhaṅga 127,
-      Khandhaka 22, Parivāra 51 + Pātimokkha 2 (~71,557 segs) — Pāli + Brahmali EN
-    - **Abhidhamma Piṭaka** ครบ: 7 books (ds, vb, dt, pp, kv, ya, patthana)
-      ~88,414 segs — Pāli only (bilara ไม่มี EN ทุก translator)
-    - **รวม ~444,673 segments** ใน DB
+    📊 **Current state (v1.1+, at parity with SuttaCentral bilara-data):**
+    - **Sutta Piṭaka** complete: DN 37, MN 155, SN 1,829, AN 1,419, KN
+      2,351 sections (~284,702 segments) — Pāli + Sujato EN
+    - **Vinaya Piṭaka** complete: Bhikkhu Vibhaṅga 222, Bhikkhunī Vibhaṅga
+      127, Khandhaka 22, Parivāra 51 + Pātimokkha 2 (~71,557 segments) —
+      Pāli + Brahmali EN
+    - **Abhidhamma Piṭaka** complete: 7 books (ds, vb, dt, pp, kv, ya,
+      patthana) ~88,414 segments — Pāli only (bilara has no English for
+      any Abhidhamma book)
+    - **Total ~444,673 segments** in the DB
 
-    ⚠️ **Quirks ที่ยังอยู่:**
-    - Schema มี duplicate codes legacy + SC modern ใช้ co-exist:
-      - Vinaya: `vin-v/vin-m/vin-c/vin-p` (legacy, segment_count = 0) คู่กับ
-        `pli-tv-bu-vb/pli-tv-bi-vb/pli-tv-kd/pli-tv-pvr` (active, มี segments)
-      - Abhidhamma: `ym/pt` (legacy = 0) คู่กับ `ya/patthana` (active)
-    - **เลือก code ที่ segment_count > 0 ตอนใช้งาน** — ตัวอื่นเป็น metadata
-      placeholder จาก migration เก่า
+    ⚠️ **Known quirks:**
+    - The schema carries duplicate legacy + SC-modern codes side by side:
+      - Vinaya: `vin-v/vin-m/vin-c/vin-p` (legacy, segment_count = 0)
+        alongside `pli-tv-bu-vb/pli-tv-bi-vb/pli-tv-kd/pli-tv-pvr`
+        (active, populated).
+      - Abhidhamma: `ym/pt` (legacy = 0) alongside `ya/patthana` (active).
+    - **Always pick the code with `segment_count > 0`** — the others are
+      metadata placeholders from an older migration.
 
-    🌐 **ภาษา:** ส่งกลับ Pāli + Thai + English labels เสมอ (metadata ไม่ใช่
-    segment text); text content ตามภาษาที่ ENABLED_LANGUAGES บอก. ตอนนี้
-    ฉบับแปลไทยใน DB ยังไม่มี — Thai user ใช้ cross_reference 84000.org เพิ่ม
+    🌐 **Languages:** Returns Pāli + Thai + English labels regardless of
+    enabled set (these are metadata, not segment text). Text content
+    follows ENABLED_LANGUAGES. Thai translations aren't loaded yet —
+    Thai users can fall back to the cross_reference 84000.org link.
 
     Returns:
-        โครงสร้างแบบ hierarchical:
+        Hierarchical structure:
         - pitakas{vinaya/sutta/abhidhamma} → nikayas[]
-        - แต่ละ nikaya: code, name (3 ภาษา), sutta_count, segment_count
+        - Each nikaya: code, name (3 languages), sutta_count, segment_count.
     """
     conn = get_connection()
     try:
@@ -1173,7 +1195,7 @@ def list_structure() -> dict[str, Any]:
         return {"pitakas": structure}
 
     except Exception as e:
-        return {"error": f"เกิดข้อผิดพลาด: {str(e)}"}
+        return {"error": f"Error: {str(e)}"}
     finally:
         cur.close()
         release_connection(conn)
@@ -1183,26 +1205,28 @@ def list_structure() -> dict[str, Any]:
 def get_reference(
     sutta_id: str,
 ) -> dict[str, Any]:
-    """สร้างข้อมูลอ้างอิง (citation) ที่ถูกต้องสำหรับสูตร
+    """Build a proper citation string for a sutta.
 
-    💡 **ใช้ tool นี้เมื่อ:**
-    - User ขอ citation สำหรับงานวิชาการ/บทความ/อ้างอิง
-    - ต้องการรู้ตำแหน่งในพระไตรปิฎก (ปิฎก/นิกาย) ของสูตร
-    - ต้องการ formatted citation string พร้อมใช้
+    💡 **Use this tool when:**
+    - The user wants a citation for academic work, an article, or a reference.
+    - You need to know the canonical location of a sutta (pitaka / nikāya).
+    - You want a ready-to-use formatted citation string.
 
-    🔗 vs `get_sutta`: tool นี้ return เฉพาะ metadata + citation ไม่มี segments;
-    ใช้คู่กับ `get_sutta` เมื่ออยากได้ทั้งเนื้อหา + citation
+    🔗 vs `get_sutta`: this tool returns metadata + citation only, no
+    segments. Pair it with `get_sutta` when you want both the content
+    and the citation.
 
     Args:
-        sutta_id: รหัสสูตร เช่น "mn1", "dn22", "sn56.11"
+        sutta_id: Sutta ID, e.g. "mn1", "dn22", "sn56.11".
 
     Returns:
         - sutta_id, title{pali,thai,english}
-        - location: nikaya + pitaka (3 ภาษา)
-        - segment_count: ขนาดสูตร (segments)
-        - citation_format: รูปแบบ ready-to-use เช่น "The Root of All Things
-          (Mūlapariyāyasutta, MN1), Middle Discourses"
-        - cross_reference: SuttaCentral + 84000 URLs สำหรับลิงก์ใน citation
+        - location: nikāya + pitaka (3 languages)
+        - segment_count: size of the sutta (segments)
+        - citation_format: ready-to-use string, e.g. "The Root of All
+          Things (Mūlapariyāyasutta, MN1), Middle Discourses"
+        - cross_reference: SuttaCentral + 84000 URLs for linking in the
+          citation.
     """
     try:
         sutta_id = _validate_sutta_id(sutta_id)
@@ -1243,7 +1267,7 @@ def get_reference(
         row = cur.fetchone()
 
         if not row:
-            return {"error": f"ไม่พบสูตร: {sutta_id}"}
+            return {"error": f"Sutta not found: {sutta_id}"}
 
         # title fallback จาก segment :0.2 (เช่นเดียวกับ get_sutta) — เพราะ
         # section.title_* ใน DB หลายแถวเป็น null. หาตัวแรกที่ลงท้าย ":0.2"
@@ -1306,7 +1330,7 @@ def get_reference(
         }
 
     except Exception as e:
-        return {"error": f"เกิดข้อผิดพลาด: {str(e)}"}
+        return {"error": f"Error: {str(e)}"}
     finally:
         cur.close()
         release_connection(conn)
@@ -1319,27 +1343,29 @@ def get_reference(
 
 @mcp.tool()
 def list_editions() -> list[dict[str, Any]]:
-    """แสดงรายการฉบับแปลที่มีในระบบ พร้อมสถิติ coverage
+    """List the translation editions available, with coverage stats.
 
-    💡 **ใช้ tool นี้เมื่อ:**
-    - ก่อนเรียก `compare_translations` หรือ `get_sutta(edition=...)` —
-      เพื่อรู้ว่าใช้ค่า edition อะไรได้บ้างและฉบับไหนคุ้มเทียบ
-    - User ถามว่ามีฉบับแปลใดบ้างใน DB
+    💡 **Use this tool when:**
+    - Before calling `compare_translations` or `get_sutta(edition=...)`,
+      so you know which edition values are valid and worth comparing.
+    - The user asks which editions are loaded in the DB.
 
-    🔍 **กรอง:** Tool นี้ filter ตาม `TRIPITAKA_ENABLED_LANGUAGES` ของเซิร์ฟเวอร์
-    — Thai disabled → return empty list. ทำงานเฉพาะภาษาที่เปิดอยู่
+    🔍 **Filtering:** Filtered by the server's `TRIPITAKA_ENABLED_LANGUAGES`
+    — when Thai is disabled the list is empty. Only enabled languages
+    are returned.
 
-    ⚠️ **State ปัจจุบัน:** DB ส่วนใหญ่มีแต่ Pāli (default จาก SuttaCentral
-    bilara) + English (Sujato). Thai editions (`dhiranandi`, `jayasaro`,
-    `mbu`, `royal`) ยังไม่ได้ index — return empty จนกว่าจะ load
+    ⚠️ **Current state:** the DB mostly holds Pāli (default from
+    SuttaCentral bilara) and English (Sujato). Thai editions
+    (`dhiranandi`, `jayasaro`, `mbu`, `royal`) aren't indexed yet — the
+    list returns empty until they're loaded.
 
     Returns:
-        list ของ edition object แต่ละตัวมี:
-        - edition: รหัสฉบับ เช่น "sujato", "dhiranandi", "mbu"
-        - translator: ชื่อผู้แปล
-        - language: รหัสภาษา ISO ("pi", "en", "th")
-        - segment_count: จำนวน segments ที่มีคำแปลใน edition นี้
-        - sutta_count: จำนวนสูตรที่มีคำแปล
+        List of edition objects, each containing:
+        - edition: edition code, e.g. "sujato", "dhiranandi", "mbu"
+        - translator: translator's name
+        - language: ISO code ("pi", "en", "th")
+        - segment_count: how many segments have a translation in this edition
+        - sutta_count: how many suttas have a translation.
     """
     conn = get_connection()
     try:
@@ -1365,12 +1391,12 @@ def list_editions() -> list[dict[str, Any]]:
         results = [_build_context(row, columns) for row in cur.fetchall()]
 
         if not results:
-            return [{"message": "ยังไม่มีฉบับแปลเพิ่มเติมในระบบ"}]
+            return [{"message": "No additional translation editions loaded"}]
 
         return results
 
     except Exception as e:
-        return [{"error": f"เกิดข้อผิดพลาด: {str(e)}"}]
+        return [{"error": f"Error: {str(e)}"}]
     finally:
         cur.close()
         release_connection(conn)
@@ -1380,40 +1406,43 @@ def list_editions() -> list[dict[str, Any]]:
 def compare_translations(
     segment_id: str,
 ) -> dict[str, Any]:
-    """เปรียบเทียบคำแปลทุกฉบับที่มีสำหรับ segment เดียวกัน
+    """Compare every available translation for a single segment.
 
-    💡 **ใช้ tool นี้เมื่อ:**
-    - User ถามความหมาย/การแปลของบรรทัดเดียวจากบาลี ที่อยากเทียบหลายผู้แปล
-    - ตรวจสอบว่าผู้แปลแต่ละคนตีความต่างกันยังไง (เช่น คำเทคนิค `dukkha`,
-      `anattā`, `nibbāna` มี nuance ในการแปลต่างกัน)
-    - งานวิชาการที่ต้อง quote multiple translations
+    💡 **Use this tool when:**
+    - The user asks about the meaning/translation of a single Pāli line
+      and wants to see multiple translators side-by-side.
+    - Checking how different translators interpret the same line —
+      technical terms like `dukkha`, `anattā`, `nibbāna` carry nuance
+      that varies across translations.
+    - Academic work that needs to quote multiple translations.
 
-    🔍 **vs `get_sutta`:** tool นี้ targets **1 segment** (line-level), ส่วน
-    `get_sutta` targets **ทั้งสูตร**. ถ้าอยากเทียบทั้งสูตร ต้องเรียก
-    `compare_translations` หลาย segment
+    🔍 **vs `get_sutta`:** this tool targets a **single segment** (line
+    level); `get_sutta` returns the **whole sutta**. To compare a whole
+    sutta you'd call `compare_translations` for each segment.
 
-    📋 **Format ของ segment_id:** `<sutta_id>:<paragraph>.<line>` เช่น
-    `mn1:171.4` (Mūlapariyāyasutta paragraph 171 line 4 — "Nandī dukkhassa
-    mūlaṁ"). หา segment_id จาก `get_sutta` หรือ search results
+    📋 **segment_id format:** `<sutta_id>:<paragraph>.<line>`, e.g.
+    `mn1:171.4` (Mūlapariyāyasutta paragraph 171 line 4 — "Nandī
+    dukkhassa mūlaṁ"). Find segment_ids via `get_sutta` or search results.
 
-    ⚠️ **State ปัจจุบัน:** Translation table ยังว่าง (DB load เฉพาะ default
-    Pāli+English จาก bilara). `total_editions` มักเป็น 0; `text_pali` กับ
-    `text_english` ใช้ได้เสมอ. Thai editions เพิ่มทีหลัง
+    ⚠️ **Current state:** the `translation` table is mostly empty (the DB
+    only loads default Pāli + English from bilara). `total_editions` is
+    usually 0; `text_pali` and `text_english` are always populated. Thai
+    editions will be added later.
 
     Args:
-        segment_id: รหัส segment เช่น "mn26:8.2", "dn22:17.1", "mn62:5.3"
+        segment_id: Segment ID, e.g. "mn26:8.2", "dn22:17.1", "mn62:5.3".
 
     Returns:
         - segment_id, sutta_id
-        - text_pali: ต้นฉบับบาลี (Mahāsaṅgīti)
-        - text_english: Sujato translation (จาก bilara-data)
-        - text_thai_default: bilara Thai translation (ปัจจุบัน null เพราะ
+        - text_pali: Pāli source (Mahāsaṅgīti)
+        - text_english: Sujato translation (from bilara-data)
+        - text_thai_default: bilara Thai translation (currently null —
           Thai disabled)
-        - translations[]: filtered ตาม ENABLED_LANGUAGES — list of
+        - translations[]: filtered by ENABLED_LANGUAGES — list of
           {edition, translator, language, text}
-        - total_editions: นับจำนวน editions ที่ active
-        - cross_reference: SuttaCentral segment-level deep link (สำคัญ —
-          link ตรงไปยัง segment ใน SC viewer)
+        - total_editions: count of active editions
+        - cross_reference: SuttaCentral segment-level deep link
+          (important — jumps straight to the segment in the SC viewer).
     """
     conn = get_connection()
     try:
@@ -1432,7 +1461,7 @@ def compare_translations(
         )
         row = cur.fetchone()
         if not row:
-            return {"error": f"ไม่พบ segment: {segment_id}"}
+            return {"error": f"Segment not found: {segment_id}"}
 
         seg_db_id, seg_id, sutta_id, text_pali, text_thai_default, text_english = row
 
@@ -1471,7 +1500,7 @@ def compare_translations(
         return result
 
     except Exception as e:
-        return {"error": f"เกิดข้อผิดพลาด: {str(e)}"}
+        return {"error": f"Error: {str(e)}"}
     finally:
         cur.close()
         release_connection(conn)
@@ -1479,25 +1508,29 @@ def compare_translations(
 
 @mcp.tool()
 def get_word_definition(word: str, language: str = "all", limit_context: int = 3) -> dict[str, Any]:
-    """ดึงความหมายพจนานุกรมของคําศัพท์บาลี พร้อมด้วยตัวอย่างประโยคบริบทในพระสูตร
+    """Look up the dictionary meaning of a Pāli word, with sutta context.
 
-    ใช้เป็น Pali Dictionary Bridge เพื่อทำความเข้าใจความหมายแท้จริงของคำ
-    โดยนำเสนอ "นิยาม" ควบคู่กับ "บริบทที่พระพุทธองค์ทรงใช้จริง"
+    Serves as a Pāli Dictionary Bridge — pairs the "definition" with the
+    "context where the Buddha actually used the word".
 
-    📖 **เกี่ยวกับฐานข้อมูลพจนานุกรม:**
-    Tool นี้ใช้พจนานุกรมต้นฉบับหลายเล่ม รวมถึง "พจนานุกรมพุทธศาสน์ ฉบับ
-    ประมวลศัพท์" ของสมเด็จพระพุทธโฆษาจารย์ (ป. อ. ปยุตฺโต) ที่เป็นภาษาไทย —
-    เนื้อหาเหล่านี้เป็น **ผลงานต้นฉบับวิชาการที่สมบูรณ์อยู่แล้ว** (ไม่ใช่
-    คำแปล) จึง **เปิดให้ใช้ได้เสมอ** แม้ ENABLED_LANGUAGES จะปิดภาษาไทย.
-    AI client ควรแปลเนื้อหาผลลัพธ์ภาษาไทยเป็นภาษาผู้ใช้เองหากจำเป็น.
+    📖 **About the dictionary sources:**
+    This tool draws from multiple primary dictionaries, including
+    "พจนานุกรมพุทธศาสน์ ฉบับประมวลศัพท์" (Buddhist Dictionary —
+    Concept-Glossary edition) by Somdet Phra Buddhaghosacariya (P. A.
+    Payutto). The Thai-language entries are **original scholarly works**
+    (not translations), so they are **always available** even when
+    ENABLED_LANGUAGES has Thai disabled. The AI client should translate
+    Thai entries into the user's language if needed.
 
     Args:
-        word: คำที่ต้องการค้นหา (เช่น "dukkha", "กฐิน")
-        language: ภาษาของพจนานุกรม (เช่น "en", "thai", หรือ "all" เป็นค่าเริ่มต้น)
-        limit_context: จำนวนตัวอย่างประโยคในพระสูตรที่จะแสดง (1-5)
+        word: Word to look up (e.g. "dukkha", "กฐิน").
+        language: Dictionary language (e.g. "en", "thai", or "all" as
+                  default).
+        limit_context: Number of sutta-context examples to include (1-5).
 
     Returns:
-        ข้อมูลพจนานุกรมจาก SuttaCentral/Payutto และตัวอย่างบริบทการใช้คำนั้นจาก segment
+        Dictionary entries from SuttaCentral/Payutto plus context
+        examples showing how the word is used in segments.
     """
     word_search = word.lower().strip()
     limit_context = min(max(1, limit_context), 5)
@@ -1565,10 +1598,10 @@ def get_word_definition(word: str, language: str = "all", limit_context: int = 3
             if fallback:
                 definitions = [{"word": r[0], "source": r[1], "text": r[2]} for r in fallback]
                 return {
-                    "note": f"ไม่พบคำตรงตัวสำหรับ '{word}' แต่พบคำที่ใกล้เคียง:",
+                    "note": f"No exact match for '{word}'; here are similar words:",
                     "suggestions": definitions
                 }
-            return {"error": f"ไม่พบคำว่า '{word}' ในพจนานุกรม"}
+            return {"error": f"Word '{word}' not found in dictionary"}
             
         # 2. Fetch context from segment where text_pali contains the word
         # ใช้ ROW_NUMBER() + PARTITION BY เพื่อให้ดึงแค่ 1 ตัวอย่างต่อพระสูตร 
@@ -1654,7 +1687,7 @@ def get_word_definition(word: str, language: str = "all", limit_context: int = 3
         }
         
     except Exception as e:
-        return {"error": f"เกิดข้อผิดพลาด: {str(e)}"}
+        return {"error": f"Error: {str(e)}"}
     finally:
         cur.close()
         release_connection(conn)
@@ -1662,36 +1695,38 @@ def get_word_definition(word: str, language: str = "all", limit_context: int = 3
 
 @mcp.tool()
 def parse_pali_word(word: str) -> dict[str, Any]:
-    """วิเคราะห์คำบาลีเพื่อหารากศัพท์ (Stemming / Lemmatization เบื้องต้น)
+    """Strip Pāli inflectional suffixes to find the root form (basic stem).
 
-    💡 **ใช้ tool นี้เมื่อ:**
-    - เจอคำบาลีในข้อความ (เช่น `dukkhassa`, `bhikkhūnaṁ`) แล้ว
-      `get_word_definition` หาไม่เจอ — Pāli inflect คำตามวิภัตติ ๘ × วจน ๒
-      = ๑๖ form ต่อราก
-    - ต้องการแยก compound word (`sammāsambuddhassa` → `sammā` + `sambuddha`
-      + `-ssa` genitive)
-    - ดู possible stems ก่อนค้นต่อใน `get_word_definition`
+    💡 **Use this tool when:**
+    - You find an inflected Pāli word (e.g. `dukkhassa`, `bhikkhūnaṁ`) and
+      `get_word_definition` doesn't find it directly — Pāli inflects nouns
+      across 7 cases × 2 numbers, ~16 forms per root.
+    - You want to split a compound (`sammāsambuddhassa` → `sammā` +
+      `sambuddha` + `-ssa` genitive).
+    - You want to see possible stems before another `get_word_definition`
+      lookup.
 
-    🔄 **Workflow แนะนำ:**
-    `parse_pali_word(inflected_form)` → ได้ `possible_stems[]` →
-    เรียก `get_word_definition(stem)` ทีละ stem จนเจอ definition
+    🔄 **Recommended workflow:**
+    `parse_pali_word(inflected_form)` → get `possible_stems[]` →
+    call `get_word_definition(stem)` per stem until you find a definition.
 
-    ⚠️ **ข้อจำกัด:**
-    - เป็น rule-based เบื้องต้น — ตัด common suffixes (case endings, vowel
-      shortening) ไม่ใช่ full morphological analyzer
-    - Compound words (samāsa) ไม่ได้แยก — เช่น `dukkhanirodha` ไม่ตัดเป็น
-      `dukkha` + `nirodha`
-    - ไม่จับ sandhi (เสียงเชื่อม) เช่น `tena ahaṁ → tenāhaṁ`
-    - ผลลัพธ์เป็น **possible** stems — ต้อง verify ผ่าน `get_word_definition`
+    ⚠️ **Limitations:**
+    - Rule-based first-pass — strips common suffixes (case endings, vowel
+      shortening). Not a full morphological analyzer.
+    - Compound words (samāsa) are NOT split — `dukkhanirodha` won't be
+      broken into `dukkha` + `nirodha`.
+    - Sandhi (sound junctions) like `tena ahaṁ → tenāhaṁ` aren't reversed.
+    - Returns **possible** stems — verify each via `get_word_definition`.
 
     Args:
-        word: คำบาลีที่ inflected (เช่น "dukkhassa", "bhikkhūnaṁ", "sīlavā")
+        word: An inflected Pāli word (e.g. "dukkhassa", "bhikkhūnaṁ",
+              "sīlavā").
 
     Returns:
-        - original_word: input ที่ normalize แล้ว
-        - matched_suffixes_removed: list ของ suffix ที่ตัดได้
-        - possible_stems: list ของรากศัพท์ที่อาจเป็นไปได้
-        - guidance: คำแนะนำ workflow ต่อ
+        - original_word: normalised input
+        - matched_suffixes_removed: list of stripped suffixes
+        - possible_stems: candidate root forms
+        - guidance: next-step workflow hint.
     """
     word = word.lower().strip()
     
