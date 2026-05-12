@@ -490,7 +490,15 @@ def _strip_disabled_text_fields(result: dict[str, Any]) -> dict[str, Any]:
 # =============================================================================
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations={
+        "title": "Keyword Search",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
 def search_by_keyword(
     keyword: str,
     language: str = "pali",
@@ -632,7 +640,15 @@ def search_by_keyword(
         release_connection(conn)
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations={
+        "title": "Get Sutta",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
 def get_sutta(
     sutta_id: str,
     language: str = "pali",
@@ -831,7 +847,15 @@ def get_sutta(
         release_connection(conn)
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations={
+        "title": "Semantic Search",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
 def search_semantic(
     query: str,
     language: str = "pali",
@@ -933,7 +957,15 @@ def search_semantic(
         release_connection(conn)
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations={
+        "title": "Hybrid Search",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
 def search_hybrid(
     query: str,
     language: str = "pali",
@@ -1101,7 +1133,15 @@ def search_hybrid(
         release_connection(conn)
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations={
+        "title": "List Tipiṭaka Structure",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
 def list_structure() -> dict[str, Any]:
     """Show the structure of all three pitakas with coverage statistics.
 
@@ -1201,7 +1241,15 @@ def list_structure() -> dict[str, Any]:
         release_connection(conn)
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations={
+        "title": "Get Citation",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
 def get_reference(
     sutta_id: str,
 ) -> dict[str, Any]:
@@ -1341,7 +1389,15 @@ def get_reference(
 # =============================================================================
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations={
+        "title": "List Translation Editions",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
 def list_editions() -> list[dict[str, Any]]:
     """List the translation editions available, with coverage stats.
 
@@ -1402,7 +1458,15 @@ def list_editions() -> list[dict[str, Any]]:
         release_connection(conn)
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations={
+        "title": "Compare Translations",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
 def compare_translations(
     segment_id: str,
 ) -> dict[str, Any]:
@@ -1506,7 +1570,15 @@ def compare_translations(
         release_connection(conn)
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations={
+        "title": "Get Word Definition",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
 def get_word_definition(word: str, language: str = "all", limit_context: int = 3) -> dict[str, Any]:
     """Look up the dictionary meaning of a Pāli word, with sutta context.
 
@@ -1693,7 +1765,15 @@ def get_word_definition(word: str, language: str = "all", limit_context: int = 3
         release_connection(conn)
 
 
-@mcp.tool()
+@mcp.tool(
+    annotations={
+        "title": "Parse Pāli Word",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
 def parse_pali_word(word: str) -> dict[str, Any]:
     """Strip Pāli inflectional suffixes to find the root form (basic stem).
 
