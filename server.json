@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.dhamma-seeker/tripitaka-mcp",
+  "title": "Tripitaka MCP",
+  "description": "MCP server for the full Pāli Canon — search, cite, compare translations. Offered as Dhamma Dāna.",
+  "version": "1.3.0",
+  "repository": {
+    "url": "https://github.com/dhamma-seeker/tripitaka-mcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://tripitaka-mcp.com",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.tripitaka-mcp.com/mcp"
+    },
+    {
+      "type": "sse",
+      "url": "https://mcp.tripitaka-mcp.com/sse"
+    }
+  ]
+}
