@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Use cases — Tripitaka MCP</title>
+<meta name="description" content="Six worked examples of what AI assistants can do with the Tripitaka MCP server — thematic surveys, translation comparison, Pāli word study, locus-classicus lookup, and more. Every claim verifiable through the included source links.">
+<link rel="canonical" href="https://tripitaka-mcp.com/use-cases/">
+<meta property="og:title" content="Use cases — Tripitaka MCP">
+<meta property="og:description" content="Worked examples: what you can actually ask, and what the AI does behind the scenes.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tripitaka-mcp.com/use-cases/">
+<meta property="og:image" content="https://tripitaka-mcp.com/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<style>
+:root {
+    --bg: #fafaf7;
+    --fg: #1c1c1c;
+    --muted: #6b6b6b;
+    --accent: #8b6914;
+    --accent-dark: #6e520f;
+    --code-bg: #f0ede5;
+    --border: #e2dfd5;
+    --card-hover-bg: #fcfbf6;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Sarabun", "Noto Sans Thai", system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+}
+main {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+}
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--accent-dark); }
+.back-home {
+    display: inline-block;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+.back-home:hover { color: var(--accent); }
+h1 {
+    font-size: 2rem;
+    margin: 0 0 0.4rem;
+    line-height: 1.15;
+}
+.subtitle {
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+}
+.intro {
+    margin: 0 0 2.5rem;
+    color: var(--fg);
+    font-size: 0.98rem;
+}
+.intro code {
+    background: var(--code-bg);
+    padding: 0.15em 0.45em;
+    border-radius: 4px;
+    font-size: 0.92em;
+}
+
+.case {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem 1.6rem;
+    margin: 0 0 1.4rem;
+    background: var(--bg);
+}
+.case-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 0 0 0.5rem;
+}
+.case-num {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    color: var(--muted);
+    background: var(--code-bg);
+    padding: 0.15em 0.55em;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.case-type {
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.case h2 {
+    font-size: 1.2rem;
+    margin: 0 0 0.65rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+.case-prompt {
+    background: var(--code-bg);
+    border-left: 3px solid var(--accent);
+    padding: 0.85rem 1.1rem;
+    margin: 0.5rem 0 0.9rem;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+    color: var(--fg);
+    font-size: 0.97rem;
+    line-height: 1.5;
+}
+.case-prompt::before {
+    content: "Ask: ";
+    font-style: normal;
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: block;
+    margin-bottom: 0.3rem;
+}
+.case-desc {
+    margin: 0.5rem 0 0.85rem;
+    color: var(--fg);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+.case-tools {
+    margin: 0 0 0.85rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+.case-tools code {
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.88em;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--fg);
+}
+.case-screenshot {
+    margin: 1rem 0 0;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--code-bg);
+}
+.case-placeholder {
+    margin: 1rem 0 0;
+    padding: 2.5rem 1rem;
+    background: var(--code-bg);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    text-align: center;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+.cta-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 3rem 0 0;
+    padding: 1.5rem 1.6rem;
+    background: var(--code-bg);
+    border-radius: 10px;
+    align-items: center;
+    justify-content: space-between;
+}
+.cta-text {
+    color: var(--fg);
+    font-size: 0.98rem;
+}
+.cta-text strong { color: var(--accent); }
+.cta-btn {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 0.75rem 1.3rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.98rem;
+}
+.cta-btn:hover { background: var(--accent-dark); color: var(--bg); }
+
+.footer-note {
+    margin: 2rem 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-align: center;
+    line-height: 1.7;
+}
+</style>
+</head>
+<body>
+<main>
+
+<a href="/" class="back-home">← Tripitaka MCP</a>
+
+<h1>Use cases</h1>
+<p class="subtitle">What people actually ask, and what the assistant does behind the scenes.</p>
+
+<p class="intro">
+Six worked examples of <em>aggregation-style</em> questions — the kind where you don't already
+know which sutta or segment you need. The assistant picks the right tools, fetches verbatim
+text from <code>SuttaCentral bilara-data</code>, and includes clickable
+<code>cross_reference</code> URLs back to the source on every quoted segment. Click through any
+of those to verify the canonical reference yourself.
+</p>
+
+<!-- 1. Thematic survey -->
+<article class="case">
+<div class="case-head">
+<span class="case-num">01</span>
+<span class="case-type">Thematic survey</span>
+</div>
+<h2>"What does the Buddha teach about anger across the canon?"</h2>
+<div class="case-prompt">
+What does the Buddha teach about anger across the canon? Summarize the main suttas and
+quote 3–4 of the most foundational passages, with citations.
+</div>
+<p class="case-desc">
+Why this is hard: the canon uses several Pāli words for anger and its relatives —
+<em>kodha</em>, <em>dosa</em>, <em>byāpāda</em>, <em>āghāta</em> — and the relevant teachings
+sit in different nikāyas. A plain keyword search would miss most of it; semantic search picks
+up the conceptual neighbourhood.
+</p>
+<p class="case-tools">
+Tools used: <code>search_hybrid</code> (one call, picks up varied vocabulary) →
+<code>get_sutta</code> on the top 3–5 matches → synthesis with all
+<code>cross_reference</code> URLs preserved as clickable links.
+</p>
+<div class="case-placeholder">
+[Screenshot: real Claude reply showing the survey with verbatim segments + clickable SuttaCentral links — to be captured]
+</div>
+</article>
+
+<!-- 2. Translation comparison -->
+<article class="case">
+<div class="case-head">
+<span class="case-num">02</span>
+<span class="case-type">Translation comparison</span>
+</div>
+<h2>"How do different translators handle a key Pāli term?"</h2>
+<div class="case-prompt">
+How do Bhikkhu Sujato and Bhikkhu Brahmali handle the word <em>dukkha</em> differently?
+Show me 3–4 segments where their renderings diverge meaningfully.
+</div>
+<p class="case-desc">
+The single most heated word in Pāli–English translation. Bhikkhu Sujato leans toward
+"suffering" with calibration; the older Pali Text Society tradition reaches for "stress" or
+"unsatisfactoriness". This is the kind of question where reading a single translation hides
+the interpretive choice — the comparison surfaces it.
+</p>
+<p class="case-tools">
+Tools used: <code>search_by_keyword(dukkha)</code> for occurrences →
+<code>compare_translations</code> on segment-aligned text across editions →
+formatted side-by-side output.
+</p>
+<div class="case-placeholder">
+[Screenshot: Claude reply with side-by-side translation comparison table — to be captured]
+</div>
+</article>
+
+<!-- 3. Topical reading path -->
+<article class="case">
+<div class="case-head">
+<span class="case-num">03</span>
+<span class="case-type">Topical reading path</span>
+</div>
+<h2>"Build me a study path for someone new to a topic."</h2>
+<div class="case-prompt">
+I'm new to mindfulness of breathing (ānāpānassati). Build me a 5-sutta reading path that
+starts gentle and goes deep, with one or two lines of context on why each sutta is worth
+reading.
+</div>
+<p class="case-desc">
+A reading-list shape that's standard for teachers + study groups, but tedious to assemble by
+hand. The assistant uses the canon's structure (<code>list_structure</code>) to pick across
+nikāyas, then fetches citations and a brief description for each.
+</p>
+<p class="case-tools">
+Tools used: <code>list_structure</code> → <code>search_hybrid</code> on the topic →
+<code>get_reference</code> for each of the 5 suttas chosen → pedagogical commentary.
+</p>
+<div class="case-placeholder">
+[Screenshot: Claude reply with 5-step reading path — to be captured]
+</div>
+</article>
+
+<!-- 4. Pāli word study -->
+<article class="case">
+<div class="case-head">
+<span class="case-num">04</span>
+<span class="case-type">Pāli word study</span>
+</div>
+<h2>"Definition + canonical usage of a Pāli word"</h2>
+<div class="case-prompt">
+What does <em>jhāna</em> mean according to the Payutto dictionary, and show me 5 sutta
+passages where the Buddha uses it in different teaching contexts.
+</div>
+<p class="case-desc">
+The dictionary lookup alone is useful, but for technical terms like <em>jhāna</em>,
+<em>sati</em>, or <em>samādhi</em>, the meaning lives in <em>usage</em>, not the definition.
+This use case shows the dictionary bridge feeding into canonical context examples.
+</p>
+<p class="case-tools">
+Tools used: <code>get_word_definition(jhāna)</code> (Payutto + PTS + DPPN) →
+<code>search_by_keyword</code> for occurrences → <code>get_sutta</code> on 5 contrasting
+passages → grouped output with context.
+</p>
+<div class="case-placeholder">
+[Screenshot: Claude reply with dictionary entry + 5 canonical usages — to be captured]
+</div>
+</article>
+
+<!-- 5. Locus classicus -->
+<article class="case">
+<div class="case-head">
+<span class="case-num">05</span>
+<span class="case-type">Locus classicus</span>
+</div>
+<h2>"Where does a foundational teaching originate?"</h2>
+<div class="case-prompt">
+Where does the Buddha first formulate the Four Noble Truths? Quote that discourse in
+Pāli and English with the full canonical citation.
+</div>
+<p class="case-desc">
+Identifying the <em>locus classicus</em> — the canonical first statement — is the kind of
+question scholars and serious students reach for. The assistant resolves to
+Dhammacakkappavattana (SN 56.11), fetches it verbatim, and surfaces the citation in
+academic-paper-ready form.
+</p>
+<p class="case-tools">
+Tools used: <code>search_hybrid(four noble truths)</code> → <code>get_sutta(sn56.11)</code>
+for full text → <code>get_reference</code> for the formatted citation string.
+</p>
+<div class="case-placeholder">
+[Screenshot: Claude reply with full SN 56.11 quote + citation — to be captured]
+</div>
+</article>
+
+<!-- 6. Concept bridge -->
+<article class="case">
+<div class="case-head">
+<span class="case-num">06</span>
+<span class="case-type">Concept network</span>
+</div>
+<h2>"Where do two teachings intersect?"</h2>
+<div class="case-prompt">
+Find suttas that connect <em>paṭiccasamuppāda</em> (dependent origination) with
+<em>anattā</em> (not-self). Which sutta is the canonical bridge between these two
+teachings?
+</div>
+<p class="case-desc">
+Doctrinal cross-reference work — given two technical teachings, find where the canon links
+them. This is exactly the shape of question that gets asked in graduate Buddhist studies and
+serious Dhamma study groups, and it's painful to do by hand.
+</p>
+<p class="case-tools">
+Tools used: <code>search_hybrid</code> for each concept → intersect candidates → most-likely
+canonical bridge identified → <code>get_sutta</code> for the bridge sutta + supporting
+references.
+</p>
+<div class="case-placeholder">
+[Screenshot: Claude reply with the bridge sutta identified + relevant passages — to be captured]
+</div>
+</article>
+
+<!-- CTA -->
+<div class="cta-row">
+<div class="cta-text">
+<strong>Try one of these yourself.</strong><br>
+Pick a client, paste the question, see what comes back.
+</div>
+<a class="cta-btn" href="/install/">Install in 1 click →</a>
+</div>
+
+<p class="footer-note">
+All quoted segments link back to <a href="https://suttacentral.net">SuttaCentral</a> for canonical
+verification. Source data per <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/NOTICE.md">NOTICE.md</a>.
+Project offered as <em>Dhamma Dāna</em> — free, non-commercial use only.
+</p>
+
+</main>
+</body>
+</html>
