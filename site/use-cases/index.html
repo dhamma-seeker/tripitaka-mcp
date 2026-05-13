@@ -151,22 +151,13 @@ h1 {
     color: var(--fg);
 }
 .case-screenshot {
+    display: block;
     margin: 1rem 0 0;
     width: 100%;
+    height: auto;
     border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--code-bg);
-}
-.case-placeholder {
-    margin: 1rem 0 0;
-    padding: 2.5rem 1rem;
-    background: var(--code-bg);
-    border: 1px dashed var(--border);
-    border-radius: 6px;
-    color: var(--muted);
-    text-align: center;
-    font-size: 0.85rem;
-    font-style: italic;
 }
 
 .cta-row {
@@ -244,9 +235,7 @@ Tools used: <code>search_hybrid</code> (one call, picks up varied vocabulary) �
 <code>get_sutta</code> on the top 3–5 matches → synthesis with all
 <code>cross_reference</code> URLs preserved as clickable links.
 </p>
-<div class="case-placeholder">
-[Screenshot: real Claude reply showing the survey with verbatim segments + clickable SuttaCentral links — to be captured]
-</div>
+<img class="case-screenshot" src="01-anger-survey.png" alt="Claude reply on the left summarising suttas about anger with citations, SuttaCentral source page open on the right showing the verbatim Pāli — every quote is verifiable in one click" loading="lazy">
 </article>
 
 <!-- 2. Translation comparison -->
@@ -271,9 +260,7 @@ Tools used: <code>search_by_keyword(dukkha)</code> for occurrences →
 <code>compare_translations</code> on segment-aligned text across editions →
 formatted side-by-side output.
 </p>
-<div class="case-placeholder">
-[Screenshot: Claude reply with side-by-side translation comparison table — to be captured]
-</div>
+<img class="case-screenshot" src="02-dukkha-comparison.png" alt="Side-by-side translation comparison: AI client output on the left showing dukkha rendered differently across editions, source page on the right with the canonical Pāli passage" loading="lazy">
 </article>
 
 <!-- 3. Topical reading path -->
@@ -297,9 +284,7 @@ nikāyas, then fetches citations and a brief description for each.
 Tools used: <code>list_structure</code> → <code>search_hybrid</code> on the topic →
 <code>get_reference</code> for each of the 5 suttas chosen → pedagogical commentary.
 </p>
-<div class="case-placeholder">
-[Screenshot: Claude reply with 5-step reading path — to be captured]
-</div>
+<img class="case-screenshot" src="03-anapanassati-path.png" alt="AI client output building a 5-sutta reading path for mindfulness of breathing, ordered from gentle introduction to deeper practice, each step with citation and short context" loading="lazy">
 </article>
 
 <!-- 4. Pāli word study -->
@@ -323,9 +308,7 @@ Tools used: <code>get_word_definition(jhāna)</code> (Payutto + PTS + DPPN) →
 <code>search_by_keyword</code> for occurrences → <code>get_sutta</code> on 5 contrasting
 passages → grouped output with context.
 </p>
-<div class="case-placeholder">
-[Screenshot: Claude reply with dictionary entry + 5 canonical usages — to be captured]
-</div>
+<img class="case-screenshot" src="04-jhana-study.png" alt="AI client output combining the Payutto dictionary entry for jhāna with five contrasting sutta passages where the Buddha uses the term, each with canonical citation" loading="lazy">
 </article>
 
 <!-- 5. Locus classicus -->
@@ -349,9 +332,7 @@ academic-paper-ready form.
 Tools used: <code>search_hybrid(four noble truths)</code> → <code>get_sutta(sn56.11)</code>
 for full text → <code>get_reference</code> for the formatted citation string.
 </p>
-<div class="case-placeholder">
-[Screenshot: Claude reply with full SN 56.11 quote + citation — to be captured]
-</div>
+<img class="case-screenshot" src="05-four-noble-truths.png" alt="AI client identifying Dhammacakkappavattana Sutta (SN 56.11) as the canonical origin of the Four Noble Truths, with a get_sutta tool call visible and a formatted citation block below" loading="lazy">
 </article>
 
 <!-- 6. Concept bridge -->
@@ -376,9 +357,7 @@ Tools used: <code>search_hybrid</code> for each concept → intersect candidates
 canonical bridge identified → <code>get_sutta</code> for the bridge sutta + supporting
 references.
 </p>
-<div class="case-placeholder">
-[Screenshot: Claude reply with the bridge sutta identified + relevant passages — to be captured]
-</div>
+<img class="case-screenshot" src="06-paticcasamuppada-anatta.png" alt="AI client identifying the canonical sutta that bridges dependent origination (paṭiccasamuppāda) and not-self (anattā), with supporting passages and verifiable citations" loading="lazy">
 </article>
 
 <!-- CTA -->
