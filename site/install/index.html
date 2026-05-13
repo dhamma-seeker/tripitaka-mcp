@@ -55,11 +55,17 @@ a:hover { color: var(--accent-dark); }
 .back-home:hover { color: var(--accent); }
 .install-header .brand-mark {
     display: block;
-    width: 80px;
-    height: 80px;
-    margin: 0 0 1rem;
+    width: 96px;
+    height: 96px;
+    margin: 0 0 1.1rem;
+    padding: 10px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: 0 3px 14px rgba(139, 105, 20, 0.12);
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    box-sizing: border-box;
 }
 .install-header h1 {
     font-size: 2.2rem;
@@ -200,7 +206,7 @@ a:hover { color: var(--accent-dark); }
 <a href="/" class="back-home">← Tripitaka MCP</a>
 
 <header class="install-header">
-<img class="brand-mark" src="/favicon-192.png" width="80" height="80" alt="Tripitaka MCP logo — folded hands over a dhammacakka in pixel art">
+<img class="brand-mark" src="/favicon-192.png" width="96" height="96" alt="Tripitaka MCP logo — folded hands over a dhammacakka in pixel art">
 <h1>Install in 1 click</h1>
 <p class="lead">Pick your AI client below. Each one connects to <code>mcp.tripitaka-mcp.com/mcp</code> — no API key, no signup, completely free.</p>
 <p class="endpoint-summary">10 tools · ~444K Pāli segments at parity with SuttaCentral · offered as <em>Dhamma Dāna</em></p>

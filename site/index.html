@@ -94,11 +94,17 @@ header {
 }
 .brand-mark {
     display: block;
-    width: 56px;
-    height: 56px;
-    margin: 0 0 0.85rem;
+    width: 76px;
+    height: 76px;
+    margin: 0 0 1rem;
+    padding: 8px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(139, 105, 20, 0.10);
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    box-sizing: border-box;
 }
 h1 {
     font-size: 2rem;
@@ -344,7 +350,7 @@ footer p { margin: 0.5rem 0; }
 <main>
 
 <header>
-<img class="brand-mark" src="/favicon-192.png" width="56" height="56" alt="Tripitaka MCP logo — folded hands over a dhammacakka in pixel art">
+<img class="brand-mark" src="/favicon-192.png" width="76" height="76" alt="Tripitaka MCP logo — folded hands over a dhammacakka in pixel art">
 <h1>Tripitaka MCP</h1>
 <p class="tagline-th">บริการพระไตรปิฎกบาลีผ่าน MCP protocol — เผยแผ่เป็นธรรมทาน</p>
 <p class="lead">The Pāli Canon, accessible to your AI assistant. This MCP server lets Claude — or any MCP-compatible client — search, cite, and compare translations of the Buddha's discourses with segment-level precision. Offered freely as <em>Dhamma Dāna</em> for study, research, and practice.</p>
