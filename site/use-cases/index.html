@@ -158,6 +158,87 @@ h1 {
     border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--code-bg);
+    cursor: zoom-in;
+    transition: opacity 0.15s, border-color 0.15s;
+}
+.case-screenshot:hover {
+    opacity: 0.92;
+    border-color: var(--accent);
+}
+
+/* Lightbox modal — native <dialog> for accessibility (focus trap, ESC close,
+   browser-managed inertness). Older browsers without dialog.showModal()
+   fall through to the JS guard, leaving screenshots as plain images. */
+.lightbox {
+    border: none;
+    padding: 0;
+    background: transparent;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+.lightbox::backdrop {
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(2px);
+}
+.lightbox[open] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+}
+.lightbox-img {
+    max-width: 95vw;
+    max-height: 85vh;
+    width: auto;
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+    cursor: default;
+}
+.lightbox-caption {
+    color: #fafaf7;
+    font-size: 0.88rem;
+    max-width: 90vw;
+    text-align: center;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0 1rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.lightbox-close {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--fg);
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 22px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+}
+.lightbox-close:hover {
+    background: #fff;
+    transform: scale(1.05);
+}
+.lightbox-hint {
+    color: rgba(250, 250, 247, 0.65);
+    font-size: 0.78rem;
+    margin: 0;
+    letter-spacing: 0.03em;
 }
 
 .cta-row {
@@ -376,5 +457,45 @@ Project offered as <em>Dhamma Dāna</em> — free, non-commercial use only.
 </p>
 
 </main>
+
+<!-- Lightbox: click any screenshot to view at full size -->
+<dialog id="lightbox" class="lightbox" aria-label="Screenshot at full size">
+<button type="button" class="lightbox-close" id="lightbox-close" aria-label="Close (Esc)">&times;</button>
+<img class="lightbox-img" id="lightbox-img" src="" alt="">
+<p class="lightbox-caption" id="lightbox-caption"></p>
+<p class="lightbox-hint">Click outside the image, press Esc, or use the × button to close.</p>
+</dialog>
+
+<script>
+// Lightbox: native <dialog> with click-to-open, ESC / backdrop-click / × to close.
+// Guards on showModal() so older browsers degrade to plain clickable images.
+(function () {
+  var dialog = document.getElementById('lightbox');
+  if (!dialog || typeof dialog.showModal !== 'function') return;
+  var img = document.getElementById('lightbox-img');
+  var caption = document.getElementById('lightbox-caption');
+  var closeBtn = document.getElementById('lightbox-close');
+
+  document.querySelectorAll('.case-screenshot').forEach(function (el) {
+    el.addEventListener('click', function () {
+      img.src = el.src;
+      img.alt = el.alt || '';
+      caption.textContent = el.alt || '';
+      dialog.showModal();
+    });
+  });
+
+  // Click on the image itself — no-op (keeps the modal open so user can
+  // right-click to save, pinch-zoom on mobile, etc.).
+  img.addEventListener('click', function (e) { e.stopPropagation(); });
+
+  // Click anywhere else inside the dialog (the backdrop area) closes.
+  dialog.addEventListener('click', function (e) {
+    if (e.target === dialog) dialog.close();
+  });
+
+  closeBtn.addEventListener('click', function () { dialog.close(); });
+})();
+</script>
 </body>
 </html>
