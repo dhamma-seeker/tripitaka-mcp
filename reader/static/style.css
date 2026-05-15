@@ -1583,3 +1583,13 @@ code.sid[title], .sutta-id[title] { cursor: help; }
 .site-footer a { color: var(--accent); text-decoration: none; }
 .site-footer a:hover { text-decoration: underline; }
 .site-footer em { font-style: italic; color: var(--fg); }
+
+.site-footer .legal-links {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+.site-footer .legal-links a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.site-footer .legal-links a:hover { color: var(--accent); }
+.site-footer .legal-links .sep { color: var(--border); margin: 0 0.4em; }
