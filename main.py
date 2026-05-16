@@ -148,6 +148,25 @@ def _build_instructions() -> str:
 
 mcp = FastMCP("Tripitaka", instructions=_build_instructions())
 
+
+def hosted_only_tool(**kwargs):
+    """`@mcp.tool` variant ที่ลงทะเบียน tool **เฉพาะ backend ที่ไม่ใช่ sqlite**.
+
+    semantic/hybrid search ต้องใช้ pgvector + embedding model — local (SQLite)
+    mode ไม่มี. ถ้ายัง register ไว้ LLM client จะเห็นแล้วเรียก แล้วเจอ error
+    แล้วสับสน/hallucinate (พบจาก POC offline stack 2026-05-16). local mode จึง
+    ไม่ลงทะเบียน 2 tool นี้เลย — client เห็นแค่ 8 tool ที่ใช้ได้จริง.
+
+    backend อื่น (postgres/hosted): ทำงานเหมือน `@mcp.tool(**kwargs)` ทุกประการ.
+    """
+    def decorator(fn):
+        if get_backend().name == "sqlite":
+            return fn  # ไม่ register เป็น MCP tool ใน local mode
+        return mcp.tool(**kwargs)(fn)
+
+    return decorator
+
+
 # สร้างตารางตอน startup (ถ้ายังไม่มี)
 # Prod ที่ใช้ readonly user ให้ข้ามด้วย TRIPITAKA_SKIP_MIGRATIONS=true
 # เพราะ readonly role ไม่มีสิทธิ์ CREATE TABLE
@@ -943,7 +962,7 @@ def get_sutta(
         backend.release(conn)
 
 
-@mcp.tool(
+@hosted_only_tool(
     annotations={
         "title": "Semantic Search",
         "readOnlyHint": True,
@@ -1063,7 +1082,7 @@ def search_semantic(
         backend.release(conn)
 
 
-@mcp.tool(
+@hosted_only_tool(
     annotations={
         "title": "Hybrid Search",
         "readOnlyHint": True,

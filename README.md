@@ -134,7 +134,7 @@ Both serve the same ~444K-segment canon. The differences:
 | Rate limit | 10 req / 10 s, 60 req / min per IP | none |
 | Setup | zero / one-click | Python 3.10+, pipx, one-time ~120 MB download |
 
-`search_semantic` / `search_hybrid` and the trigram keyword index need PostgreSQL + pgvector + a ~1 GB embedding model — too heavy for a lightweight local install, so they stay hosted-only. In local mode those two tools return a clear message pointing you to `search_by_keyword`.
+`search_semantic` / `search_hybrid` and the trigram keyword index need PostgreSQL + pgvector + a ~1 GB embedding model — too heavy for a lightweight local install, so they stay hosted-only. In local mode those two tools aren't registered at all: a connected client sees only the 8 available tools, so it never tries to call a tool that can't work.
 
 Because the local server is a standard stdio MCP server, it also enables a **fully offline AI stack** — pair it with a local model (e.g. Ollama) and any MCP-capable chat UI, and nothing leaves your machine.
 
