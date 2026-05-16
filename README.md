@@ -93,6 +93,38 @@ Claude will pick the right tool, fetch the canonical Pāli, and surface clickabl
 
 The hosted server is rate-limited (10 req/10s + 60 req/min per IP) and offered for personal study, research, and dhamma practice — see [NOTICE.md](./NOTICE.md) before redistributing or using commercially.
 
+### 💻 Run it fully offline (`pipx` — local SQLite, no server)
+
+Prefer to keep everything on your own machine — no network calls to the hosted server? Install the local edition. It ships the whole Pāli canon as a single SQLite file (~120 MB) and runs as a local stdio MCP server.
+
+```bash
+pipx install tripitaka-mcp     # needs Python 3.12+
+tripitaka-mcp init             # one-time: downloads the SQLite database
+tripitaka-mcp serve            # runs the MCP server over stdio
+```
+
+Then point Claude Desktop / Cursor at the local command — no `npx`, no `mcp-remote`, no internet:
+
+```json
+{
+  "mcpServers": {
+    "tripitaka": {
+      "command": "tripitaka-mcp",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+(If `tripitaka-mcp` isn't on the client's `PATH`, use the absolute path from `which tripitaka-mcp`.)
+
+**What the local edition does and doesn't do:**
+
+- ✅ 8 tools — keyword search (SQLite FTS5 full-text, diacritic-insensitive), `get_sutta`, dictionary lookup, translation comparison, structure / reference / editions, Pāli word parsing — over the full ~444K-segment canon.
+- ❌ `search_semantic` / `search_hybrid` — these need a vector database and a ~1 GB embedding model, so they stay on the hosted server. In local mode they return a clear message pointing you to keyword search.
+
+Because the local server is a standard stdio MCP server, it also enables a **fully offline AI stack** — pair it with a local model (e.g. Ollama) and any MCP-capable chat UI, and nothing leaves your machine.
+
 ### 🏎️ Fastest local path — use the installer (recommended for non-developers)
 
 ```bash

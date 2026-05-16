@@ -101,9 +101,33 @@ Expected behaviour: client calls `get_sutta(sutta_id="dn22")`, receives ~454 seg
 
 If the client returns "tool not found" or hangs > 30 seconds after restart, see [Troubleshooting](#troubleshooting).
 
-## Self-host alternative (only if user asks)
+## Offline local edition (`pipx` — recommended for offline users)
 
-For users who want offline data or to fork:
+If the user wants a fully offline install with **no Docker and no PostgreSQL**, use the `pipx` local edition. It ships the canon as a single SQLite file and runs as a local stdio MCP server:
+
+```bash
+pipx install tripitaka-mcp     # needs Python 3.12+
+tripitaka-mcp init             # one-time: downloads the ~120 MB SQLite database
+```
+
+Then add this to the client's MCP config (no `npx`, no `mcp-remote`):
+
+```json
+{
+  "mcpServers": {
+    "tripitaka": {
+      "command": "tripitaka-mcp",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+The local edition serves 8 of the 10 tools (everything except `search_semantic` / `search_hybrid`, which need the hosted server's vector database). Keyword search uses SQLite FTS5 and is diacritic-insensitive.
+
+## Self-host the full hosted stack (only if user asks)
+
+For users who want the complete server (PostgreSQL + semantic search) or to fork:
 
 ```bash
 git clone https://github.com/dhamma-seeker/tripitaka-mcp.git
