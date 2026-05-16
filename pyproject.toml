@@ -4,15 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tripitaka-mcp"
-version = "1.0.1"
+version = "1.0.2"
 description = "Local MCP server for the Pāli Tipiṭaka — verifiable Buddhist canon access for AI assistants, offline via SQLite"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Dhamma Seeker" }]
 keywords = ["mcp", "buddhism", "pali", "tipitaka", "suttacentral", "sqlite"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
