@@ -52,3 +52,8 @@ model_cache/
 # Database Dumps
 *.dump
 *.sql.gz
+
+# SQLite databases (built locally, shipped via HuggingFace — never in git)
+tripitaka.db
+*.sqlite
+*.sqlite3
