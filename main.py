@@ -151,7 +151,11 @@ mcp = FastMCP("Tripitaka", instructions=_build_instructions())
 # สร้างตารางตอน startup (ถ้ายังไม่มี)
 # Prod ที่ใช้ readonly user ให้ข้ามด้วย TRIPITAKA_SKIP_MIGRATIONS=true
 # เพราะ readonly role ไม่มีสิทธิ์ CREATE TABLE
-if os.getenv("TRIPITAKA_SKIP_MIGRATIONS", "").lower() not in ("1", "true", "yes"):
+# SQLite mode ก็ข้าม — DB ถูก build มาแล้ว (scripts/build_sqlite_db.py)
+if (
+    os.getenv("TRIPITAKA_SKIP_MIGRATIONS", "").lower() not in ("1", "true", "yes")
+    and get_backend().name != "sqlite"
+):
     try:
         create_tables()
     except Exception as e:
@@ -902,6 +906,15 @@ def search_semantic(
     """
     limit = min(max(1, limit), 20)
 
+    if get_backend().name == "sqlite":
+        return [
+            {
+                "error": "semantic search is not available in local (SQLite) "
+                "mode — it requires the hosted server (pgvector + an embedding "
+                "model). Use search_by_keyword instead."
+            }
+        ]
+
     try:
         # สร้าง embedding จาก query
         from embedding.model import generate_embedding
@@ -1006,6 +1019,15 @@ def search_hybrid(
     """
     limit = min(max(1, limit), 20)
     
+    if get_backend().name == "sqlite":
+        return [
+            {
+                "error": "hybrid search is not available in local (SQLite) "
+                "mode — it requires the hosted server (pgvector + an embedding "
+                "model). Use search_by_keyword instead."
+            }
+        ]
+
     try:
         from embedding.model import generate_embedding
         query_embedding = generate_embedding(query)
@@ -1433,8 +1455,30 @@ def list_editions() -> list[dict[str, Any]]:
     conn = backend.connect()
     try:
         cur = backend.cursor(conn)
-        cur.execute(
-            """
+        if backend.name == "sqlite":
+            # SQLite ไม่มี ANY(array) → IN (?, ?, ...) แทน
+            _codes = list(ENABLED_TRANSLATION_CODES)
+            _ph = ", ".join(["?"] * len(_codes))
+            cur.execute(
+                f"""
+                SELECT
+                    t.edition,
+                    t.translator,
+                    t.language,
+                    COUNT(t.id) AS segment_count,
+                    COUNT(DISTINCT sec.sutta_id) AS sutta_count
+                FROM translation t
+                JOIN segment seg ON t.segment_id = seg.id
+                JOIN section sec ON seg.section_id = sec.id
+                WHERE t.language IN ({_ph})
+                GROUP BY t.edition, t.translator, t.language
+                ORDER BY t.language, t.edition
+                """,
+                _codes,
+            )
+        else:
+            cur.execute(
+                """
             SELECT
                 t.edition,
                 t.translator,
@@ -1448,8 +1492,8 @@ def list_editions() -> list[dict[str, Any]]:
             GROUP BY t.edition, t.translator, t.language
             ORDER BY t.language, t.edition
             """,
-            (list(ENABLED_TRANSLATION_CODES),),
-        )
+                (list(ENABLED_TRANSLATION_CODES),),
+            )
         columns = ["edition", "translator", "language", "segment_count", "sutta_count"]
         results = [_build_context(row, columns) for row in cur.fetchall()]
 
@@ -1538,15 +1582,29 @@ def compare_translations(
         seg_db_id, seg_id, sutta_id, text_pali, text_thai_default, text_english = row
 
         # ดึงคำแปลจาก translation table — กรองเฉพาะภาษาที่เปิดใช้งาน
-        cur.execute(
-            """
+        if backend.name == "sqlite":
+            # SQLite ไม่มี ANY(array) → IN (?, ?, ...) แทน
+            _codes = list(ENABLED_TRANSLATION_CODES)
+            _ph = ", ".join(["?"] * len(_codes))
+            cur.execute(
+                f"""
+                SELECT edition, translator, language, text
+                FROM translation
+                WHERE segment_id = ? AND language IN ({_ph})
+                ORDER BY language, edition
+                """,
+                [seg_db_id, *_codes],
+            )
+        else:
+            cur.execute(
+                """
             SELECT edition, translator, language, text
             FROM translation
             WHERE segment_id = %s AND language = ANY(%s)
             ORDER BY language, edition
             """,
-            (seg_db_id, list(ENABLED_TRANSLATION_CODES)),
-        )
+                (seg_db_id, list(ENABLED_TRANSLATION_CODES)),
+            )
         translations = [
             {
                 "edition": r[0],
