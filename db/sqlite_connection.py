@@ -35,20 +35,25 @@ def resolve_db_path() -> str:
 
 
 class _TranslatingCursor:
-    """ห่อ sqlite3 cursor — แปลง placeholder `%s` (psycopg2 pyformat) → `?`
-    (sqlite qmark) อัตโนมัติตอน execute.
+    """ห่อ sqlite3 cursor — แปลง dialect ของ Postgres → SQLite ตอน execute:
+      - placeholder `%s` (psycopg2 pyformat) → `?` (sqlite qmark)
+      - `ILIKE` → `LIKE` (sqlite `LIKE` เป็น case-insensitive สำหรับ ASCII
+        อยู่แล้ว = เทียบเท่า Postgres `ILIKE` สำหรับงานของเรา)
+
+    ทั้งสองเป็นการแปลง dialect ล้วน (ไม่เปลี่ยน logic). โครงสร้าง query ที่
+    ต่างกันจริง (ANY→IN, ~* regex→FTS5) ใช้กิ่ง `if backend.name == "sqlite"`
+    แยกใน main.py แทน — ดู Dual-Backend Discipline ใน CLAUDE.md.
 
     ปลอดภัยเพราะ tool ที่ใช้ positional `%s` ไม่มี `%(name)s`, `%%`, หรือ literal
-    `%` ใน SQL string (ตรวจแล้ว — wildcard ของ LIKE อยู่ใน params ไม่ใช่ SQL).
-    tool ที่มีกิ่ง SQLite แยก (search_by_keyword, get_word_definition) เขียน SQL
-    ด้วย `?` อยู่แล้ว → ไม่มี `%s` ให้แปลง = no-op.
+    `%` ใน SQL string (wildcard ของ LIKE อยู่ใน params ไม่ใช่ SQL); และทุก
+    `ILIKE` ในโค้ดมีช่องว่างขนาบสองข้าง.
     """
 
     def __init__(self, cur: sqlite3.Cursor):
         self._cur = cur
 
     def execute(self, sql, params=None):
-        sql = sql.replace("%s", "?")
+        sql = sql.replace("%s", "?").replace(" ILIKE ", " LIKE ")
         if params is None:
             return self._cur.execute(sql)
         return self._cur.execute(sql, params)

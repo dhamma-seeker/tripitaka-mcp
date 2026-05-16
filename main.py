@@ -1835,8 +1835,30 @@ def get_word_definition(word: str, language: str = "all", limit_context: int = 3
         # 2. Fetch context from segment where text_pali contains the word
         # ใช้ ROW_NUMBER() + PARTITION BY เพื่อให้ดึงแค่ 1 ตัวอย่างต่อพระสูตร 
         # และ ORDER BY random() เพื่อสุ่มความหลากหลายของนิกาย
-        cur.execute(
-            """
+        if backend.name == "sqlite":
+            # SQLite: ~* word-boundary regex → FTS5 MATCH (token-level = word match)
+            _match = 'text_pali : "' + word_search.replace('"', '""') + '"'
+            cur.execute(
+                """
+                WITH matched AS (
+                    SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english, seg.text_thai,
+                           ROW_NUMBER() OVER (PARTITION BY sec.sutta_id ORDER BY random()) as rn
+                    FROM segment_fts
+                    JOIN segment seg ON seg.id = segment_fts.rowid
+                    JOIN section sec ON seg.section_id = sec.id
+                    WHERE segment_fts MATCH ?
+                )
+                SELECT sutta_id, segment_id, text_pali, text_english, text_thai
+                FROM matched
+                WHERE rn = 1
+                ORDER BY random()
+                LIMIT ?
+                """,
+                (_match, limit_context),
+            )
+        else:
+            cur.execute(
+                """
             WITH matched AS (
                 SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english, seg.text_thai,
                        ROW_NUMBER() OVER (PARTITION BY sec.sutta_id ORDER BY random()) as rn
@@ -1850,8 +1872,8 @@ def get_word_definition(word: str, language: str = "all", limit_context: int = 3
             ORDER BY random()
             LIMIT %s
             """,
-            (f"\\y{word_search}\\y", limit_context)
-        )
+                (f"\\y{word_search}\\y", limit_context)
+            )
         appears_in = [
             {
                 "sutta_id": r[0],
