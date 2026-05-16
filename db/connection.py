@@ -2,12 +2,15 @@
 Tripitaka MCP Server — Database Connection Management
 
 จัดการ connection pool สำหรับ PostgreSQL + pgvector
+
+NOTE: psycopg2 / pgvector ถูก import แบบ lazy (ในฟังก์ชัน) — ดู Dual-Backend
+Discipline ใน CLAUDE.md กฎข้อ 5. ทำให้ local install (SQLite backend) import
+โมดูลนี้ได้โดยไม่ต้องติดตั้ง psycopg2.
 """
 
+from __future__ import annotations
+
 import os
-import psycopg2
-from psycopg2 import pool
-from pgvector.psycopg2 import register_vector
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -27,6 +30,8 @@ def get_pool() -> pool.ThreadedConnectionPool:
     """
     global _connection_pool
     if _connection_pool is None:
+        from psycopg2 import pool
+
         database_url = os.getenv("DATABASE_URL")
         if not database_url:
             raise RuntimeError(
@@ -56,6 +61,8 @@ def get_connection():
         finally:
             release_connection(conn)
     """
+    from pgvector.psycopg2 import register_vector
+
     p = get_pool()
     conn = p.getconn()
     register_vector(conn)
