@@ -189,6 +189,31 @@ a:hover { color: var(--accent-dark); }
 }
 .install-help a { color: var(--accent); }
 
+/* --- Local / offline install section ------------------------------------*/
+.install-local { margin: 0 0 2.5rem; }
+.install-local h2 {
+    font-size: 1.4rem;
+    margin: 0 0 0.45rem;
+    padding-top: 1.9rem;
+    border-top: 1px solid var(--border);
+    letter-spacing: -0.01em;
+}
+.local-intro { color: var(--fg); font-size: 1rem; margin: 0 0 1.15rem; }
+.local-intro code, .local-note code {
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    color: var(--fg);
+}
+.local-note {
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.55;
+    margin: 1rem 0 0;
+}
+
 .install-footer {
     color: var(--muted);
     font-size: 0.95rem;
@@ -267,6 +292,36 @@ a:hover { color: var(--accent-dark); }
 <div class="client-hint">Smithery generates the right snippet for any MCP-compatible editor.</div>
 </a>
 
+</section>
+
+<section class="install-local" aria-label="Run it offline on your own machine">
+<h2>Or run it 100% offline</h2>
+<p class="local-intro">No hosted server, no network calls — the whole Pāli canon as a single SQLite file on your own machine. Needs <strong>Python 3.10+</strong>.</p>
+
+<div class="install-clients">
+
+<button class="client-card" type="button" data-copy="pipx install tripitaka-mcp &amp;&amp; tripitaka-mcp init">
+<div class="client-name">1 · Install (terminal)</div>
+<div class="client-action">Click to copy command →</div>
+<div class="client-hint"><code>pipx install tripitaka-mcp &amp;&amp; tripitaka-mcp init</code> — installs the CLI, then downloads the ~120 MB canon database (one time). No <code>pipx</code>? Run <code>brew install pipx</code> first.</div>
+</button>
+
+<button class="client-card" type="button" data-copy='{
+  "mcpServers": {
+    "tripitaka": {
+      "command": "tripitaka-mcp",
+      "args": ["serve"]
+    }
+  }
+}'>
+<div class="client-name">2 · Claude Desktop config</div>
+<div class="client-action">Click to copy config →</div>
+<div class="client-hint">Paste into <code>claude_desktop_config.json</code>, then restart Claude Desktop. No <code>npx</code>, no internet needed.</div>
+</button>
+
+</div>
+
+<p class="local-note">Serves 8 of the 10 tools — everything except <code>search_semantic</code> and <code>search_hybrid</code>, which need the hosted server's vector database. Keyword search uses SQLite full-text and is diacritic-insensitive. Package on <a href="https://pypi.org/project/tripitaka-mcp/">PyPI</a> — works with any MCP client, and pairs with a local model (e.g. Ollama) for a fully offline AI stack.</p>
 </section>
 
 <details class="install-help">
