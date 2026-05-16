@@ -24,7 +24,7 @@ from typing import Any
 from dotenv import load_dotenv
 from fastmcp import FastMCP
 
-from db.connection import get_connection, release_connection
+from db.backend import get_backend
 from db.schema import create_tables
 
 load_dotenv()
@@ -555,9 +555,10 @@ def search_by_keyword(
         return [{"error": str(e)}]
 
     limit = min(max(1, limit), 50)
-    conn = get_connection()
+    backend = get_backend()
+    conn = backend.connect()
     try:
-        cur = conn.cursor()
+        cur = backend.cursor(conn)
         params = {"kw": keyword, "limit": limit}
 
         if language == "thai":
@@ -637,7 +638,7 @@ def search_by_keyword(
         return [{"error": f"Search error: {str(e)}"}]
     finally:
         cur.close()
-        release_connection(conn)
+        backend.release(conn)
 
 
 @mcp.tool(
@@ -716,9 +717,10 @@ def get_sutta(
     except ValidationError as e:
         return {"error": str(e)}
 
-    conn = get_connection()
+    backend = get_backend()
+    conn = backend.connect()
     try:
-        cur = conn.cursor()
+        cur = backend.cursor(conn)
 
         # ดึงข้อมูล section + metadata
         cur.execute(
@@ -844,7 +846,7 @@ def get_sutta(
         return {"error": f"Error: {str(e)}"}
     finally:
         cur.close()
-        release_connection(conn)
+        backend.release(conn)
 
 
 @mcp.tool(
@@ -910,9 +912,10 @@ def search_semantic(
     except Exception as e:
         return [{"error": f"Could not create embedding: {str(e)}"}]
 
-    conn = get_connection()
+    backend = get_backend()
+    conn = backend.connect()
     try:
-        cur = conn.cursor()
+        cur = backend.cursor(conn)
 
         cur.execute(
             """
@@ -954,7 +957,7 @@ def search_semantic(
         return [{"error": f"Search error: {str(e)}"}]
     finally:
         cur.close()
-        release_connection(conn)
+        backend.release(conn)
 
 
 @mcp.tool(
@@ -1009,9 +1012,10 @@ def search_hybrid(
     except Exception as e:
         return [{"error": f"Could not create embedding: {str(e)}"}]
         
-    conn = get_connection()
+    backend = get_backend()
+    conn = backend.connect()
     try:
-        cur = conn.cursor()
+        cur = backend.cursor(conn)
         
         # 1. Semantic Search (Top 50)
         cur.execute(
@@ -1130,7 +1134,7 @@ def search_hybrid(
         return [{"error": f"Hybrid search error: {str(e)}"}]
     finally:
         cur.close()
-        release_connection(conn)
+        backend.release(conn)
 
 
 @mcp.tool(
@@ -1182,9 +1186,10 @@ def list_structure() -> dict[str, Any]:
         - pitakas{vinaya/sutta/abhidhamma} → nikayas[]
         - Each nikaya: code, name (3 languages), sutta_count, segment_count.
     """
-    conn = get_connection()
+    backend = get_backend()
+    conn = backend.connect()
     try:
-        cur = conn.cursor()
+        cur = backend.cursor(conn)
 
         cur.execute(
             """
@@ -1238,7 +1243,7 @@ def list_structure() -> dict[str, Any]:
         return {"error": f"Error: {str(e)}"}
     finally:
         cur.close()
-        release_connection(conn)
+        backend.release(conn)
 
 
 @mcp.tool(
@@ -1281,9 +1286,10 @@ def get_reference(
     except ValidationError as e:
         return {"error": str(e)}
 
-    conn = get_connection()
+    backend = get_backend()
+    conn = backend.connect()
     try:
-        cur = conn.cursor()
+        cur = backend.cursor(conn)
 
         cur.execute(
             """
@@ -1381,7 +1387,7 @@ def get_reference(
         return {"error": f"Error: {str(e)}"}
     finally:
         cur.close()
-        release_connection(conn)
+        backend.release(conn)
 
 
 # =============================================================================
@@ -1423,9 +1429,10 @@ def list_editions() -> list[dict[str, Any]]:
         - segment_count: how many segments have a translation in this edition
         - sutta_count: how many suttas have a translation.
     """
-    conn = get_connection()
+    backend = get_backend()
+    conn = backend.connect()
     try:
-        cur = conn.cursor()
+        cur = backend.cursor(conn)
         cur.execute(
             """
             SELECT
@@ -1455,7 +1462,7 @@ def list_editions() -> list[dict[str, Any]]:
         return [{"error": f"Error: {str(e)}"}]
     finally:
         cur.close()
-        release_connection(conn)
+        backend.release(conn)
 
 
 @mcp.tool(
@@ -1508,9 +1515,10 @@ def compare_translations(
         - cross_reference: SuttaCentral segment-level deep link
           (important — jumps straight to the segment in the SC viewer).
     """
-    conn = get_connection()
+    backend = get_backend()
+    conn = backend.connect()
     try:
-        cur = conn.cursor()
+        cur = backend.cursor(conn)
 
         # ดึง segment หลัก
         cur.execute(
@@ -1567,7 +1575,7 @@ def compare_translations(
         return {"error": f"Error: {str(e)}"}
     finally:
         cur.close()
-        release_connection(conn)
+        backend.release(conn)
 
 
 @mcp.tool(
@@ -1607,9 +1615,10 @@ def get_word_definition(word: str, language: str = "all", limit_context: int = 3
     word_search = word.lower().strip()
     limit_context = min(max(1, limit_context), 5)
     
-    conn = get_connection()
+    backend = get_backend()
+    conn = backend.connect()
     try:
-        cur = conn.cursor()
+        cur = backend.cursor(conn)
         
         # 1. Fetch definitions from dictionary table
         if language == "all":
@@ -1762,7 +1771,7 @@ def get_word_definition(word: str, language: str = "all", limit_context: int = 3
         return {"error": f"Error: {str(e)}"}
     finally:
         cur.close()
-        release_connection(conn)
+        backend.release(conn)
 
 
 @mcp.tool(
