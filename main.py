@@ -494,6 +494,92 @@ def _strip_disabled_text_fields(result: dict[str, Any]) -> dict[str, Any]:
 # =============================================================================
 
 
+def _keyword_search_sqlite(
+    cur,
+    keyword: str,
+    language: str,
+    edition: str | None,
+    pitaka: str | None,
+    limit: int,
+) -> list[dict[str, Any]]:
+    """FTS5-backed keyword search สำหรับ SQLite mode.
+
+    คืน list[dict] รูปแบบเดียวกับ Postgres path ของ search_by_keyword
+    (segment_id, sutta_id, text_*, [edition], similarity, word_similarity).
+    ใช้แทน pg_trgm similarity()/word_similarity() ที่ SQLite ไม่มี — ดู
+    Dual-Backend Discipline ใน CLAUDE.md.
+    """
+    # escape keyword เป็น FTS5 phrase literal — กัน special char (* " : ฯลฯ)
+    phrase = '"' + (keyword or "").replace('"', '""') + '"'
+
+    if language == "thai":
+        sql = """
+            SELECT
+                seg.segment_id,
+                sec.sutta_id,
+                seg.text_pali,
+                t.text AS text_thai,
+                seg.text_english,
+                t.edition,
+                bm25(translation_fts) AS rank
+            FROM translation_fts
+            JOIN translation t ON t.id = translation_fts.rowid
+            JOIN segment seg ON t.segment_id = seg.id
+            JOIN section sec ON seg.section_id = sec.id
+            JOIN book b ON sec.book_id = b.id
+            JOIN nikaya n ON b.nikaya_id = n.id
+            JOIN pitaka p ON n.pitaka_id = p.id
+            WHERE translation_fts MATCH ?
+              AND t.language = 'th'
+        """
+        sql_params: list[Any] = [phrase]
+        if edition:
+            sql += " AND t.edition = ?"
+            sql_params.append(edition)
+        if pitaka:
+            sql += " AND p.code = ?"
+            sql_params.append(pitaka)
+    else:
+        text_col = LANGUAGE_COLUMNS[language]
+        sql = """
+            SELECT
+                seg.segment_id,
+                sec.sutta_id,
+                seg.text_pali,
+                seg.text_thai,
+                seg.text_english,
+                bm25(segment_fts) AS rank
+            FROM segment_fts
+            JOIN segment seg ON seg.id = segment_fts.rowid
+            JOIN section sec ON seg.section_id = sec.id
+            JOIN book b ON sec.book_id = b.id
+            JOIN nikaya n ON b.nikaya_id = n.id
+            JOIN pitaka p ON n.pitaka_id = p.id
+            WHERE segment_fts MATCH ?
+        """
+        # column filter — ค้นเฉพาะคอลัมน์ภาษาที่เลือก (เทียบเท่า seg.{text_col})
+        sql_params = [f"{text_col} : {phrase}"]
+        if pitaka:
+            sql += " AND p.code = ?"
+            sql_params.append(pitaka)
+
+    sql += " ORDER BY rank LIMIT ?"
+    sql_params.append(limit)
+
+    cur.execute(sql, sql_params)
+    cols = [desc[0] for desc in cur.description]
+    rows = [dict(zip(cols, row)) for row in cur.fetchall()]
+
+    # bm25 → similarity-like score (ค่ามาก = ตรงกว่า) ให้ schema ตรงกับ Postgres
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        score = round(-(r.pop("rank", 0.0) or 0.0), 4)
+        r["similarity"] = score
+        r["word_similarity"] = score
+        out.append(r)
+    return out
+
+
 @mcp.tool(
     annotations={
         "title": "Keyword Search",
@@ -565,7 +651,11 @@ def search_by_keyword(
         cur = backend.cursor(conn)
         params = {"kw": keyword, "limit": limit}
 
-        if language == "thai":
+        if backend.name == "sqlite":
+            results = _keyword_search_sqlite(
+                cur, keyword, language, edition, pitaka, limit
+            )
+        elif language == "thai":
             # ค้นหาภาษาไทยจากตาราง translation
             query = """
                 SELECT
