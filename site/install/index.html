@@ -321,7 +321,7 @@ a:hover { color: var(--accent-dark); }
 
 </div>
 
-<p class="local-note">Serves 8 of the 10 tools — everything except <code>search_semantic</code> and <code>search_hybrid</code>, which need the hosted server's vector database. Keyword search uses SQLite full-text and is diacritic-insensitive. Package on <a href="https://pypi.org/project/tripitaka-mcp/">PyPI</a> — works with any MCP client, and pairs with a local model (e.g. Ollama) for a fully offline AI stack.</p>
+<p class="local-note">Serves 8 of the 10 tools — everything except <code>search_semantic</code> and <code>search_hybrid</code>, which need the hosted server's vector database. Keyword search uses SQLite full-text (diacritic-insensitive) — it ranks results a little differently from the hosted trigram search, and the local database is a snapshot, so re-run <code>tripitaka-mcp init</code> to refresh it. Full hosted-vs-local comparison is in the <a href="https://github.com/dhamma-seeker/tripitaka-mcp">README</a>. Package on <a href="https://pypi.org/project/tripitaka-mcp/">PyPI</a> — works with any MCP client, and pairs with a local model (e.g. Ollama) for a fully offline AI stack.</p>
 </section>
 
 <details class="install-help">

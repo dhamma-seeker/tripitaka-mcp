@@ -98,7 +98,7 @@ The hosted server is rate-limited (10 req/10s + 60 req/min per IP) and offered f
 Prefer to keep everything on your own machine — no network calls to the hosted server? Install the local edition. It ships the whole Pāli canon as a single SQLite file (~120 MB) and runs as a local stdio MCP server.
 
 ```bash
-pipx install tripitaka-mcp     # needs Python 3.12+
+pipx install tripitaka-mcp     # needs Python 3.10+
 tripitaka-mcp init             # one-time: downloads the SQLite database
 tripitaka-mcp serve            # runs the MCP server over stdio
 ```
@@ -118,10 +118,23 @@ Then point Claude Desktop / Cursor at the local command — no `npx`, no `mcp-re
 
 (If `tripitaka-mcp` isn't on the client's `PATH`, use the absolute path from `which tripitaka-mcp`.)
 
-**What the local edition does and doesn't do:**
+**Hosted vs local — what's different**
 
-- ✅ 8 tools — keyword search (SQLite FTS5 full-text, diacritic-insensitive), `get_sutta`, dictionary lookup, translation comparison, structure / reference / editions, Pāli word parsing — over the full ~444K-segment canon.
-- ❌ `search_semantic` / `search_hybrid` — these need a vector database and a ~1 GB embedding model, so they stay on the hosted server. In local mode they return a clear message pointing you to keyword search.
+Both serve the same ~444K-segment canon. The differences:
+
+| | Hosted (`mcp.tripitaka-mcp.com`) | Local (`pipx`) |
+|---|---|---|
+| Tools | all 10 | 8 — no `search_semantic` / `search_hybrid` |
+| Concept / semantic search | ✅ vector search (pgvector) | ❌ — use `search_by_keyword` instead |
+| Keyword search | PostgreSQL trigram — fuzzy, typo-tolerant, similarity-ranked | SQLite FTS5 — whole-word / token match; **results and ranking can differ** from hosted |
+| Canon data | always current | a snapshot from when you ran `init` — re-run `tripitaka-mcp init` to refresh |
+| Updates | automatic | `pipx upgrade tripitaka-mcp` for code; re-run `init` for data |
+| Privacy | queries reach the hosted server (nothing logged — see [Privacy Policy](https://tripitaka-mcp.com/privacy/)) | nothing leaves your machine |
+| Internet | required | not needed after `init` |
+| Rate limit | 10 req / 10 s, 60 req / min per IP | none |
+| Setup | zero / one-click | Python 3.10+, pipx, one-time ~120 MB download |
+
+`search_semantic` / `search_hybrid` and the trigram keyword index need PostgreSQL + pgvector + a ~1 GB embedding model — too heavy for a lightweight local install, so they stay hosted-only. In local mode those two tools return a clear message pointing you to `search_by_keyword`.
 
 Because the local server is a standard stdio MCP server, it also enables a **fully offline AI stack** — pair it with a local model (e.g. Ollama) and any MCP-capable chat UI, and nothing leaves your machine.
 
