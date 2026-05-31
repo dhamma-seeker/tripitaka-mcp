@@ -14,7 +14,8 @@ This skill packages the proven multi-step workflow for researching Buddhist scri
 2. **Always include `cross_reference` URLs in your reply** as markdown clickable links. Every search/get response carries them. Surfacing them lets the user verify your interpretation against the source — this is the single most important credibility move you can make for scholarly content.
 
 3. **Pick the right tool for the question shape:**
-   - "How many times does word X appear / in which suttas?" → `search_by_keyword` (trigram exact match)
+   - "How many times does X appear / every place it's mentioned (exhaustive, don't miss any)?" → `survey_corpus` (exact total + per-pitaka + matched forms; `mode=thorough` adds concept recall)
+   - "Best few passages for a word / quick keyword lookup" → `search_by_keyword` (trigram, ranked)
    - "Which suttas teach concept Y / discourses about topic Z?" → `search_hybrid` (RRF = keyword + semantic)
    - "Show me sutta X in full" → `get_sutta`
    - "Compare translations of segment X" → `compare_translations`

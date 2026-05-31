@@ -121,6 +121,13 @@ def create_tables() -> None:
             ON segment USING gin (text_english gin_trgm_ops);
         """)
 
+        # NOTE: diacritic-insensitive search (f_unaccent + functional GIN indexes
+        # idx_segment_{pali,english}_unaccent_trgm, used by survey_corpus) is set
+        # up in scripts/setup_unaccent.sql — it needs loaded data + grants the
+        # readonly role EXECUTE on f_unaccent. Run it once after data load (deploy
+        # .sh does this automatically). Kept out of create_tables to keep a single
+        # source of truth.
+
         # Foreign key indexes
         cur.execute("CREATE INDEX IF NOT EXISTS idx_segment_section_id ON segment(section_id);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_section_book_id ON section(book_id);")

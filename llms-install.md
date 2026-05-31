@@ -70,7 +70,7 @@ The client must be **fully quit and reopened** — closing the window is not eno
 
 ### Step 4: Verify
 
-After restart, the client's MCP indicator (🔌 in Claude Desktop's bottom-left) should show `tripitaka` connected with **10 tools** and **3 resources**.
+After restart, the client's MCP indicator (🔌 in Claude Desktop's bottom-left) should show `tripitaka` connected with **11 tools** and **3 resources**.
 
 > First-run takes 5–10 seconds while `npx` downloads the `mcp-remote` package on demand. Subsequent restarts are instant.
 
@@ -79,7 +79,8 @@ The available tools are:
 | Tool | Purpose |
 | --- | --- |
 | `search_hybrid` | Best-default — combined keyword + semantic via RRF |
-| `search_by_keyword` | Trigram fuzzy match for exact Pāli terms |
+| `search_by_keyword` | Trigram fuzzy match — top few matches for an exact Pāli term |
+| `survey_corpus` | Exhaustive coverage — exact total + per-pitaka + matched forms ("how many / every place X"); `mode=thorough` adds semantic recall |
 | `search_semantic` | Pure vector similarity (Pāli-trained model not yet) |
 | `get_sutta` | Fetch any sutta in full by ID |
 | `get_reference` | Generate an academic citation |
@@ -123,7 +124,7 @@ Then add this to the client's MCP config (no `npx`, no `mcp-remote`):
 }
 ```
 
-The local edition serves 8 of the 10 tools (everything except `search_semantic` / `search_hybrid`, which need the hosted server's vector database). Keyword search uses SQLite FTS5 and is diacritic-insensitive.
+The local edition serves 9 of the 11 tools (everything except `search_semantic` / `search_hybrid`, which need the hosted server's vector database — `survey_corpus` works locally in lexical-only mode). Keyword search uses SQLite FTS5 and is diacritic-insensitive.
 
 ## Self-host the full hosted stack (only if user asks)
 

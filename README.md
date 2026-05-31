@@ -78,7 +78,7 @@ which npx
 }
 ```
 
-**3.** Quit Claude Desktop completely (`⌘Q` on macOS, tray → Quit on Windows) and reopen. The 🔌 indicator in the bottom-left should show `tripitaka` with 10 tools available.
+**3.** Quit Claude Desktop completely (`⌘Q` on macOS, tray → Quit on Windows) and reopen. The 🔌 indicator in the bottom-left should show `tripitaka` with 11 tools available.
 
 > _First connection takes 5–10 seconds_ while `npx` downloads `mcp-remote` on demand — give Claude Desktop a moment after restart before assuming it failed.
 
@@ -270,12 +270,13 @@ cp skills/tipitaka-research.md ~/.claude/skills/
 
 Details in [`skills/README.md`](./skills/README.md).
 
-## 📦 MCP Tools (10 total)
+## 📦 MCP Tools (11 total)
 
 | Tool | Description |
 |---|---|
 | `search_hybrid` | **(Recommended for concept search)** Combined keyword + semantic via RRF — best when looking for "discourses about X". |
-| `search_by_keyword` | Trigram keyword search — best for exact word lookups (`appamāda`, `ānāpānassati`). |
+| `search_by_keyword` | Trigram keyword search — best for the top few matches of an exact word (`appamāda`, `ānāpānassati`). |
+| `survey_corpus` | **Exhaustive** corpus survey — exact total + per-pitaka breakdown + the matched word-forms, for "how many times / every place X appears" (coverage, not just best matches). `mode=thorough` adds concept-level semantic recall. |
 | `search_semantic` | Pure vector similarity — usually you want `search_hybrid` instead. |
 | `get_sutta` | Fetch a full sutta by ID (e.g. `mn1`, `dn22`, `dhp1-20`) — returns every segment with cross-reference URLs. |
 | `get_reference` | Generate a properly formatted academic citation with all source URLs. |
@@ -300,7 +301,7 @@ Upgrading to a Pāli-trained embedding model (e.g. bge-m3) plus embedding the Th
 
 ```text
 tripitaka-mcp/
-├── main.py                       # Main MCP Server (10 tools + 3 resources)
+├── main.py                       # Main MCP Server (11 tools + 3 resources)
 ├── db/
 │   ├── connection.py             # Database connection pool
 │   └── schema.py                 # Schema (supports translation table)

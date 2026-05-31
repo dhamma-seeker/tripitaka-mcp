@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 from fastmcp import FastMCP
 
 from db.backend import get_backend
+from db.normalize import fold_pali
 from db.schema import create_tables
 
 load_dotenv()
@@ -103,6 +104,18 @@ def _build_instructions() -> str:
         "needed. If unsure, mirror the language of the user's most recent "
         "message.\n\n"
         + coverage_note
+        + "\n🧭 **Which search tool?**\n"
+        "- **Coverage / counting / \"don't miss any\"** — e.g. \"how many "
+        "times does Kusinārā appear\", \"every place ānāpānassati is "
+        "mentioned\", \"which pitakas mention X\": use **`survey_corpus`**. It "
+        "returns an EXACT total, a per-pitaka breakdown, the distinct word "
+        "forms matched, and an exhaustive (`complete:true`) enumeration — "
+        "things `search_by_keyword` cannot give (it is ranked + capped at 50). "
+        "Use `match_scope='stem'` to include inflections/compounds, and "
+        "`mode='thorough'` to add concept-level (different-vocabulary) recall "
+        "(hosted only; the `semantic` block is explicitly NON-exhaustive).\n"
+        "- **Best few passages for a word** — `search_by_keyword`.\n"
+        "- **\"Discourses about X\" / concept** — `search_hybrid`.\n"
         + "\n🔗 **Cross-reference URLs (IMPORTANT — always surface in your "
         "reply as clickable markdown links):**\n"
         "Every tool response includes a `cross_reference` field with URLs "
@@ -752,6 +765,496 @@ def search_by_keyword(
     finally:
         cur.close()
         backend.release(conn)
+
+
+# =============================================================================
+# Corpus survey — exhaustive lexical coverage with a completeness contract
+# =============================================================================
+# search_by_keyword answers "show me the best matches" — ranked, hard-capped at
+# 50, no total. survey_corpus answers a different question: "find EVERY
+# occurrence across the whole canon and tell me you didn't miss any."
+#
+# The lexical layer is deterministic, so it carries a hard guarantee
+# (`complete: true`) + an exact count + the distinct surface forms it matched,
+# so the caller can audit exactly what was (and wasn't) counted. Concept-level
+# semantic recall is a separate layer added later and is explicitly NOT
+# exhaustive — we never let it claim completeness. See PROGRESS.md.
+
+# token = a run of (Unicode) word characters — Romanised Pāli words incl.
+# diacritics (ā, ṁ, ñ …) all match \w in Python 3 str patterns.
+# folding lives in db/normalize.fold_pali — used only to extract matched_forms
+# and build the folded needle; the actual match is f_unaccent (PG) / FTS5 (SQLite).
+_PALI_TOKEN_RE = re.compile(r"\w+", re.UNICODE)
+
+
+def _matched_surface_forms(texts, folded_kw: str, scope: str) -> list[str]:
+    """Distinct surface forms (verbatim, with diacritics) that matched.
+
+    `word` scope → a token whose fold == folded_kw.
+    `stem` scope → a token whose fold starts with folded_kw.
+
+    This is the audit half of the completeness contract: the caller sees every
+    inflection/compound that was counted (e.g. kusinārā, kusinārāyaṁ,
+    kusināravagga) and can discard over-matches itself.
+
+    NOTE: audit is token-level, so a multi-token PHRASE query (folded_kw with a
+    space) yields [] here even when total_segments > 0 — no single surface form
+    represents a phrase. Counts/results stay correct; only this form list is
+    empty for phrases.
+    """
+    forms: dict[str, None] = {}
+    for t in texts:
+        for tok in _PALI_TOKEN_RE.findall(t or ""):
+            folded = fold_pali(tok)
+            hit = folded == folded_kw if scope == "word" else folded.startswith(folded_kw)
+            if hit:
+                forms.setdefault(tok, None)
+    return sorted(forms)
+
+
+# cap on how many matching segments we scan to extract matched_forms — keeps a
+# very common term (e.g. "dukkha") cheap. Counts/aggregation are always exact
+# (COUNT in SQL); only the matched_forms LIST may be partial past this, and we
+# flag it via forms_truncated so we never silently under-report.
+_FORMS_SCAN_CAP = 20000
+
+
+def _fts_match_expr(text_col: str, folded_kw: str, scope: str) -> str:
+    """Build an FTS5 MATCH expression for one text column.
+
+    word → quoted phrase of the folded tokens (exact word match).
+    stem → each folded token as a prefix token (kusinara* …) for inflection +
+           compound recall.
+    """
+    tokens = [t for t in folded_kw.split() if t]
+    if not tokens:
+        return f'{text_col} : ""'
+    if scope == "stem":
+        return f"{text_col} : " + " ".join(f"{t}*" for t in tokens)
+    return f'{text_col} : "{folded_kw}"'
+
+
+def _survey_sqlite(cur, keyword, language, pitaka, scope, page_size, cursor):
+    """Lexical-exhaustive survey for SQLite/local mode (FTS5-backed).
+
+    Returns the `lexical` block of the completeness contract. Counts and
+    aggregation are exact (SQL COUNT); the FTS tokenizer already folds
+    diacritics so matching is diacritic-insensitive.
+    """
+    text_col = LANGUAGE_COLUMNS[language]  # text_pali / text_english
+    folded_kw = fold_pali(keyword)
+    match_expr = _fts_match_expr(text_col, folded_kw, scope)
+
+    # shared FROM + WHERE — joined up to pitaka so we can filter/aggregate
+    base = (
+        " FROM segment_fts"
+        " JOIN segment seg ON seg.id = segment_fts.rowid"
+        " JOIN section sec ON seg.section_id = sec.id"
+        " JOIN book b ON sec.book_id = b.id"
+        " JOIN nikaya n ON b.nikaya_id = n.id"
+        " JOIN pitaka p ON n.pitaka_id = p.id"
+        " WHERE segment_fts MATCH ?"
+    )
+    where_params: list[Any] = [match_expr]
+    if pitaka:
+        base += " AND p.code = ?"
+        where_params.append(pitaka)
+
+    # exact totals
+    cur.execute(
+        f"SELECT COUNT(*), COUNT(DISTINCT sec.sutta_id){base}", where_params
+    )
+    total_segments, total_suttas = cur.fetchone()
+
+    # per-pitaka breakdown
+    cur.execute(f"SELECT p.code, COUNT(*){base} GROUP BY p.code", where_params)
+    by_pitaka = {code: cnt for code, cnt in cur.fetchall()}
+
+    # matched surface forms (audit) — scan matching texts up to the cap
+    cur.execute(
+        f"SELECT seg.{text_col}{base} LIMIT ?", where_params + [_FORMS_SCAN_CAP]
+    )
+    scanned = [row[0] for row in cur.fetchall()]
+    matched_forms = _matched_surface_forms(scanned, folded_kw, scope)
+    forms_truncated = total_segments > _FORMS_SCAN_CAP
+
+    # one page of results, canonical order (insertion order ≈ canonical)
+    cur.execute(
+        "SELECT seg.segment_id, sec.sutta_id, seg.text_pali, seg.text_english"
+        f"{base} ORDER BY seg.id LIMIT ? OFFSET ?",
+        where_params + [page_size, cursor],
+    )
+    cols = ["segment_id", "sutta_id", "text_pali", "text_english"]
+    results = [dict(zip(cols, row)) for row in cur.fetchall()]
+
+    return {
+        "total_segments": total_segments,
+        "total_suttas": total_suttas,
+        "by_pitaka": by_pitaka,
+        "matched_forms": matched_forms,
+        "forms_truncated": forms_truncated,
+        "results": results,
+    }
+
+
+def _survey_postgres(cur, keyword, language, pitaka, scope, page_size, cursor):
+    """Lexical-exhaustive survey for Postgres/hosted mode.
+
+    Diacritic-insensitive matching reuses the functional GIN index
+    `gin(f_unaccent(text_pali) gin_trgm_ops)` (f_unaccent = unaccent + lower),
+    so `kusinara` finds `kusinārā` and the match is fully index-driven (~ms over
+    the whole canon) — no extra column, no backfill. f_unaccent folds the same
+    as db.normalize.fold_pali for the canon (verified: kusinārā → 11 word / 67
+    stem on both). The extension/function/indexes are set up by
+    scripts/setup_unaccent.sql (run post-data-load; deploy.sh does this).
+
+      word → whole-word match: ILIKE substring (drives the index) + word-
+             boundary regex (\\m..\\M) refine.
+      stem → word-prefix match: ILIKE substring + leading-boundary regex (\\m..).
+    """
+    text_col = LANGUAGE_COLUMNS[language]  # text_pali / text_english
+    folded_kw = fold_pali(keyword)
+    # MUST mirror the indexed expression `f_unaccent(text_<lang>)` exactly so the
+    # planner uses idx_segment_<lang>_unaccent_trgm.
+    fexpr = f"f_unaccent(seg.{text_col})"
+
+    # ILIKE substring (folded, lowercased — f_unaccent lowercases too) drives the
+    # trigram index; the regex then refines to whole-word / word-prefix. A multi-
+    # token phrase skips the regex (substring only — boundary regex across tokens
+    # is brittle).
+    conds = [f"{fexpr} LIKE %(like)s"]
+    params: dict[str, Any] = {"like": f"%{folded_kw}%"}
+    if folded_kw.strip() and " " not in folded_kw.strip():
+        params["re"] = r"\m" + re.escape(folded_kw) + (r"\M" if scope == "word" else "")
+        conds.append(f"{fexpr} ~ %(re)s")
+    cond = " AND ".join(conds)
+
+    base = (
+        " FROM segment seg"
+        " JOIN section sec ON seg.section_id = sec.id"
+        " JOIN book b ON sec.book_id = b.id"
+        " JOIN nikaya n ON b.nikaya_id = n.id"
+        " JOIN pitaka p ON n.pitaka_id = p.id"
+        f" WHERE {cond}"
+    )
+    if pitaka:
+        base += " AND p.code = %(pitaka)s"
+        params["pitaka"] = pitaka
+
+    cur.execute(f"SELECT COUNT(*), COUNT(DISTINCT sec.sutta_id){base}", params)
+    total_segments, total_suttas = cur.fetchone()
+
+    cur.execute(f"SELECT p.code, COUNT(*){base} GROUP BY p.code", params)
+    by_pitaka = {code: cnt for code, cnt in cur.fetchall()}
+
+    cur.execute(
+        f"SELECT seg.{text_col}{base} LIMIT %(cap)s", {**params, "cap": _FORMS_SCAN_CAP}
+    )
+    scanned = [row[0] for row in cur.fetchall()]
+    matched_forms = _matched_surface_forms(scanned, folded_kw, scope)
+    forms_truncated = total_segments > _FORMS_SCAN_CAP
+
+    cur.execute(
+        "SELECT seg.segment_id, sec.sutta_id, seg.text_pali, seg.text_english"
+        f"{base} ORDER BY seg.id LIMIT %(limit)s OFFSET %(offset)s",
+        {**params, "limit": page_size, "offset": cursor},
+    )
+    cols = ["segment_id", "sutta_id", "text_pali", "text_english"]
+    results = [dict(zip(cols, row)) for row in cur.fetchall()]
+
+    return {
+        "total_segments": total_segments,
+        "total_suttas": total_suttas,
+        "by_pitaka": by_pitaka,
+        "matched_forms": matched_forms,
+        "forms_truncated": forms_truncated,
+        "results": results,
+    }
+
+
+# --- semantic recall layer (thorough mode, hosted-only) ----------------------
+# Concept-level recall — surfaces passages that teach the same idea with
+# DIFFERENT vocabulary (e.g. ānāpānassati taught via assasati/passasati). This
+# is approximate by nature, so it is ALWAYS labelled non-exhaustive and never
+# carries a completeness guarantee. It augments — never replaces — the lexical
+# layer.
+
+_SEM_DEFAULT_THRESHOLD = 0.7
+_SEM_DEFAULT_K = 50
+_SEM_MAX_K = 200
+
+
+def _text_matches_lexically(text: str, folded_kw: str, scope: str) -> bool:
+    """True if `text` would be caught by the lexical layer for this term.
+
+    Lets the semantic layer flag which of its hits are *new* (concept-only)
+    vs. already covered lexically — same fold/word/stem rule as the survey.
+    """
+    for tok in _PALI_TOKEN_RE.findall(text or ""):
+        folded = fold_pali(tok)
+        if (folded == folded_kw) if scope == "word" else folded.startswith(folded_kw):
+            return True
+    return False
+
+
+def _semantic_layer_postgres(cur, query, k, threshold, folded_kw, scope, language, pitaka):
+    """Bounded semantic recall over Pāli embeddings (pgvector).
+
+    Returns the `semantic` contract block: top-k segments within `threshold`
+    cosine distance, each flagged `in_lexical` so the caller sees which are
+    concept-only finds. `capped` is True when we hit k (more may exist) — we
+    never silently truncate.
+
+    Respects the same `pitaka` filter as the lexical layer (so a pitaka-scoped
+    survey stays scoped end-to-end). `in_lexical` is judged against the SAME
+    text column the lexical layer matched (`language`), not always Pāli.
+    """
+    try:
+        from embedding.model import generate_embedding
+
+        q_emb = generate_embedding(query)
+    except ImportError:
+        return {"available": False, "note": "Embedding model not installed on this server."}
+    except Exception as e:
+        return {"available": False, "note": f"Could not embed query: {e}"}
+
+    # join only as deep as needed: pitaka filter pulls in book→nikaya→pitaka
+    sql = (
+        "SELECT seg.segment_id, sec.sutta_id, seg.text_pali, seg.text_english,"
+        " seg.embedding <=> %(emb)s::vector AS distance"
+        " FROM segment seg JOIN section sec ON seg.section_id = sec.id"
+    )
+    params: dict[str, Any] = {"emb": q_emb, "threshold": threshold, "k": k}
+    if pitaka:
+        sql += (
+            " JOIN book b ON sec.book_id = b.id"
+            " JOIN nikaya n ON b.nikaya_id = n.id"
+            " JOIN pitaka p ON n.pitaka_id = p.id"
+        )
+    sql += " WHERE seg.embedding IS NOT NULL AND (seg.embedding <=> %(emb)s::vector) <= %(threshold)s"
+    if pitaka:
+        sql += " AND p.code = %(pitaka)s"
+        params["pitaka"] = pitaka
+    sql += " ORDER BY distance LIMIT %(k)s"
+
+    cur.execute(sql, params)
+    cols = ["segment_id", "sutta_id", "text_pali", "text_english", "distance"]
+    rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+
+    # judge in_lexical against the column the lexical layer actually matched
+    lex_col = LANGUAGE_COLUMNS[language]
+    new_finds = 0
+    items = []
+    for r in rows:
+        in_lex = _text_matches_lexically(r.get(lex_col, ""), folded_kw, scope)
+        if not in_lex:
+            new_finds += 1
+        items.append({
+            **r,
+            "distance": round(float(r["distance"]), 4),
+            "in_lexical": in_lex,
+            "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
+        })
+    items = [_strip_disabled_text_fields(it) for it in items]
+
+    return {
+        "available": True,
+        "exhaustive": False,
+        "note": "Related by MEANING — approximate, NOT exhaustive. `in_lexical` "
+        "flags hits already in the lexical layer; the rest are concept-only "
+        "finds (different vocabulary).",
+        "threshold": threshold,
+        "returned": len(items),
+        "new_concept_finds": new_finds,
+        "capped": len(items) >= k,
+        "results": items,
+    }
+
+
+_SEMANTIC_FAST = {
+    "available": False,
+    "note": "Lexical-only (mode='fast'). Pass mode='thorough' for concept-level "
+    "semantic recall (different-vocabulary passages).",
+}
+
+_SEMANTIC_LOCAL = {
+    "available": False,
+    "note": "Semantic recall needs the hosted server (pgvector + embeddings). "
+    "Local mode is lexical-only — the lexical coverage above is still exhaustive.",
+}
+
+
+@mcp.tool(
+    annotations={
+        "title": "Survey Corpus (exhaustive)",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
+def survey_corpus(
+    keyword: str,
+    language: str = "pali",
+    pitaka: str | None = None,
+    match_scope: str = "word",
+    mode: str = "fast",
+    page_size: int = 20,
+    cursor: int = 0,
+    sem_threshold: float = _SEM_DEFAULT_THRESHOLD,
+    sem_limit: int = _SEM_DEFAULT_K,
+) -> dict[str, Any]:
+    """Exhaustively survey the WHOLE Tipiṭaka for a term — guaranteed complete.
+
+    Use this (not `search_by_keyword`) when the question is about **coverage or
+    counting** rather than "show me the best passages":
+    - "How many times does Kusinārā appear in the canon?"
+    - "Every place ānāpānassati is mentioned — don't miss any"
+    - "Which pitakas/how many suttas mention this term?"
+
+    Unlike `search_by_keyword` (ranked, capped at 50, no total), this returns an
+    **exact count**, a **per-pitaka breakdown**, the **distinct surface forms**
+    that matched (so you can audit and discard over-matches), and a paginated
+    enumeration. The `lexical` result carries `complete: true` — a hard
+    guarantee that nothing was dropped for the chosen `match_scope`.
+
+    Two layers, two different promises:
+    - **lexical** — the word and its forms. Deterministic + EXHAUSTIVE.
+    - **semantic** (`mode="thorough"`, hosted only) — passages teaching the same
+      concept with DIFFERENT vocabulary (e.g. ānāpānassati via
+      `assasati`/`passasati`). Approximate, **NOT exhaustive** — it never claims
+      completeness, it only boosts recall.
+
+    Args:
+        keyword: Term to survey (Romanised Pāli preferred; diacritics optional —
+                 matching folds `ā→a`, `ṁ→m`, etc.).
+        language: "pali" (default) or "english". Thai is not indexed yet.
+        pitaka: Restrict to "vinaya" / "sutta" / "abhidhamma", or None for all.
+        match_scope: "word" (default) matches the exact word/phrase only.
+                     "stem" also matches inflections + compounds via prefix
+                     (kusinārā → kusinārāyaṁ, kusināravagga …) — higher recall,
+                     may over-match (audit via `matched_forms`).
+        mode: "fast" (default) = lexical only — quick, no server-side ML, works
+              offline. "thorough" = also run the semantic layer (hosted only;
+              this is the heavier part). The lexical guarantee holds in BOTH.
+        page_size: Lexical results per page (default 20, max 100). Counts/forms
+                   cover the WHOLE corpus regardless of this.
+        cursor: Offset into the full lexical result set for pagination.
+        sem_threshold: Max cosine distance for semantic hits (default 0.7;
+                       lower = stricter). Only used when mode="thorough".
+        sem_limit: Max semantic hits (default 50, max 200). `capped` flags when
+                   reached. Only used when mode="thorough".
+
+    Returns:
+        A completeness contract: { query, language, match_scope, mode,
+        lexical: { complete, total_segments, total_suttas, by_pitaka,
+        matched_forms, forms_truncated, page, results },
+        semantic: { available, exhaustive:false, new_concept_finds, capped,
+        results, … } }.
+    """
+    try:
+        language = _validate_choice(language, VALID_LANGUAGES_SEARCH, "language")
+        pitaka = _validate_choice(pitaka, VALID_PITAKAS, "pitaka")
+    except ValidationError as e:
+        return {"error": str(e)}
+
+    if match_scope not in ("word", "stem"):
+        return {"error": f"invalid match_scope {match_scope!r} (allowed: 'word', 'stem')"}
+    if mode not in ("fast", "thorough"):
+        return {"error": f"invalid mode {mode!r} (allowed: 'fast', 'thorough')"}
+    if language not in LANGUAGE_COLUMNS:
+        # thai lives in the translation table and isn't indexed for survey yet
+        return {
+            "error": f"survey_corpus supports 'pali'/'english' only — "
+            f"{language!r} is not indexed for exhaustive survey yet."
+        }
+    if not (keyword or "").strip():
+        return {"error": "keyword must not be empty"}
+
+    page_size = min(max(1, page_size), 100)
+    cursor = max(0, cursor)
+    sem_limit = min(max(1, sem_limit), _SEM_MAX_K)
+    folded_kw = fold_pali(keyword)
+
+    backend = get_backend()
+    conn = backend.connect()
+    try:
+        cur = backend.cursor(conn)
+        if backend.name == "sqlite":
+            lex = _survey_sqlite(cur, keyword, language, pitaka, match_scope, page_size, cursor)
+        else:
+            lex = _survey_postgres(cur, keyword, language, pitaka, match_scope, page_size, cursor)
+
+        # semantic layer: thorough mode only, hosted only
+        if mode == "fast":
+            semantic = _SEMANTIC_FAST
+        elif backend.name == "sqlite":
+            semantic = _SEMANTIC_LOCAL
+        else:
+            semantic = _semantic_layer_postgres(
+                cur, keyword, sem_limit, sem_threshold, folded_kw, match_scope,
+                language, pitaka,
+            )
+    except Exception as e:
+        return {"error": f"Survey error: {str(e)}"}
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
+        backend.release(conn)
+
+    total = lex["total_segments"]
+    if total == 0:
+        return {
+            "query": keyword,
+            "language": language,
+            "match_scope": match_scope,
+            "mode": mode,
+            "lexical": {
+                "complete": True,
+                "total_segments": 0,
+                "total_suttas": 0,
+                "by_pitaka": {},
+                "matched_forms": [],
+                "results": [],
+                "message": f"No lexical occurrences of '{keyword}' ({match_scope}) in the canon.",
+            },
+            "semantic": semantic,
+        }
+
+    returned = len(lex["results"])
+    next_cursor = cursor + returned if cursor + returned < total else None
+    results = [
+        _strip_disabled_text_fields({
+            **r,
+            "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
+        })
+        for r in lex["results"]
+    ]
+
+    return {
+        "query": keyword,
+        "language": language,
+        "match_scope": match_scope,
+        "mode": mode,
+        "lexical": {
+            "complete": True,
+            "total_segments": total,
+            "total_suttas": lex["total_suttas"],
+            "by_pitaka": lex["by_pitaka"],
+            "matched_forms": lex["matched_forms"],
+            "forms_truncated": lex["forms_truncated"],
+            "page": {
+                "cursor": cursor,
+                "page_size": page_size,
+                "returned": returned,
+                "next_cursor": next_cursor,
+            },
+            "results": results,
+        },
+        "semantic": semantic,
+    }
 
 
 @mcp.tool(

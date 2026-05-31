@@ -4,7 +4,7 @@ A practical guide for AI clients (Claude Desktop, Cline, Cursor, etc.) and human
 
 ## What this server does
 
-The Tripitaka MCP server exposes **10 tools and 3 resources** giving an AI assistant first-class access to the Pāli Tipiṭaka — the foundational scripture of Theravāda Buddhism. The corpus loaded here is at parity with [SuttaCentral's bilara-data](https://github.com/suttacentral/bilara-data):
+The Tripitaka MCP server exposes **11 tools and 3 resources** giving an AI assistant first-class access to the Pāli Tipiṭaka — the foundational scripture of Theravāda Buddhism. The corpus loaded here is at parity with [SuttaCentral's bilara-data](https://github.com/suttacentral/bilara-data):
 
 - **Sutta Piṭaka** (~284K segments) — Pāli + Bhikkhu Sujato English
 - **Vinaya Piṭaka** (~71K segments) — Pāli + Bhikkhu Brahmali English
@@ -28,7 +28,8 @@ Tools are gated by question shape, not topic. Match what the user is asking agai
 
 | Question shape | Tool | Why |
 | --- | --- | --- |
-| "How many times does word X appear / which suttas mention Y?" | `search_by_keyword` | Trigram exact match — accurate for canonical Pāli terms (`appamāda`, `ānāpānassati`) |
+| "How many times does X appear / every place it's mentioned — exhaustive, don't miss any" | `survey_corpus` | Exact total + per-pitaka breakdown + matched word-forms; `mode=thorough` adds concept-level recall |
+| "Best few passages for a word / quick lookup" | `search_by_keyword` | Trigram match — ranked top results for canonical Pāli terms (`appamāda`, `ānāpānassati`) |
 | "Which suttas teach concept Z / discourses about X?" | `search_hybrid` | Combined keyword + semantic via RRF — best for concept landscape |
 | "Show me sutta X in full / quote it" | `get_sutta` | Returns every segment with cross-reference URLs |
 | "Compare translations of segment X" | `compare_translations` | Side-by-side renderings across editions |
