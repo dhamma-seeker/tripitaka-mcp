@@ -116,6 +116,11 @@ def _build_instructions() -> str:
         "(hosted only; the `semantic` block is explicitly NON-exhaustive).\n"
         "- **Best few passages for a word** — `search_by_keyword`.\n"
         "- **\"Discourses about X\" / concept** — `search_hybrid`.\n"
+        "- **A sutta's structure / outline / table of contents / \"how many "
+        "sections\"** — call `get_sutta(sutta_id, mode='outline')` (section "
+        "titles + counts + ids, no text). Do NOT fetch the whole sutta and "
+        "parse the structure by hand — that wastes the context window "
+        "(`dn16` alone is 1,664 segments).\n"
         "- **Read the context around a hit** — search tools return a precise "
         "`segment_id` (e.g. `dn22:18.1`). To read its surroundings without "
         "pulling the whole sutta, call `get_sutta(sutta_id, around='<segment_id>', "
@@ -1282,22 +1287,58 @@ def _split_segment_id(segment_id: str) -> tuple[str, str]:
     return segment_id, ""
 
 
+def _section_title(seg: dict[str, Any]) -> dict[str, str | None]:
+    return {
+        "pali": seg.get("text_pali"),
+        "thai": seg.get("text_thai"),
+        "english": seg.get("text_english"),
+    }
+
+
 def _build_outline(segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """สร้าง outline (TOC ไม่มี text) จาก full ordered segments list.
 
-    Grouping (รับ 2 โครงสร้าง):
-    - ถ้า colon-prefix หลากหลาย (range-format เช่น dhp1-20 → dhp1..dhp20,
-      pli-tv-bu-vb-as1-7 → as1..as7) → group ตาม prefix.
-    - ถ้า prefix เดียว (mn1/dn16/sn56.11) → group ตามส่วนแรกหลัง ':' จนถึง '.'
-      แรก (เลขบนสุด): dn16 → 1..6, sn56.11 → 0..14, mn1 → 1..194.
+    เลือกหน่วยของ section ตามโครงสร้างจริงของ segment_id (รับ 3 รูปแบบ):
 
-    title ต่อ section ดึงจาก segment แรกในกลุ่มที่ลงท้าย '.0' (section header
-    จริง เช่น dn16:2.1.0 = "8. Ariyasaccakathā") — ตาม language flag ที่ seg
-    มีอยู่; ถ้าไม่มี '.0' → title คง null.
+    1. **มี `.0` header segments** (สูตร 3-level เช่น dn16/dn22) → 1 section ต่อ
+       1 `.0` header. `.0` คือหัวข้อย่อยตาม SuttaCentral (เช่น `dn16:1.3.0` =
+       "1. Vassakārabrāhmaṇa") — dn16 มี 40 หัวข้อ. section แรกขยายกลับไป index 0
+       เพื่อกลืน preamble (segment ก่อน `.0` แรก เช่น title block + บทนำ) ไม่ให้
+       ตกหล่น. title = text ของ `.0` header นั้น.
+    2. **colon-prefix หลากหลาย** (range-format: dhp1-20 → dhp1..dhp20,
+       pli-tv-bu-vb-as1-7 → as1..as7) → group ตาม prefix.
+    3. **prefix เดียว ไม่มี `.0`** (mn1/sn56.11) → group ตามส่วนแรกหลัง ':'
+       จนถึง '.' แรก (เลขบนสุด): mn1 → 1..194, sn56.11 → 0..14.
+
+    ทุกรูปแบบ partition segments แบบครบถ้วน → Σ section_count == total_segments.
     """
-    group_by_prefix = len({_split_segment_id(s["segment_id"])[0] for s in segments}) > 1
+    # --- รูปแบบ 1: section per '.0' header ---
+    dot_zero = [
+        i for i, s in enumerate(segments)
+        if _split_segment_id(s["segment_id"])[1].endswith(".0")
+    ]
+    if dot_zero:
+        # boundary เริ่มที่ index 0 (กลืน preamble เข้า section แรก) แล้วตามด้วย
+        # ตำแหน่งของ '.0' ตัวที่ 2 เป็นต้นไป → จำนวน section == จำนวน '.0'
+        starts = [0] + dot_zero[1:]
+        sections: list[dict[str, Any]] = []
+        for si, start in enumerate(starts):
+            end = starts[si + 1] if si + 1 < len(starts) else len(segments)
+            header = segments[dot_zero[si]]  # '.0' header ของ section นี้
+            sections.append({
+                "key": str(si + 1),
+                "title": _section_title(header),
+                "header_segment_id": header["segment_id"],
+                "first_segment_id": segments[start]["segment_id"],
+                "last_segment_id": segments[end - 1]["segment_id"],
+                "offset": start,
+                "segment_count": end - start,
+            })
+        return sections
 
-    sections: list[dict[str, Any]] = []
+    # --- รูปแบบ 2/3: group ตาม prefix หรือเลขบนสุด ---
+    group_by_prefix = len({_split_segment_id(s["segment_id"])[0] for s in segments}) > 1
+    sections = []
     current_key: str | None = None
     title_filled = False
     for idx, seg in enumerate(segments):
@@ -1318,11 +1359,7 @@ def _build_outline(segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
         sec["last_segment_id"] = seg["segment_id"]
         sec["segment_count"] += 1
         if not title_filled and rest.endswith(".0"):
-            sec["title"] = {
-                "pali": seg.get("text_pali"),
-                "thai": seg.get("text_thai"),
-                "english": seg.get("text_english"),
-            }
+            sec["title"] = _section_title(seg)
             title_filled = True
     return sections
 
@@ -1347,7 +1384,23 @@ def get_sutta(
     offset: int = 0,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    """Fetch the content of a sutta/section by ID.
+    """Fetch a sutta's content — OR its table of contents (`mode="outline"`).
+
+    ⚡ **Decide which mode BEFORE calling — don't fetch the whole sutta and
+    parse it yourself:**
+    - The user wants the **structure / outline / table of contents**, or asks
+      **"how many sections/parts"** / "what's in it" → call
+      `get_sutta(sutta_id, mode="outline")`. It returns the section list
+      (titles + segment counts + ids), NOT the full text — cheap and exact.
+    - The user wants the **context around a search hit** → `around="<segment_id>"`
+      (search tools hand you the id, e.g. `dn22:18.1`) + optional `window`.
+    - The user wants a **specific part** you already located → `segment_range="A..B"`
+      or `offset`+`limit`.
+    - Only fetch the **whole** sutta (no mode/selector) when the user actually
+      wants to read/quote a SHORT sutta in full. Long ones (DN, long
+      Vinaya/Abhidhamma; > ~400 segments — e.g. `dn16` is 1,664) should almost
+      always start with `mode="outline"`; pulling the entire text wastes the
+      context window.
 
     Uses standard SuttaCentral IDs, e.g.:
     - `mn1` = Majjhima Nikāya sutta 1 (Mūlapariyāyasutta, 334 segments)

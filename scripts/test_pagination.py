@@ -70,7 +70,7 @@ async def run_suite(client: Client) -> list[tuple[str, bool, str]]:
         f"total={total16}",
     )
 
-    # 2) outline dn16 (single-prefix → group by เลขบนสุด)
+    # 2) outline dn16 — section per '.0' header (40 subtopics), TOC ไม่มี text
     out16 = await call(client, sutta_id=DN16, mode="outline")
     sections = out16.get("sections", [])
     sum_counts = sum(s["segment_count"] for s in sections)
@@ -78,23 +78,28 @@ async def run_suite(client: Client) -> list[tuple[str, bool, str]]:
         "text_pali" not in s and "text_english" not in s and "segments" not in s
         for s in sections
     )
-    has_title = any(s["title"].get("pali") or s["title"].get("english") for s in sections)
+    # ทุก section ใน '.0' mode มี title (จาก header) + header_segment_id ลงท้าย '.0'
+    all_titled = all(s["title"].get("pali") or s["title"].get("english") for s in sections)
+    headers_dot0 = all(s.get("header_segment_id", "").endswith(".0") for s in sections)
     check(
-        "outline dn16: Σcount==total, no text, has section title",
+        "outline dn16: 40 '.0' sections, Σcount==total, no text, all titled",
         out16.get("mode") == "outline"
         and out16.get("total_segments") == total16
         and sum_counts == total16
-        and out16.get("section_count") == len(sections)
+        and out16.get("section_count") == len(sections) == 40
         and no_text
-        and has_title,
-        f"sections={len(sections)} Σ={sum_counts} title={has_title}",
+        and all_titled
+        and headers_dot0,
+        f"sections={len(sections)} Σ={sum_counts} titled={all_titled}",
     )
-    # offset/first_segment_id ของ section แรกต้องชี้ index 0
+    # section แรกขยายกลับไป index 0 (กลืน preamble) — first_segment_id == full[0]
     check(
-        "outline dn16: section[0].offset==0 & first_segment_id matches full[0]",
+        "outline dn16: section[0] absorbs preamble (offset 0, first==full[0])",
         sections and sections[0]["offset"] == 0
-        and sections[0]["first_segment_id"] == _seg_ids(full16)[0],
-        f"first={sections[0]['first_segment_id'] if sections else None}",
+        and sections[0]["first_segment_id"] == _seg_ids(full16)[0]
+        and sections[0]["title"].get("pali", "").startswith("1."),
+        f"first={sections[0]['first_segment_id'] if sections else None} "
+        f"title={sections[0]['title'].get('pali') if sections else None}",
     )
 
     # 3) outline dhp1-20 (range-format → group by colon-prefix)
