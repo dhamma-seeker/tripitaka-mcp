@@ -19,7 +19,7 @@ Tools:
 
 import os
 import re
-from typing import Any
+from typing import Any, Literal
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP
@@ -623,9 +623,9 @@ def _keyword_search_sqlite(
 )
 def search_by_keyword(
     keyword: str,
-    language: str = "pali",
-    edition: str | None = None,
-    pitaka: str | None = None,
+    language: Literal["pali", "english", "thai"] = "pali",
+    edition: Literal["dhiranandi", "jayasaro", "mbu", "royal"] | None = None,
+    pitaka: Literal["vinaya", "sutta", "abhidhamma"] | None = None,
     limit: int = 10,
 ) -> list[dict[str, Any]]:
     """Keyword search across the Pāli Tipiṭaka (trigram word-similarity).
@@ -1095,10 +1095,10 @@ _SEMANTIC_LOCAL = {
 )
 def survey_corpus(
     keyword: str,
-    language: str = "pali",
-    pitaka: str | None = None,
-    match_scope: str = "word",
-    mode: str = "fast",
+    language: Literal["pali", "english"] = "pali",
+    pitaka: Literal["vinaya", "sutta", "abhidhamma"] | None = None,
+    match_scope: Literal["word", "stem"] = "word",
+    mode: Literal["fast", "thorough"] = "fast",
     page_size: int = 20,
     cursor: int = 0,
     sem_threshold: float = _SEM_DEFAULT_THRESHOLD,
@@ -1268,8 +1268,8 @@ def survey_corpus(
 )
 def get_sutta(
     sutta_id: str,
-    language: str = "pali",
-    edition: str | None = None,
+    language: Literal["pali", "thai", "english", "all"] = "pali",
+    edition: Literal["dhiranandi", "jayasaro", "mbu", "royal"] | None = None,
 ) -> dict[str, Any]:
     """Fetch the full content of a sutta/section by ID — returns every segment.
 
@@ -1807,7 +1807,8 @@ def list_structure() -> dict[str, Any]:
         alongside `pli-tv-bu-vb/pli-tv-bi-vb/pli-tv-kd/pli-tv-pvr`
         (active, populated).
       - Abhidhamma: `ym/pt` (legacy = 0) alongside `ya/patthana` (active).
-    - **Always pick the code with `segment_count > 0`** — the others are
+    - **Use the `active` flag** — each nikaya carries `active: true/false`
+      (true ⇔ `segment_count > 0`). Pick `active` nikayas; the others are
       metadata placeholders from an older migration.
 
     🌐 **Languages:** Returns Pāli + Thai + English labels regardless of
@@ -1869,6 +1870,11 @@ def list_structure() -> dict[str, Any]:
                     "name_english": row[7],
                     "sutta_count": row[8],
                     "segment_count": row[9],
+                    # `active` = this nikaya has loaded segment text. Legacy
+                    # placeholder codes (vin-v/ym/pt …) carry segment_count = 0
+                    # and are NOT searchable — filter on this flag instead of
+                    # re-deriving `segment_count > 0` client-side.
+                    "active": row[9] > 0,
                 })
 
         return {"pitakas": structure}
@@ -2257,7 +2263,7 @@ def compare_translations(
         "openWorldHint": False,
     }
 )
-def get_word_definition(word: str, language: str = "all", limit_context: int = 3) -> dict[str, Any]:
+def get_word_definition(word: str, language: Literal["en", "thai", "th", "all"] = "all", limit_context: int = 3) -> dict[str, Any]:
     """Look up the dictionary meaning of a Pāli word, with sutta context.
 
     Serves as a Pāli Dictionary Bridge — pairs the "definition" with the
