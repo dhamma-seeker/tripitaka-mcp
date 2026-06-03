@@ -116,6 +116,12 @@ def _build_instructions() -> str:
         "(hosted only; the `semantic` block is explicitly NON-exhaustive).\n"
         "- **Best few passages for a word** — `search_by_keyword`.\n"
         "- **\"Discourses about X\" / concept** — `search_hybrid`.\n"
+        "- **Read the context around a hit** — search tools return a precise "
+        "`segment_id` (e.g. `dn22:18.1`). To read its surroundings without "
+        "pulling the whole sutta, call `get_sutta(sutta_id, around='<segment_id>', "
+        "window=N)`. For long suttas, use `get_sutta(sutta_id, mode='outline')` "
+        "first to see the structure, then fetch one section by `segment_range` "
+        "or `offset`/`limit`.\n"
         + "\n🔗 **Cross-reference URLs (IMPORTANT — always surface in your "
         "reply as clickable markdown links):**\n"
         "Every tool response includes a `cross_reference` field with URLs "
@@ -1257,6 +1263,70 @@ def survey_corpus(
     }
 
 
+# ---------------------------------------------------------------------------
+# get_sutta pagination helpers — pure-Python over the already-ordered segment
+# list (ORDER BY seg.id = canonical load order, identical across backends).
+# No SQL involved → Postgres/SQLite produce byte-identical slices/outlines.
+# ---------------------------------------------------------------------------
+
+
+def _split_segment_id(segment_id: str) -> tuple[str, str]:
+    """แยก segment_id เป็น (colon_prefix, rest).
+
+    'dn16:2.1.0' -> ('dn16', '2.1.0'); 'sn56.11:14.4' -> ('sn56.11', '14.4');
+    'dhp1:0.1' -> ('dhp1', '0.1'); ถ้าไม่มี ':' -> (segment_id, '').
+    """
+    if ":" in segment_id:
+        prefix, rest = segment_id.split(":", 1)
+        return prefix, rest
+    return segment_id, ""
+
+
+def _build_outline(segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """สร้าง outline (TOC ไม่มี text) จาก full ordered segments list.
+
+    Grouping (รับ 2 โครงสร้าง):
+    - ถ้า colon-prefix หลากหลาย (range-format เช่น dhp1-20 → dhp1..dhp20,
+      pli-tv-bu-vb-as1-7 → as1..as7) → group ตาม prefix.
+    - ถ้า prefix เดียว (mn1/dn16/sn56.11) → group ตามส่วนแรกหลัง ':' จนถึง '.'
+      แรก (เลขบนสุด): dn16 → 1..6, sn56.11 → 0..14, mn1 → 1..194.
+
+    title ต่อ section ดึงจาก segment แรกในกลุ่มที่ลงท้าย '.0' (section header
+    จริง เช่น dn16:2.1.0 = "8. Ariyasaccakathā") — ตาม language flag ที่ seg
+    มีอยู่; ถ้าไม่มี '.0' → title คง null.
+    """
+    group_by_prefix = len({_split_segment_id(s["segment_id"])[0] for s in segments}) > 1
+
+    sections: list[dict[str, Any]] = []
+    current_key: str | None = None
+    title_filled = False
+    for idx, seg in enumerate(segments):
+        prefix, rest = _split_segment_id(seg["segment_id"])
+        key = prefix if group_by_prefix else (rest.split(".", 1)[0] if rest else "")
+        if key != current_key:
+            current_key = key
+            title_filled = False
+            sections.append({
+                "key": key,
+                "title": {"pali": None, "thai": None, "english": None},
+                "first_segment_id": seg["segment_id"],
+                "last_segment_id": seg["segment_id"],
+                "offset": idx,
+                "segment_count": 0,
+            })
+        sec = sections[-1]
+        sec["last_segment_id"] = seg["segment_id"]
+        sec["segment_count"] += 1
+        if not title_filled and rest.endswith(".0"):
+            sec["title"] = {
+                "pali": seg.get("text_pali"),
+                "thai": seg.get("text_thai"),
+                "english": seg.get("text_english"),
+            }
+            title_filled = True
+    return sections
+
+
 @mcp.tool(
     annotations={
         "title": "Get Sutta",
@@ -1270,8 +1340,14 @@ def get_sutta(
     sutta_id: str,
     language: Literal["pali", "thai", "english", "all"] = "pali",
     edition: Literal["dhiranandi", "jayasaro", "mbu", "royal"] | None = None,
+    mode: Literal["full", "outline"] = "full",
+    around: str | None = None,
+    window: int = 10,
+    segment_range: str | None = None,
+    offset: int = 0,
+    limit: int | None = None,
 ) -> dict[str, Any]:
-    """Fetch the full content of a sutta/section by ID — returns every segment.
+    """Fetch the content of a sutta/section by ID.
 
     Uses standard SuttaCentral IDs, e.g.:
     - `mn1` = Majjhima Nikāya sutta 1 (Mūlapariyāyasutta, 334 segments)
@@ -1299,6 +1375,27 @@ def get_sutta(
     - The response includes a `cross_reference` field — render the URLs
       as clickable markdown in your reply so users can verify the source.
 
+    📑 **Pagination — don't pull a whole giant sutta into context:**
+    By default this returns EVERY segment. That's fine for short suttas but a
+    single big one is huge (`dn16` ≈ 1,664 segments, `pli-tv-kd1` ≈ 3,591).
+    Use one of these instead when the sutta is long (rule of thumb: > ~400
+    segments) or when you only need part of it:
+    - `mode="outline"` — a table of contents only (section keys + titles +
+      counts + `first_segment_id`/`last_segment_id` + `offset`), **no segment
+      text**. Cheap way to see the structure, then fetch one section.
+    - `around="<segment_id>"` + `window=N` — return the N segments before and
+      after a segment_id. **Ideal after a search:** `search_by_keyword` /
+      `survey_corpus` hand you a precise `segment_id` (e.g. `dn22:18.1`); pass
+      it here to read its context without downloading the whole sutta.
+    - `segment_range="<startId>..<endId>"` — inclusive slice between two
+      segment_ids (use the `..` separator; omit the end id to go to the end).
+      Pairs with `mode="outline"` (use a section's first/last id).
+    - `offset` (0-based) + `limit` — ordinal paging. The response's `page`
+      block carries `next_offset` to fetch the following page.
+    Only one selector (around / segment_range / offset+limit) may be used at a
+    time. Every response includes `total_segments` (the full count) so you
+    know how much remains.
+
     ✅ **Coverage (v1.1+):** all three pitakas at parity with SuttaCentral
     `bilara-data`:
     - Sutta Piṭaka (DN/MN/SN/AN/KN): Pāli + Sujato EN (5,791 sections)
@@ -1318,13 +1415,27 @@ def get_sutta(
                  "mbu", "royal", or None. If None, uses `text_thai` from
                  bilara-data. ⚠️ The DB has no Thai editions loaded yet,
                  so most values return null.
+        mode: "full" (default, returns segment text) or "outline" (table of
+              contents only — section keys/titles/counts, no segment text).
+        around: A segment_id to center on (e.g. "dn22:18.1"). Returns the
+                `window` segments before and after it. Ignored if None.
+        window: Segments before AND after `around` (default 10, clamped 0–200).
+        segment_range: Inclusive slice "<startId>..<endId>" (e.g.
+                       "dn16:2.1.0..dn16:2.2.8"). Omit the end id to read to
+                       the sutta's end. Uses the `..` separator.
+        offset: 0-based ordinal start for paging (default 0).
+        limit: Max segments to return from `offset` (default None = to end,
+               clamped 1–2000).
 
     Returns:
-        Sutta data including:
-        - sutta_id, title{pali,thai,english}, nikaya, pitaka, edition
-        - segment_count, segments[] (id-sorted, every segment included)
-        - cross_reference: SuttaCentral URLs (sutta + Pāli + English) plus
-          84000.org link for Thai-user routing.
+        mode="full": sutta_id, title{pali,thai,english}, nikaya, pitaka,
+        edition, total_segments (full count), segment_count (== len(segments)
+        returned), segments[] (id-sorted slice), page{offset, returned,
+        has_more, next_offset}, cross_reference.
+        mode="outline": sutta_id, title, nikaya, pitaka, mode, total_segments,
+        section_count, sections[]{key, title, first_segment_id,
+        last_segment_id, offset, segment_count}, cross_reference.
+        On error: {"error": "..."}.
     """
     try:
         sutta_id = _validate_sutta_id(sutta_id)
@@ -1332,6 +1443,21 @@ def get_sutta(
         edition = _validate_choice(edition, VALID_EDITIONS, "edition")
     except ValidationError as e:
         return {"error": str(e)}
+
+    if mode not in ("full", "outline"):
+        return {"error": f"invalid mode: {mode!r} (allowed: 'full', 'outline')"}
+
+    # selector ใช้ได้ทีละ 1 (เฉพาะ mode='full') — fail-fast ก่อนแตะ DB
+    selectors_used = sum((
+        around is not None,
+        segment_range is not None,
+        offset != 0 or limit is not None,
+    ))
+    if mode == "full" and selectors_used > 1:
+        return {
+            "error": "use only one selector at a time: "
+            "around (+window), segment_range, or offset+limit"
+        }
 
     backend = get_backend()
     conn = backend.connect()
@@ -1435,7 +1561,8 @@ def get_sutta(
                 return None
             return db_title or title_from_segment[lang]
 
-        return {
+        # metadata ที่ทุก response มีร่วมกัน
+        meta = {
             "sutta_id": section_row[1],
             "title": {
                 "pali": _title_for("pali", section_row[2]),
@@ -1452,10 +1579,74 @@ def get_sutta(
                 "thai": section_row[9],
                 "english": section_row[10],
             },
+        }
+        total_segments = len(segments)
+        cross_reference = _cross_reference_urls(section_row[1])
+
+        # --- mode="outline": TOC ไม่มี text ---
+        if mode == "outline":
+            sections = _build_outline(segments)
+            return {
+                **meta,
+                "mode": "outline",
+                "total_segments": total_segments,
+                "section_count": len(sections),
+                "sections": sections,
+                "cross_reference": cross_reference,
+            }
+
+        # --- mode="full": เลือก slice ตาม selector (pure-Python, parity ฟรี) ---
+        id_to_index = {s["segment_id"]: i for i, s in enumerate(segments)}
+        start, end = 0, total_segments  # default = ทั้งสูตร (backward-compat)
+
+        if around is not None:
+            if around not in id_to_index:
+                return {"error": f"segment not found in {sutta_id}: {around!r}"}
+            w = min(max(0, window), 200)
+            i = id_to_index[around]
+            start, end = max(0, i - w), min(total_segments, i + w + 1)
+        elif segment_range is not None:
+            if ".." not in segment_range:
+                return {
+                    "error": "segment_range must be '<startId>..<endId>' "
+                    "(use the '..' separator), e.g. 'dn16:2.1.0..dn16:2.2.8'"
+                }
+            a, _, b = segment_range.partition("..")
+            a, b = a.strip(), b.strip()
+            if a not in id_to_index:
+                return {"error": f"segment not found in {sutta_id}: {a!r}"}
+            start = id_to_index[a]
+            if b == "":
+                end = total_segments
+            elif b not in id_to_index:
+                return {"error": f"segment not found in {sutta_id}: {b!r}"}
+            else:
+                end = id_to_index[b] + 1
+            if end <= start:
+                return {"error": f"segment_range end precedes start: {segment_range!r}"}
+        elif offset != 0 or limit is not None:
+            start = min(max(0, offset), total_segments)
+            if limit is None:
+                end = total_segments
+            else:
+                end = min(total_segments, start + min(max(1, limit), 2000))
+
+        page_segments = segments[start:end]
+        has_more = end < total_segments
+
+        return {
+            **meta,
             "edition": edition,
-            "segment_count": len(segments),
-            "segments": segments,
-            "cross_reference": _cross_reference_urls(section_row[1]),
+            "total_segments": total_segments,
+            "segment_count": len(page_segments),
+            "segments": page_segments,
+            "page": {
+                "offset": start,
+                "returned": len(page_segments),
+                "has_more": has_more,
+                "next_offset": end if has_more else None,
+            },
+            "cross_reference": cross_reference,
         }
 
     except Exception as e:
