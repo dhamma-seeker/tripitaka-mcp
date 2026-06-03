@@ -101,6 +101,15 @@ async def run_suite(client: Client) -> list[tuple[str, bool, str]]:
         f"first={sections[0]['first_segment_id'] if sections else None} "
         f"title={sections[0]['title'].get('pali') if sections else None}",
     )
+    # group field = bhāṇavāra (1..6) — section 1 → group "1", ครบ 6 กลุ่ม
+    groups = [s.get("group") for s in sections]
+    check(
+        "outline dn16: 'group' = bhāṇavāra 1..6 (40 sections nest under 6)",
+        all(g is not None for g in groups)
+        and sorted(set(groups), key=int) == ["1", "2", "3", "4", "5", "6"]
+        and sections[0]["group"] == "1",
+        f"distinct groups={sorted(set(groups), key=int)}",
+    )
 
     # 3) outline dhp1-20 (range-format → group by colon-prefix)
     outdhp = await call(client, sutta_id=DHP, mode="outline")
@@ -165,6 +174,21 @@ async def run_suite(client: Client) -> list[tuple[str, bool, str]]:
         and len(full_kd_ids_head) == 200
         and len(set(full_kd_ids_head)) == 200,  # ไม่ทับซ้อน
         f"total={total_kd}",
+    )
+
+    # 6b) compact cross_reference: multi-hit (search) ตัด 84000 'note' ออก,
+    #     แต่ get_sutta (single) ยังคง note ไว้
+    kw = await client.call_tool("search_by_keyword", {"keyword": "ariyasacca", "limit": 3})
+    kw_payload = json.loads(kw.content[0].text)
+    hits = kw_payload.get("result", []) if isinstance(kw_payload, dict) else kw_payload
+    search_no_note = bool(hits) and all(
+        "note" not in h.get("cross_reference", {}).get("tipitaka_84000", {}) for h in hits
+    )
+    gs_has_note = "note" in full16.get("cross_reference", {}).get("tipitaka_84000", {})
+    check(
+        "cross_reference: search hits drop 84000 'note', get_sutta keeps it",
+        search_no_note and gs_has_note,
+        f"hits={len(hits)} search_no_note={search_no_note} gs_has_note={gs_has_note}",
     )
 
     # 7) error cases
