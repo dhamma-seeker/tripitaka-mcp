@@ -500,7 +500,9 @@ def _tripitaka_reader_urls(
     return urls
 
 
-def _cross_reference_urls(sutta_id: str, segment_id: str | None = None) -> dict[str, Any]:
+def _cross_reference_urls(
+    sutta_id: str, segment_id: str | None = None, compact: bool = False
+) -> dict[str, Any]:
     """รวม URL จากทุกแหล่งสำหรับ AI client surface ใน response.
 
     Returns dict with:
@@ -510,12 +512,20 @@ def _cross_reference_urls(sutta_id: str, segment_id: str | None = None) -> dict[
         - suttacentral: deep-link set (canonical reference, segment URL)
         - tipitaka_84000: ฉบับมหาจุฬาฯ ไทย — volume page + Google search
           fallback (deep-link mapping เป็น heuristic, ใช้ search_url ถ้าไม่ตรง)
+
+    compact=True (multi-hit responses: search/survey) — ตัด `note` ของ 84000
+    ที่ยาว ~250 ตัวอักษรและ**ซ้ำเป๊ะทุก hit ของสูตรเดียวกัน** ออก (เป็น advisory
+    เดียวกับที่อยู่ใน server instructions อยู่แล้ว). deep-link สำหรับ verify
+    ยังครบทุกแหล่ง. ลด token boilerplate มากในผลลัพธ์ที่มีหลายสิบ hit.
     """
-    return {
+    ref = {
         "tripitaka_mcp_reader": _tripitaka_reader_urls(sutta_id, segment_id),
         "suttacentral": _suttacentral_urls(sutta_id, segment_id),
         "tipitaka_84000": _tipitaka_84000_urls(sutta_id),
     }
+    if compact:
+        ref["tipitaka_84000"].pop("note", None)
+    return ref
 
 
 def _strip_disabled_text_fields(result: dict[str, Any]) -> dict[str, Any]:
@@ -766,7 +776,7 @@ def search_by_keyword(
         return [
             _strip_disabled_text_fields({
                 **r,
-                "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
+                "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"], compact=True),
             })
             for r in results
         ]
@@ -1064,7 +1074,7 @@ def _semantic_layer_postgres(cur, query, k, threshold, folded_kw, scope, languag
             **r,
             "distance": round(float(r["distance"]), 4),
             "in_lexical": in_lex,
-            "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
+            "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"], compact=True),
         })
     items = [_strip_disabled_text_fields(it) for it in items]
 
@@ -1239,7 +1249,7 @@ def survey_corpus(
     results = [
         _strip_disabled_text_fields({
             **r,
-            "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
+            "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"], compact=True),
         })
         for r in lex["results"]
     ]
@@ -1295,6 +1305,16 @@ def _section_title(seg: dict[str, Any]) -> dict[str, str | None]:
     }
 
 
+def _top_group(segment_id: str) -> str:
+    """เลข/โทเคนบนสุดหลัง ':' (จนถึง '.' แรก) — สำหรับ outline `group`.
+
+    'dn16:2.1.0' → '2' (= bhāṇavāra), 'mn1:5.3' → '5', 'dhp1:0.1' → '0'.
+    ใช้ระบุชั้นบนสุดที่ section ย่อยซ้อนอยู่ ให้ client ไม่ต้อง infer เอง.
+    """
+    rest = _split_segment_id(segment_id)[1]
+    return rest.split(".", 1)[0] if rest else ""
+
+
 def _build_outline(segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """สร้าง outline (TOC ไม่มี text) จาก full ordered segments list.
 
@@ -1327,6 +1347,7 @@ def _build_outline(segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
             header = segments[dot_zero[si]]  # '.0' header ของ section นี้
             sections.append({
                 "key": str(si + 1),
+                "group": _top_group(header["segment_id"]),  # ชั้นบน (เช่น bhāṇavāra)
                 "title": _section_title(header),
                 "header_segment_id": header["segment_id"],
                 "first_segment_id": segments[start]["segment_id"],
@@ -1349,6 +1370,7 @@ def _build_outline(segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
             title_filled = False
             sections.append({
                 "key": key,
+                "group": key,  # ไม่มีชั้นซ้อน — group = key
                 "title": {"pali": None, "thai": None, "english": None},
                 "first_segment_id": seg["segment_id"],
                 "last_segment_id": seg["segment_id"],
@@ -1486,8 +1508,10 @@ def get_sutta(
         returned), segments[] (id-sorted slice), page{offset, returned,
         has_more, next_offset}, cross_reference.
         mode="outline": sutta_id, title, nikaya, pitaka, mode, total_segments,
-        section_count, sections[]{key, title, first_segment_id,
-        last_segment_id, offset, segment_count}, cross_reference.
+        section_count, sections[]{key, group (top-level unit the section nests
+        under — e.g. dn16 bhāṇavāra 1–6), title, header_segment_id,
+        first_segment_id, last_segment_id, offset, segment_count},
+        cross_reference.
         On error: {"error": "..."}.
     """
     try:
@@ -1817,7 +1841,7 @@ def search_semantic(
         return [
             _strip_disabled_text_fields({
                 **r,
-                "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
+                "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"], compact=True),
             })
             for r in results
         ]
@@ -2003,7 +2027,7 @@ def search_hybrid(
                 row = id_to_row[seg_id]
                 context_row = (row[1], row[2], row[3], row[4], row[5], round(rrf_scores[seg_id], 4))
                 ctx = _build_context(context_row, columns)
-                ctx["cross_reference"] = _cross_reference_urls(ctx["sutta_id"], ctx["segment_id"])
+                ctx["cross_reference"] = _cross_reference_urls(ctx["sutta_id"], ctx["segment_id"], compact=True)
                 results.append(_strip_disabled_text_fields(ctx))
 
         return results
