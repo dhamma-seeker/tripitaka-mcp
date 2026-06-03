@@ -124,7 +124,7 @@ Both serve the same ~444K-segment canon. The differences:
 
 | | Hosted (`mcp.tripitaka-mcp.com`) | Local (`pipx`) |
 |---|---|---|
-| Tools | all 10 | 8 — no `search_semantic` / `search_hybrid` |
+| Tools | all 11 | 9 — no `search_semantic` / `search_hybrid` |
 | Concept / semantic search | ✅ vector search (pgvector) | ❌ — use `search_by_keyword` instead |
 | Keyword search | PostgreSQL trigram — fuzzy, typo-tolerant, similarity-ranked | SQLite FTS5 — whole-word / token match; **results and ranking can differ** from hosted |
 | Canon data | always current | a snapshot from when you ran `init` — re-run `tripitaka-mcp init` to refresh |
@@ -134,7 +134,7 @@ Both serve the same ~444K-segment canon. The differences:
 | Rate limit | 10 req / 10 s, 60 req / min per IP | none |
 | Setup | zero / one-click | Python 3.10+, pipx, one-time ~120 MB download |
 
-`search_semantic` / `search_hybrid` and the trigram keyword index need PostgreSQL + pgvector + a ~1 GB embedding model — too heavy for a lightweight local install, so they stay hosted-only. In local mode those two tools aren't registered at all: a connected client sees only the 8 available tools, so it never tries to call a tool that can't work.
+`search_semantic` / `search_hybrid` and the trigram keyword index need PostgreSQL + pgvector + a ~1 GB embedding model — too heavy for a lightweight local install, so they stay hosted-only. In local mode those two tools aren't registered at all: a connected client sees only the 9 available tools, so it never tries to call a tool that can't work.
 
 Because the local server is a standard stdio MCP server, it also enables a **fully offline AI stack** — pair it with a local model (e.g. Ollama) and any MCP-capable chat UI, and nothing leaves your machine.
 
@@ -278,7 +278,7 @@ Details in [`skills/README.md`](./skills/README.md).
 | `search_by_keyword` | Trigram keyword search — best for the top few matches of an exact word (`appamāda`, `ānāpānassati`). |
 | `survey_corpus` | **Exhaustive** corpus survey — exact total + per-pitaka breakdown + the matched word-forms, for "how many times / every place X appears" (coverage, not just best matches). `mode=thorough` adds concept-level semantic recall. |
 | `search_semantic` | Pure vector similarity — usually you want `search_hybrid` instead. |
-| `get_sutta` | Fetch a full sutta by ID (e.g. `mn1`, `dn22`, `dhp1-20`) — returns every segment with cross-reference URLs. |
+| `get_sutta` | Fetch a sutta by ID (e.g. `mn1`, `dn22`, `dhp1-20`) with cross-reference URLs. Whole sutta by default; for long ones use `mode="outline"` (table of contents, no text), `around="<segment_id>"`+`window` (context around a hit), or `segment_range`/`offset`+`limit` to fetch just a slice. |
 | `get_reference` | Generate a properly formatted academic citation with all source URLs. |
 | `compare_translations` | Compare renderings of a single segment across editions. |
 | `list_structure` | Show the Tipiṭaka structure with segment-count coverage per nikāya. |

@@ -18,6 +18,8 @@ This skill packages the proven multi-step workflow for researching Buddhist scri
    - "Best few passages for a word / quick keyword lookup" → `search_by_keyword` (trigram, ranked)
    - "Which suttas teach concept Y / discourses about topic Z?" → `search_hybrid` (RRF = keyword + semantic)
    - "Show me sutta X in full" → `get_sutta`
+   - "What's the structure / table of contents / how many sections of sutta X?" → `get_sutta(sutta_id, mode="outline")` (section titles + counts, no text — cheap; don't fetch the whole sutta and parse it yourself)
+   - "Read the context around this segment" → `get_sutta(sutta_id, around="<segment_id>", window=N)` (search tools hand you the segment_id)
    - "Compare translations of segment X" → `compare_translations`
    - "Generate a citation for sutta X" → `get_reference`
    - "What's in the Tipiṭaka structure / what's loaded?" → `list_structure`
@@ -45,7 +47,14 @@ Before compiling a list, run a small batch (3-5) of `search_by_keyword` calls on
 - Stock phrases (`So satova assasati, satova passasati`) appear in 10+ suttas — that's expected, not a bug
 
 ### Step 3 — Drill into specific suttas with `get_sutta`
-When the user wants a specific sutta, fetch the full content. Don't try to recite — quote `text_pali` and `text_english` directly from the result. The server returns 100-1600+ segments per sutta; rendering may be truncated by the client UI but the AI receives the full payload, so analyses (counting occurrences, finding closing markers, etc.) are valid.
+When the user wants a specific sutta, quote `text_pali` and `text_english` directly from the result — don't recite from memory.
+
+**For long suttas, don't pull the whole thing into context.** A short sutta (≲400 segments) is fine to fetch in full, but the big ones are huge (`dn16` ≈ 1,664 segments, `pli-tv-kd1` ≈ 3,591). Use `get_sutta`'s pagination instead:
+- `mode="outline"` → a table of contents first (section titles + counts + `group` + segment-ids, no text). Pick the section you need, then fetch just it.
+- `around="<segment_id>"` + `window=N` → read the neighborhood of a search hit (search/survey tools return precise segment_ids like `dn22:18.1`).
+- `segment_range="A..B"` or `offset`+`limit` → fetch one section / page; the `page.next_offset` field paginates.
+
+Counting/structural analyses (occurrences, closing markers, bhāṇavāra boundaries) are valid on whatever you fetch, and `mode="outline"` already gives the structure exactly — no need to download every segment to derive it.
 
 ### Step 4 — Be honest about gaps and uncertainty
 When data is incomplete or a place's modern location is disputed, say so explicitly. Distinguish between:

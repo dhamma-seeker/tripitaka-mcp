@@ -31,7 +31,9 @@ Tools are gated by question shape, not topic. Match what the user is asking agai
 | "How many times does X appear / every place it's mentioned — exhaustive, don't miss any" | `survey_corpus` | Exact total + per-pitaka breakdown + matched word-forms; `mode=thorough` adds concept-level recall |
 | "Best few passages for a word / quick lookup" | `search_by_keyword` | Trigram match — ranked top results for canonical Pāli terms (`appamāda`, `ānāpānassati`) |
 | "Which suttas teach concept Z / discourses about X?" | `search_hybrid` | Combined keyword + semantic via RRF — best for concept landscape |
-| "Show me sutta X in full / quote it" | `get_sutta` | Returns every segment with cross-reference URLs |
+| "Show me sutta X in full / quote it" | `get_sutta` | Returns segments with cross-reference URLs (whole sutta by default; for long ones see below) |
+| "Structure / table of contents / how many sections of sutta X?" | `get_sutta(mode="outline")` | Section titles + counts + ids, **no text** — cheap; don't fetch the whole sutta to derive structure |
+| "Read the context around segment X (e.g. a search hit)" | `get_sutta(around="…", window=N)` | N segments either side of a segment_id — without pulling the whole sutta |
 | "Compare translations of segment X" | `compare_translations` | Side-by-side renderings across editions |
 | "Generate a citation for sutta X" | `get_reference` | Properly formatted academic citation + source URLs |
 | "What does Pāli word X mean?" | `get_word_definition` | Looks up in P. A. Payutto's Thai Buddhist dictionary, PTS, DPPN |
@@ -64,6 +66,16 @@ Every tool response includes a `cross_reference` block with deep links:
 ### Use `limit` deliberately
 
 Default `limit=10` is often too low for surveys. For "list all suttas about X" queries, set `limit=20` for hybrid search (its max) or `limit=30-50` for keyword surveys.
+
+### Don't pull a whole long sutta into context
+
+`get_sutta` returns every segment by default — fine for short suttas, but the big ones are huge (`dn16` ≈ 1,664 segments, `pli-tv-kd1` ≈ 3,591). For those, reach for `get_sutta`'s pagination instead of fetching everything:
+
+- `mode="outline"` — a table of contents (section titles, counts, `group`, segment-ids; no text). See the structure, then fetch one section.
+- `around="<segment_id>"` + `window=N` — read the neighborhood of a search hit without the whole sutta.
+- `segment_range="A..B"` / `offset`+`limit` — fetch one section or page (`page.next_offset` continues).
+
+All of these work in both hosted and local modes (they're core `get_sutta` logic, not server-only).
 
 ### Be honest about gaps
 
