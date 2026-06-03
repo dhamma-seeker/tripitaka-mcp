@@ -303,6 +303,12 @@ text from <code>SuttaCentral bilara-data</code>, and includes clickable
 <code>cross_reference</code> URLs back to the source on every quoted segment. Click through any
 of those to verify the canonical reference yourself.
 </p>
+<p class="intro">
+For a long sutta the assistant doesn't dump the whole thing — it opens the table of contents
+first (<code>get_sutta(…, mode="outline")</code>), then fetches just the section it needs, or the
+segments around a search hit (<code>around="…"</code>). So even DN 16 (1,664 segments) stays a
+precise lookup rather than a context-window flood.
+</p>
 
 <!-- 1. Thematic survey -->
 <article class="case">
