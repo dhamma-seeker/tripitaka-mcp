@@ -28,7 +28,7 @@ Gives AI agents (such as Claude or Cursor) the ability to look up suttas, quote 
 - 📚 **Dictionary Bridge** — built-in dictionary of 20,000+ entries (P. A. Payutto, PTS, DPPN).
 - 📖 **Get Sutta & Reference** — fetch sutta content by ID (e.g. `mn1`, `pli-tv-bu-vb-pj1`, `patthana1.1`) and generate properly formatted academic citations.
 - 🔬 **Pāli word analyzer** — strip inflectional suffixes to find the root form when dictionary lookup misses (`bhikkhūnaṁ` → `bhikkhu`).
-- 🔗 **Cross-reference URLs in every response** — clickable deep links to SuttaCentral (Pāli + Sujato English + segment anchor) plus 84000.org volume routing for Thai users. AI clients can surface these so users verify the source in one click.
+- 🔗 **Cross-reference URLs in every response** — clickable deep links to the project's own bilingual reader (Pāli + English, with a segment anchor that highlights the cited verse) as the primary source, plus SuttaCentral for independent/scholarly verification. AI clients surface these so users verify the source in one click.
 - 📡 **Dual transport** — both legacy SSE (`/sse`) and canonical Streamable HTTP (`/mcp`, MCP spec 2025-03-26).
 - 📦 **MCP Resources** — `tripitaka://structure`, `tripitaka://sutta/{id}`, `tripitaka://word/{w}` for clients that pin context as resources.
 - 📄 **Curated reference pages** at [`/topics/*`](https://mcp.tripitaka-mcp.com/topics/) — six markdown pages covering canon structure, getting-started + tool selection, places (Mahājanapada + holy sites + cosmology), 10 foundational themes with locus classicus, ~30 major figures, and a phase-based timeline of the Buddha's 45-year mission. Sutta IDs verified against live data; AI clients can fetch a page in one shot instead of running 30+ tool calls.

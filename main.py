@@ -127,31 +127,25 @@ def _build_instructions() -> str:
         "window=N)`. For long suttas, use `get_sutta(sutta_id, mode='outline')` "
         "first to see the structure, then fetch one section by `segment_range` "
         "or `offset`/`limit`.\n"
-        + "\n🔗 **Cross-reference URLs (IMPORTANT — always surface in your "
-        "reply as clickable markdown links):**\n"
-        "Every tool response includes a `cross_reference` field with URLs "
-        "to the source material:\n"
-        "• `tripitaka_mcp_reader` — bilingual reader (Pāli + English) on "
-        "the same domain as this MCP server. `url` = full-sutta page; "
-        "`segment_url` = deep-link that highlights and scroll-centres the "
-        "cited segment.\n"
-        "• `suttacentral` — Pāli canonical (Mahāsaṅgīti) + Sujato English "
-        "(`url`, `pali_url`, `english_url`, `segment_url`).\n"
-        "• `tipitaka_84000` — Thai Mahāchula edition "
-        "(homepage + search hint).\n\n"
-        "💡 **URL selection guide:**\n"
-        "- **Primary verification**: `tripitaka_mcp_reader.url` for full "
-        "suttas; use `segment_url` when quoting a specific sentence — the "
-        "page renders the full sutta with highlight + scroll-centre on "
-        "that segment.\n"
-        "- **Canonical secondary** (for scholarship): "
-        "`suttacentral.segment_url`, in case the user wants to verify "
-        "against the Pāli edition.\n"
-        "- **For Thai-speaking users only**: also include "
-        "`tipitaka_84000.url` as a tertiary link — the Mahāchula edition "
-        "has Thai translations but deep-links are volume-level only.\n"
+        + "\n🔗 **Cross-reference URLs — ALWAYS cite your source (hard rule):**\n"
+        "Every tool response includes a `cross_reference` field. In EVERY "
+        "reply that quotes, paraphrases, or summarises canonical text you "
+        "MUST surface the `tripitaka_mcp_reader` link as a clickable markdown "
+        "link — proactively, without being asked. This one-click verification "
+        "is the project's core anti-hallucination guarantee.\n"
+        "• `tripitaka_mcp_reader` — **primary, always include**: bilingual "
+        "reader (Pāli + English) on the same domain as this MCP server. "
+        "`url` = full-sutta page; `segment_url` = deep-link that highlights "
+        "and scroll-centres the cited segment — use `segment_url` when "
+        "quoting a specific sentence, `url` otherwise.\n"
+        "• `suttacentral` — **secondary, on demand only**: surface the "
+        "`suttacentral.segment_url` ONLY when the user is doing "
+        "scholarly/academic work, explicitly asks to verify against an "
+        "independent source, or wants the Pāli edition, parallels, or "
+        "variant readings. For everyday questions the reader link alone is "
+        "enough — do not clutter the reply with a second link.\n"
         "- Always render links as **clickable markdown** so the user can "
-        "verify the source in one click (lowers hallucination risk).\n"
+        "verify the source in one click.\n"
         "\n📚 Data sources:\n"
         "• Pāli canon + English translations: SuttaCentral `bilara-data` "
         "(CC0).\n"
@@ -325,12 +319,15 @@ _TEXT_COLUMN_TO_LANG = {
 # =============================================================================
 # AI client ใช้ URL เหล่านี้แสดงเป็น clickable link ในคำตอบ user — เพื่อให้
 # verify ต้นฉบับได้ทันที (groundability + reduce hallucination).
-# Default = SuttaCentral (Pāli canonical, deep-link ระดับ segment ได้)
-# 84000.org = ฉบับมหาจุฬาฯ ภาษาไทย — ใช้ homepage เพราะ deep-link
-# mapping (SC ID ↔ B/A) ยังไม่มี (ดู PROGRESS.md TODO)
+# Primary = Tripitaka MCP reader (own domain, deep-link ระดับ segment).
+# Secondary = SuttaCentral (Pāli canonical, deep-link ระดับ segment) — surface
+# เฉพาะงานวิชาการ/ขอตรวจสอบ independent (ดู server instructions).
+# 84000.org cross-reference link = ปิดแล้ว (2026-06-04) — deep-link ระดับสูตร
+# ทำไม่ได้ (volume-level เท่านั้น) + Thai search disabled → คุณค่าต่ำ. logic
+# volume-mapping เดิมอยู่ใน git history ถ้าจะกลับมาทำ deep-link Thai. 84000.org
+# ยังคงเป็น upstream data-source attribution ใน server instructions (เครดิต).
 
 SUTTACENTRAL_BASE = "https://suttacentral.net"
-TIPITAKA_84000_BASE = "https://84000.org/tipitaka/"
 
 # Tripitaka MCP own bilingual reader (Pāli + English) — same domain as MCP
 # server, so users can verify quotes without leaving our trust boundary.
@@ -339,86 +336,6 @@ TIPITAKA_84000_BASE = "https://84000.org/tipitaka/"
 TRIPITAKA_READER_BASE = os.getenv(
     "TRIPITAKA_READER_BASE", "https://tripitaka-mcp.com"
 ).rstrip("/")
-
-# Heuristic: nikāya prefix → 84000 volume number (มหาจุฬาฯ 45-volume edition)
-# - Vinaya = vols 1-8
-# - Sutta:  DN = 9-11, MN = 12-14, SN = 15-19, AN = 20-24, KN = 25-33
-# - Abhidhamma = vols 34-45
-# ค่านี้คือ "starting volume" ของแต่ละนิกาย; deep-link sutta-level ต้องการ
-# A= (paragraph offset) ที่เรายังไม่มี mapping → ให้ user landing ที่หน้าเล่มแรก
-# แล้วใช้ search_hint หา sutta เอง
-_NIKAYA_TO_84000_VOL = {
-    "dn": 9,
-    "mn": 12,
-    "sn": 15,
-    "an": 20,
-    # KN sub-books — เริ่มที่ vol 25
-    "kn-kp": 25,
-    "kn-dhp": 25,
-    "kn-ud": 25,
-    "kn-iti": 25,
-    "kn-snp": 25,
-    "kn-vv": 26,
-    "kn-pv": 26,
-    "kn-thag": 26,
-    "kn-thig": 26,
-    "kn-ja": 27,
-    "kn-mnd": 29,
-    "kn-cnd": 30,
-    "kn-ps": 31,
-    "kn-bv": 33,
-    "kn-cp": 33,
-    # KN sub-books แบบ short prefix (sutta_id ใช้ short เช่น "dhp1-20", "snp1.8")
-    "dhp": 25,
-    "ud": 25,
-    "iti": 25,
-    "snp": 25,
-    "vv": 26,
-    "pv": 26,
-    "thag": 26,
-    "thig": 26,
-    "ja": 27,
-    "mnd": 29,
-    "cnd": 30,
-    "ps": 31,
-    "bv": 33,
-    "cp": 33,
-    # Vinaya
-    "vin": 1,
-    "pli-tv": 1,
-    # Abhidhamma — มี active code (segment_count > 0) คู่กับ legacy code (segment_count = 0)
-    # ทั้งสอง map เป็นเล่มเดียวกัน เผื่อ user ส่ง id แบบไหนมาก็ตอบถูก
-    "ds": 34,
-    "vb": 35,
-    "dt": 36,
-    "pp": 36,
-    "kv": 37,
-    "ya": 38,        # active id format (e.g. ya1.1.1)
-    "ym": 38,        # legacy schema alias
-    "patthana": 40,  # active id format (e.g. patthana1.1)
-    "pt": 40,        # legacy schema alias
-    # Apadāna / Buddhavaṃsa subset (ไม่ map ตรงๆ ใน Thai canon — fallback to 33)
-    "tha-ap": 32,
-    "thi-ap": 32,
-}
-
-
-def _parse_nikaya_prefix(sutta_id: str) -> str | None:
-    """ดึง nikāya prefix จาก sutta_id เพื่อหา 84000 volume.
-
-    ตัวอย่าง: mn1 → "mn", dhp1-20 → "dhp", sn56.11 → "sn", tha-ap1 → "tha-ap",
-    mil3.1.1 → "mil" (ไม่อยู่ใน mapping → return None → fallback)
-    """
-    sid = sutta_id.lower()
-    # ลอง match prefix ยาวก่อน (kn-thag ก่อน thag, pli-tv ก่อน pli)
-    for prefix in sorted(_NIKAYA_TO_84000_VOL.keys(), key=len, reverse=True):
-        if sid.startswith(prefix):
-            # ตรวจว่าตัวถัดไปเป็น digit หรือ '-' (กัน match บางส่วนเช่น "dn" match "dn..." แต่ไม่ match "dnnn")
-            rest = sid[len(prefix):]
-            if rest and (rest[0].isdigit() or rest[0] == "-" or rest[0] == "."):
-                return prefix
-    return None
-
 
 def _suttacentral_urls(sutta_id: str, segment_id: str | None = None) -> dict[str, str]:
     """สร้าง URL set ของ SuttaCentral สำหรับ cross-reference.
@@ -440,48 +357,6 @@ def _suttacentral_urls(sutta_id: str, segment_id: str | None = None) -> dict[str
     return urls
 
 
-def _tipitaka_84000_urls(sutta_id: str) -> dict[str, str]:
-    """สร้าง URL set ของ 84000.org (ฉบับมหาจุฬาฯ ภาษาไทย).
-
-    Strategy: heuristic mapping จาก nikāya prefix → starting volume number.
-    user landing ที่หน้าแรกของเล่ม (ไม่ใช่ sutta-level) แล้วใช้ search_hint
-    หา sutta ในเล่ม. เพิ่ม Google site-search URL เป็น fallback ที่แม่นกว่า
-
-    Returns:
-        - url: 84000 volume URL ที่ใกล้สูตรนี้สุด (best-effort)
-        - search_url: Google site-search ของ 84000 ด้วย sutta_id (precise)
-        - note: hint สำหรับ AI client
-    """
-    nikaya_prefix = _parse_nikaya_prefix(sutta_id)
-    volume = _NIKAYA_TO_84000_VOL.get(nikaya_prefix or "")
-
-    google_search = (
-        f"https://www.google.com/search?q=site%3A84000.org+%22{sutta_id}%22"
-    )
-
-    if volume:
-        volume_url = f"https://84000.org/tipitaka/read/r.php?B={volume}&A=1"
-        note = (
-            f"Opens at the start of volume {volume} of the 45-volume "
-            f"Mahāchula edition — scroll or search for the sutta within "
-            f"the volume. Use search_url to query 84000.org directly."
-        )
-        return {
-            "url": volume_url,
-            "search_url": google_search,
-            "note": note,
-        }
-    # Fallback: paracanonical (Mil, Ne, Pe) or IDs outside the volume mapping
-    return {
-        "url": TIPITAKA_84000_BASE,
-        "search_url": google_search,
-        "note": (
-            "This sutta is outside the 45-volume main canon "
-            "(paracanonical) — use search_url to find it on the site."
-        ),
-    }
-
-
 def _tripitaka_reader_urls(
     sutta_id: str, segment_id: str | None = None
 ) -> dict[str, str]:
@@ -501,31 +376,25 @@ def _tripitaka_reader_urls(
 
 
 def _cross_reference_urls(
-    sutta_id: str, segment_id: str | None = None, compact: bool = False
+    sutta_id: str, segment_id: str | None = None
 ) -> dict[str, Any]:
-    """รวม URL จากทุกแหล่งสำหรับ AI client surface ใน response.
+    """รวม URL จากแหล่งอ้างอิงสำหรับ AI client surface ใน response.
 
     Returns dict with:
         - tripitaka_mcp_reader: bilingual reader บนโดเมนเดียวกับ MCP server
-          (preferred verification target — same trust boundary, ไม่พา user
-          ออกไป external)
-        - suttacentral: deep-link set (canonical reference, segment URL)
-        - tipitaka_84000: ฉบับมหาจุฬาฯ ไทย — volume page + Google search
-          fallback (deep-link mapping เป็น heuristic, ใช้ search_url ถ้าไม่ตรง)
+          (primary verification target — same trust boundary, ไม่พา user
+          ออกไป external; client ต้อง surface ทุกครั้ง)
+        - suttacentral: deep-link set (canonical reference, segment URL) —
+          surface เฉพาะงานวิชาการ/ขอตรวจสอบ independent (ดู server instructions)
 
-    compact=True (multi-hit responses: search/survey) — ตัด `note` ของ 84000
-    ที่ยาว ~250 ตัวอักษรและ**ซ้ำเป๊ะทุก hit ของสูตรเดียวกัน** ออก (เป็น advisory
-    เดียวกับที่อยู่ใน server instructions อยู่แล้ว). deep-link สำหรับ verify
-    ยังครบทุกแหล่ง. ลด token boilerplate มากในผลลัพธ์ที่มีหลายสิบ hit.
+    หมายเหตุ: tipitaka_84000 cross-reference link ปิดแล้ว (2026-06-04) —
+    deep-link ระดับสูตรทำไม่ได้ + Thai search disabled → คุณค่าต่ำ.
+    84000.org ยังเป็น upstream data-source attribution ใน server instructions.
     """
-    ref = {
+    return {
         "tripitaka_mcp_reader": _tripitaka_reader_urls(sutta_id, segment_id),
         "suttacentral": _suttacentral_urls(sutta_id, segment_id),
-        "tipitaka_84000": _tipitaka_84000_urls(sutta_id),
     }
-    if compact:
-        ref["tipitaka_84000"].pop("note", None)
-    return ref
 
 
 def _strip_disabled_text_fields(result: dict[str, Any]) -> dict[str, Any]:
@@ -776,7 +645,7 @@ def search_by_keyword(
         return [
             _strip_disabled_text_fields({
                 **r,
-                "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"], compact=True),
+                "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
             })
             for r in results
         ]
@@ -1074,7 +943,7 @@ def _semantic_layer_postgres(cur, query, k, threshold, folded_kw, scope, languag
             **r,
             "distance": round(float(r["distance"]), 4),
             "in_lexical": in_lex,
-            "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"], compact=True),
+            "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
         })
     items = [_strip_disabled_text_fields(it) for it in items]
 
@@ -1249,7 +1118,7 @@ def survey_corpus(
     results = [
         _strip_disabled_text_fields({
             **r,
-            "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"], compact=True),
+            "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
         })
         for r in lex["results"]
     ]
@@ -1841,7 +1710,7 @@ def search_semantic(
         return [
             _strip_disabled_text_fields({
                 **r,
-                "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"], compact=True),
+                "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
             })
             for r in results
         ]
@@ -2027,7 +1896,7 @@ def search_hybrid(
                 row = id_to_row[seg_id]
                 context_row = (row[1], row[2], row[3], row[4], row[5], round(rrf_scores[seg_id], 4))
                 ctx = _build_context(context_row, columns)
-                ctx["cross_reference"] = _cross_reference_urls(ctx["sutta_id"], ctx["segment_id"], compact=True)
+                ctx["cross_reference"] = _cross_reference_urls(ctx["sutta_id"], ctx["segment_id"])
                 results.append(_strip_disabled_text_fields(ctx))
 
         return results
@@ -2081,8 +1950,7 @@ def list_structure() -> dict[str, Any]:
 
     🌐 **Languages:** Returns Pāli + Thai + English labels regardless of
     enabled set (these are metadata, not segment text). Text content
-    follows ENABLED_LANGUAGES. Thai translations aren't loaded yet —
-    Thai users can fall back to the cross_reference 84000.org link.
+    follows ENABLED_LANGUAGES. Thai translations aren't loaded yet.
 
     Returns:
         Hierarchical structure:
@@ -2186,8 +2054,8 @@ def get_reference(
         - segment_count: size of the sutta (segments)
         - citation_format: ready-to-use string, e.g. "The Root of All
           Things (Mūlapariyāyasutta, MN1), Middle Discourses"
-        - cross_reference: SuttaCentral + 84000 URLs for linking in the
-          citation.
+        - cross_reference: Tripitaka MCP reader (primary) + SuttaCentral
+          URLs for linking in the citation.
     """
     try:
         sutta_id = _validate_sutta_id(sutta_id)
