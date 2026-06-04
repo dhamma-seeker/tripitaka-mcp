@@ -28,10 +28,9 @@ This skill packages the proven multi-step workflow for researching Buddhist scri
 
 4. **Translate the user's query to canonical Pāli first.** The server's index is Pāli (with English translations from Bhikkhu Sujato). When the user types Thai or another language, translate the keyword before calling — `"ทุกข์" → "dukkha"`, `"อานาปานสติ" → "ānāpānassati"`, `"การเจริญเมตตา" → "mettābhāvanā"`. The server `instructions` block confirms the enabled languages.
 
-5. **Surface URLs by user language:**
-   - User writing in Thai → emphasize `cross_reference.tipitaka_84000.url` (ฉบับมหาจุฬาฯ) as primary, SuttaCentral as secondary
-   - User writing in English/other → emphasize `cross_reference.suttacentral.english_url` as primary
-   - Always include `segment_url` (deep link) when quoting a specific passage
+5. **Always surface the source link (cite proactively, without being asked):**
+   - **Always include** `cross_reference.tripitaka_mcp_reader` — the bilingual reader (Pāli + English). Use `segment_url` when quoting a specific passage, `url` otherwise.
+   - **On demand only**: add `cross_reference.suttacentral.segment_url` for scholarly work, independent verification, or when the user wants the Pāli edition / parallels.
 
 ## Standard workflow for a research question
 

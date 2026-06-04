@@ -55,13 +55,12 @@ The Pāli Canon is a **closed, verifiable corpus**. Don't recite from training m
 
 If the user asks about *"การเจริญเมตตา"* or *"loving-kindness meditation,"* translate to canonical Pāli (`mettābhāvanā`) **before** calling `search_by_keyword`. The corpus is indexed in Pāli; matching English or Thai keywords against the index will miss the actual content.
 
-### Surface URLs by user language
+### Always surface the source link
 
-Every tool response includes a `cross_reference` block with deep links:
+Every tool response includes a `cross_reference` block with deep links. Cite proactively — without being asked:
 
-- For Thai users → emphasize `cross_reference.tipitaka_84000.url` (ฉบับมหาจุฬาฯ on 84000.org) as the primary citation, SuttaCentral as secondary
-- For English users → emphasize `cross_reference.suttacentral.english_url` as primary
-- Always include `segment_url` (deep link to the specific verse) when quoting a passage
+- **Always include** `cross_reference.tripitaka_mcp_reader` — the project's bilingual reader (Pāli + English). Use `segment_url` when quoting a specific passage (it highlights and scroll-centres the verse), `url` otherwise. This one-click verification is the core anti-hallucination guarantee.
+- **On demand only**: add `cross_reference.suttacentral.segment_url` when the user is doing scholarly/academic work, wants to verify against an independent source, or asks for the Pāli edition / parallels / variant readings. For everyday questions the reader link alone is enough.
 
 ### Use `limit` deliberately
 

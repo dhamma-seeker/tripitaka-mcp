@@ -176,19 +176,27 @@ async def run_suite(client: Client) -> list[tuple[str, bool, str]]:
         f"total={total_kd}",
     )
 
-    # 6b) compact cross_reference: multi-hit (search) ตัด 84000 'note' ออก,
-    #     แต่ get_sutta (single) ยังคง note ไว้
-    kw = await client.call_tool("search_by_keyword", {"keyword": "ariyasacca", "limit": 3})
+    # 6b) cross_reference shape: reader (primary) + suttacentral only;
+    #     tipitaka_84000 ปิดแล้ว (2026-06-04) → ต้องไม่มีในทุก response
+    kw = await client.call_tool("search_by_keyword", {"keyword": "dukkha", "limit": 3})
     kw_payload = json.loads(kw.content[0].text)
     hits = kw_payload.get("result", []) if isinstance(kw_payload, dict) else kw_payload
-    search_no_note = bool(hits) and all(
-        "note" not in h.get("cross_reference", {}).get("tipitaka_84000", {}) for h in hits
-    )
-    gs_has_note = "note" in full16.get("cross_reference", {}).get("tipitaka_84000", {})
+    # keep only real segment hits (drop any "no results" message object)
+    hits = [h for h in hits if "cross_reference" in h]
+
+    def _xref_ok(xref: dict) -> bool:
+        return (
+            "tripitaka_mcp_reader" in xref
+            and "suttacentral" in xref
+            and "tipitaka_84000" not in xref
+        )
+
+    search_xref_ok = bool(hits) and all(_xref_ok(h.get("cross_reference", {})) for h in hits)
+    gs_xref_ok = _xref_ok(full16.get("cross_reference", {}))
     check(
-        "cross_reference: search hits drop 84000 'note', get_sutta keeps it",
-        search_no_note and gs_has_note,
-        f"hits={len(hits)} search_no_note={search_no_note} gs_has_note={gs_has_note}",
+        "cross_reference: reader+suttacentral present, 84000 removed (search + get_sutta)",
+        search_xref_ok and gs_xref_ok,
+        f"hits={len(hits)} search_ok={search_xref_ok} get_sutta_ok={gs_xref_ok}",
     )
 
     # 7) error cases

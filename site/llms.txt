@@ -13,7 +13,7 @@
 
 - 10 MCP tools: hybrid search (trigram + RRF semantic), full-sutta fetch, segment-aligned translation comparison, citation generation, Pāli word lookup against the P. A. Payutto Thai Buddhist dictionary, inflection analyzer.
 - 3 MCP resources: `tripitaka://structure`, `tripitaka://sutta/{id}`, `tripitaka://word/{w}`.
-- Every tool response includes cross-reference URLs back to SuttaCentral and 84000.org for source verification.
+- Every tool response includes cross-reference URLs — the project's own bilingual reader (primary) and SuttaCentral (independent/scholarly) — for one-click source verification.
 
 ## Reference content
 
