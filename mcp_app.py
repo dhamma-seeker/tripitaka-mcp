@@ -126,38 +126,94 @@ _SUTTA_VIEWER_HTML = """<!DOCTYPE html>
     if (targetEl) targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
+  // setStatus (NOT `status` — that collides with the legacy window.status property)
+  window.setStatus = function (msg) {
+    document.getElementById("status").textContent = msg;
+  };
+
+  window.renderResult = function (result) {
+    // tool result arrives as { structuredContent: {...} } (FastMCP dict return)
+    const data = (result && result.structuredContent) || result || {};
+    if (!data.segments) {
+      if (data.error || data.message) window.setStatus("Server: " + (data.error || data.message));
+      return;
+    }
+    render(data);
+    window.setStatus(
+      "Rendered " + data.segments.length + " segments" +
+      (data.truncated ? " (truncated — long sutta)" : "") + "."
+    );
+  };
+
   // render static sample immediately so the iframe is never blank
   render(SAMPLE);
+  window.setStatus("Connecting to host…");
+</script>
 
-  // ── postMessage scaffold (QW1: receive real tool result from host) ────
-  // MCP Apps deliver data through a ui/ JSON-RPC dialect over postMessage.
-  // For the spike we accept any message carrying {segments:[...]} and re-render,
-  // plus echo receipt so the dev preview proves the channel is live.
-  window.addEventListener("message", (event) => {
-    const msg = event && event.data;
-    if (!msg || typeof msg !== "object") return;
-    // tolerate several shapes: raw payload, JSON-RPC result, or _meta-wrapped
-    const payload =
-      (msg.segments && msg) ||
-      (msg.result && msg.result.segments && msg.result) ||
-      (msg.params && msg.params.segments && msg.params) ||
-      null;
-    if (payload) {
-      render(payload);
-      document.getElementById("status").textContent =
-        "Rendered " + (payload.segments.length) + " segments from host data.";
-    }
-  });
+<!-- MCP Apps SDK — receives the tool result from the host and re-renders.
+     Loaded from esm.sh (allowed via the resource CSP). -->
+<script type="module">
+  import { App } from "https://esm.sh/@modelcontextprotocol/ext-apps@1.7.3";
+  try {
+    const app = new App({ name: "Tipiṭaka Sutta Viewer", version: "0.1.0" });
+    app.ontoolresult = (result) => window.renderResult(result);
+    app.onerror = (e) => console.error("MCP App error:", e);
+    await app.connect();
+    window.setStatus("Connected — call open_sutta_viewer to load a sutta.");
+  } catch (e) {
+    console.error("MCP Apps SDK failed to load:", e);
+    window.setStatus("Showing sample (host SDK unavailable in this preview).");
+  }
 </script>
 </body>
 </html>
 """
 
 
-def register_mcp_app_ui(mcp) -> list[str]:
+# จำนวน segment สูงสุดที่ส่งเข้า viewer เมื่อไม่ได้ระบุ around (กัน payload ระเบิด).
+_VIEWER_MAX_SEGMENTS = 80
+
+
+def _to_viewer_payload(sutta: dict, target_segment_id: str | None) -> dict:
+    """แปลงผลจาก get_sutta(...) → shape ที่ UI ใช้: {ref,title,target_segment_id,
+    segments:[{id,pali,en}], total, truncated}."""
+    segs_in = sutta.get("segments") or []
+    truncated = False
+    if target_segment_id is None and len(segs_in) > _VIEWER_MAX_SEGMENTS:
+        segs_in = segs_in[:_VIEWER_MAX_SEGMENTS]
+        truncated = True
+    segments = [
+        {
+            "id": s.get("segment_id", ""),
+            "pali": s.get("text_pali") or "",
+            "en": s.get("text_english") or "",
+        }
+        for s in segs_in
+    ]
+    # title อาจเป็น dict {pali,thai,english} หรือ str → ทำเป็น string เดียวให้ UI
+    raw_title = sutta.get("title")
+    if isinstance(raw_title, dict):
+        parts = [raw_title.get("english"), raw_title.get("pali")]
+        title = " · ".join(p for p in parts if p) or sutta.get("sutta_id", "")
+    else:
+        title = raw_title or sutta.get("sutta_id", "")
+    return {
+        "ref": sutta.get("sutta_id", ""),
+        "title": title,
+        "target_segment_id": target_segment_id,
+        "segments": segments,
+        "total": sutta.get("total_segments", len(segments)),
+        "truncated": truncated,
+    }
+
+
+def register_mcp_app_ui(mcp, get_sutta) -> list[str]:
     """ลงทะเบียน ui:// resource + entry-point tool. คืน list ชื่อสิ่งที่ register
-    (ไว้ log/test). เรียกจาก main.py ต่อเมื่อ `mcp_app_enabled()` เป็น True."""
-    from fastmcp.apps import AppConfig
+    (ไว้ log/test). เรียกจาก main.py ต่อเมื่อ `mcp_app_enabled()` เป็น True.
+
+    `get_sutta` = ฟังก์ชัน get_sutta จาก main (inject เพื่อเลี่ยง circular import).
+    """
+    from fastmcp.apps import AppConfig, ResourceCSP
     from fastmcp.utilities.mime import UI_MIME_TYPE
 
     registered: list[str] = []
@@ -167,6 +223,13 @@ def register_mcp_app_ui(mcp) -> list[str]:
         name="Tipiṭaka sutta viewer",
         description="Inline bilingual (Pāli + English) sutta reader rendered in-chat.",
         mime_type=UI_MIME_TYPE,
+        # CSP: viewer โหลด MCP Apps SDK จาก esm.sh เพื่อรับ tool result จาก host.
+        app=AppConfig(
+            csp=ResourceCSP(
+                resource_domains=["https://esm.sh"],
+                connect_domains=["https://esm.sh"],
+            )
+        ),
     )
     def _sutta_viewer_ui() -> str:
         return _SUTTA_VIEWER_HTML
@@ -183,18 +246,35 @@ def register_mcp_app_ui(mcp) -> list[str]:
             "openWorldHint": False,
         },
     )
-    def open_sutta_viewer() -> dict:
-        """[PoC] Render an interactive bilingual sutta viewer inside the chat.
+    def open_sutta_viewer(
+        sutta_id: str,
+        around: str | None = None,
+        window: int = 12,
+    ) -> dict:
+        """Open an interactive bilingual sutta viewer inside the chat.
 
-        Opens an in-conversation panel showing Pāli and the Bhikkhu Sujato
-        English translation side by side, with the cited segment highlighted.
-        QW0 spike: returns a static sample to prove inline rendering works.
+        Renders Pāli and the Bhikkhu Sujato English translation side by side
+        in an in-conversation panel. Prefer this over dumping raw segments when
+        the user wants to *read* a sutta.
+
+        - `sutta_id` — standard SuttaCentral id, e.g. `sn56.11`, `mn10`, `dn22`.
+        - `around` — a segment_id (e.g. `dn22:18.1`, from a search hit) to centre
+          on; that segment is highlighted and scrolled into view. Use this after
+          a search so the reader lands on the exact cited line.
+        - `window` — segments before/after `around` to include (default 12).
+
+        Without `around`, shows the sutta from the top (capped for long suttas).
         """
-        return {
-            "status": "ok",
-            "ref": "SN 56.11",
-            "note": "MCP App PoC — interactive viewer rendered inline if the host supports MCP Apps.",
-        }
+        sutta = get_sutta(
+            sutta_id,
+            language="all",
+            around=around,
+            window=window,
+        )
+        # get_sutta อาจคืน error dict (เช่น sutta ไม่พบ) — ส่งต่อให้โมเดลเห็น
+        if "segments" not in sutta:
+            return sutta
+        return _to_viewer_payload(sutta, target_segment_id=around)
 
     registered.append("open_sutta_viewer")
     return registered

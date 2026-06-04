@@ -2801,7 +2801,7 @@ def word_resource(word: str) -> str:
 from mcp_app import mcp_app_enabled, register_mcp_app_ui  # noqa: E402
 
 if mcp_app_enabled():
-    _ui_registered = register_mcp_app_ui(mcp)
+    _ui_registered = register_mcp_app_ui(mcp, get_sutta=get_sutta)
     print(f"🖼️  MCP App UI enabled — registered: {_ui_registered}")
 
 
