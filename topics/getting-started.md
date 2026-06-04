@@ -55,12 +55,19 @@ The Pāli Canon is a **closed, verifiable corpus**. Don't recite from training m
 
 If the user asks about *"การเจริญเมตตา"* or *"loving-kindness meditation,"* translate to canonical Pāli (`mettābhāvanā`) **before** calling `search_by_keyword`. The corpus is indexed in Pāli; matching English or Thai keywords against the index will miss the actual content.
 
-### Always surface the source link
+### Always link the reader — every sutta you name
 
-Every tool response includes a `cross_reference` block with deep links. Cite proactively — without being asked:
+Every time you **name** a sutta — quote it, paraphrase it, or merely mention it (e.g. "SN 45.8", "DN 22") — attach its Tripitaka reader link as clickable markdown, proactively. A bare "SN 45.8" with no link is not acceptable. This one-click verification is the core anti-hallucination guarantee.
 
-- **Always include** `cross_reference.tripitaka_mcp_reader` — the project's bilingual reader (Pāli + English). Use `segment_url` when quoting a specific passage (it highlights and scroll-centres the verse), `url` otherwise. This one-click verification is the core anti-hallucination guarantee.
-- **On demand only**: add `cross_reference.suttacentral.segment_url` when the user is doing scholarly/academic work, wants to verify against an independent source, or asks for the Pāli edition / parallels / variant readings. For everyday questions the reader link alone is enough.
+**Reader URL pattern** (use this — don't default to suttacentral.net):
+
+- full sutta → `https://tripitaka-mcp.com/read/<sutta_id>`
+- a segment → `https://tripitaka-mcp.com/read/<sutta_id>#<segment_id>` (highlights + scroll-centres the verse)
+- e.g. SN 45.8 → `https://tripitaka-mcp.com/read/sn45.8`. `sutta_id` is the lowercase canonical id.
+
+When a tool response (search, `get_sutta`, `get_reference`, `get_word_definition`'s `appears_in[]`) includes `cross_reference`, copy `tripitaka_mcp_reader.url` / `.segment_url` verbatim. When you cite a sutta you didn't fetch via a tool, build the reader URL from the pattern — don't fall back to SuttaCentral out of habit.
+
+**SuttaCentral — on demand only**: add `cross_reference.suttacentral` *only* when the user is doing scholarly/academic work, wants independent verification, or asks for the Pāli edition / parallels / variant readings. For everyday questions the reader link alone is enough; don't make SuttaCentral your default.
 
 ### Use `limit` deliberately
 
