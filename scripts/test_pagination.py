@@ -176,8 +176,8 @@ async def run_suite(client: Client) -> list[tuple[str, bool, str]]:
         f"total={total_kd}",
     )
 
-    # 6b) cross_reference shape: reader (primary) + suttacentral only;
-    #     tipitaka_84000 ปิดแล้ว (2026-06-04) → ต้องไม่มีในทุก response
+    # 6b) cross_reference shape: reader-only (is_primary + shows);
+    #     suttacentral + tipitaka_84000 ปิดแล้ว → ต้องไม่มีในทุก response
     kw = await client.call_tool("search_by_keyword", {"keyword": "dukkha", "limit": 3})
     kw_payload = json.loads(kw.content[0].text)
     hits = kw_payload.get("result", []) if isinstance(kw_payload, dict) else kw_payload
@@ -188,9 +188,10 @@ async def run_suite(client: Client) -> list[tuple[str, bool, str]]:
         reader = xref.get("tripitaka_mcp_reader", {})
         return (
             "tripitaka_mcp_reader" in xref
-            and "suttacentral" in xref
+            # reader-only (2026-06-04 รอบ 4): SC + 84000 removed from payload
+            and "suttacentral" not in xref
             and "tipitaka_84000" not in xref
-            # Lever 3 (2026-06-04): reader advertises primacy + bilingual affordance
+            # reader advertises primacy + bilingual affordance
             and reader.get("is_primary") is True
             and bool(reader.get("shows"))
         )
@@ -198,7 +199,7 @@ async def run_suite(client: Client) -> list[tuple[str, bool, str]]:
     search_xref_ok = bool(hits) and all(_xref_ok(h.get("cross_reference", {})) for h in hits)
     gs_xref_ok = _xref_ok(full16.get("cross_reference", {}))
     check(
-        "cross_reference: reader+suttacentral present, 84000 removed (search + get_sutta)",
+        "cross_reference: reader-only (is_primary+shows), SC+84000 removed (search + get_sutta)",
         search_xref_ok and gs_xref_ok,
         f"hits={len(hits)} search_ok={search_xref_ok} get_sutta_ok={gs_xref_ok}",
     )
@@ -215,7 +216,7 @@ async def run_suite(client: Client) -> list[tuple[str, bool, str]]:
         for c in ctx
     )
     check(
-        "get_word_definition: every appears_in context carries reader+SC cross_reference",
+        "get_word_definition: every appears_in context carries reader-only cross_reference",
         wd_ok,
         f"contexts={len(ctx)} all_have_reader_segment_url={wd_ok}",
     )
