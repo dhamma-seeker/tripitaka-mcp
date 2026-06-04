@@ -33,6 +33,9 @@ PROGRESS.md
 CLAUDE.md
 .claude/
 
+# Scratch / throwaway verify scripts + logs (local-only)
+scratch/
+
 # Data files (large files — manage separately if needed)
 # data/*.json
 # data/*.csv
