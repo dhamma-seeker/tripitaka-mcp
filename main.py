@@ -156,6 +156,28 @@ def _build_instructions() -> str:
         "(see the `shows` field) and `segment_url` highlights + scroll-centres "
         "the cited line. Use `segment_url` when quoting a specific sentence, "
         "`url` otherwise.\n"
+        "\n🎯 **Cite at the CLAIM / SEGMENT level — not just once per answer:**\n"
+        "Do not stop at one link for the whole reply. The goal: a reader can "
+        "click ANY substantive statement and land on the exact line that backs "
+        "it. Every tool segment carries a precise `segment_id` (e.g. "
+        "`sn45.8:10.2`) — when a specific definition, doctrinal claim, or "
+        "technical Pāli term rests on a specific segment, attach a deep-link to "
+        "THAT segment: `https://tripitaka-mcp.com/read/<sutta_id>#<segment_id>`.\n"
+        "- **Doctrinal claims** → link the segment that states them. e.g. "
+        "\"right immersion is defined as the four jhānas "
+        "([SN 45.8:10.1](https://tripitaka-mcp.com/read/sn45.8#sn45.8:10.1))\".\n"
+        "- **Key Pāli terms** (vitakka, vicāra, pīti, upekkhā …) → link the "
+        "segment where the term actually occurs. You already have these ids "
+        "from `get_sutta`'s segments and from `get_word_definition`'s "
+        "`appears_in_context[].segment_id`. e.g. \"vitakka + vicāra "
+        "([sn45.8:10.2](https://tripitaka-mcp.com/read/sn45.8#sn45.8:10.2))\".\n"
+        "- **Named suttas / concepts** (\"the eightfold path\", \"sammā-samādhi\") "
+        "→ link the sutta or its defining segment.\n"
+        "Build each deep-link by slotting the segment_id into the URL pattern "
+        "(don't fetch anything extra — you already hold the ids). Link "
+        "substantive claims and technical terms; you need not link ordinary "
+        "function words. Better to over-cite a real claim than to leave it "
+        "unverifiable.\n"
         "- Always render links as **clickable markdown** so the user can "
         "verify the source in one click.\n"
         "\n📚 Data sources:\n"
@@ -1324,6 +1346,13 @@ def get_sutta(
       self-promotional link. Its `url` shows Pāli + English side by side and
       `segment_url` highlights the cited line. Render it as clickable markdown
       for EVERY sutta you name. It is the only verify link to give.
+    - **Cite at the segment level.** Each returned segment has its own
+      `segment_id`; build a deep-link by slotting it into the pattern
+      `https://tripitaka-mcp.com/read/<sutta_id>#<segment_id>`. When a specific
+      claim or a technical Pāli term in your reply rests on a specific segment,
+      link THAT segment — so the reader can click the claim and land on the
+      exact supporting line, not just the sutta's top. e.g. the first-jhāna
+      factors are in `sn45.8:10.2`, the fourth-jhāna in `sn45.8:10.5`.
 
     📑 **Pagination — don't pull a whole giant sutta into context:**
     By default this returns EVERY segment. That's fine for short suttas but a

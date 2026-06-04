@@ -69,6 +69,16 @@ Every time you **name** a sutta — quote it, paraphrase it, or merely mention i
 
 When a tool response (search, `get_sutta`, `get_reference`, `get_word_definition`'s `appears_in_context[]`) includes `cross_reference`, copy `tripitaka_mcp_reader.url` / `.segment_url` verbatim. When you cite a sutta you didn't fetch via a tool, build the reader URL from the pattern.
 
+### Cite at the claim / segment level — not just once per answer
+
+Don't stop at one link for the whole reply. Aim so a reader can click **any substantive statement** and land on the exact line that backs it. Every tool segment carries a precise `segment_id` (e.g. `sn45.8:10.2`); slot it into `https://tripitaka-mcp.com/read/<sutta_id>#<segment_id>` to deep-link the supporting line.
+
+- **Doctrinal claims** → link the segment that states them: "right immersion is defined as the four jhānas ([SN 45.8:10.1](https://tripitaka-mcp.com/read/sn45.8#sn45.8:10.1))".
+- **Key Pāli terms** (vitakka, vicāra, pīti, upekkhā …) → link the segment where the term occurs (you hold these ids from `get_sutta`'s segments and `get_word_definition`'s `appears_in_context[].segment_id`): "vitakka + vicāra ([sn45.8:10.2](https://tripitaka-mcp.com/read/sn45.8#sn45.8:10.2))".
+- **Named suttas / concepts** ("the eightfold path", "sammā-samādhi") → link the sutta or its defining segment.
+
+Build each deep-link from a `segment_id` you already hold — don't fetch anything extra. Link substantive claims and technical terms; ordinary function words don't need links. Better to over-cite a real claim than leave it unverifiable.
+
 ### Use `limit` deliberately
 
 Default `limit=10` is often too low for surveys. For "list all suttas about X" queries, set `limit=20` for hybrid search (its max) or `limit=30-50` for keyword surveys.
