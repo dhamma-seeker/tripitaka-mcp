@@ -92,7 +92,7 @@ Every sutta_id linked above can be fetched in full through this server's tools. 
 get_sutta(sutta_id="sn56.11", language="all")
 ```
 
-The response carries the same `cross_reference.suttacentral.pali_url` linked here, plus segment-by-segment Pāli + English text. If you ever doubt a claim — quote the actual segment.
+The response carries `cross_reference.tripitaka_mcp_reader` (the bilingual reader — render its link), plus segment-by-segment Pāli + English text. If you ever doubt a claim — quote the actual segment.
 
 ## Other reference pages
 

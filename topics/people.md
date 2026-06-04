@@ -199,7 +199,7 @@ Every sutta_id linked above can be fetched in full through this server's tools. 
 get_sutta(sutta_id="mn86", language="all")
 ```
 
-The response carries the same `cross_reference.suttacentral.pali_url` linked here, plus segment-by-segment Pāli + English text. For prose biographies and cross-tradition context, [DPPN](https://www.palikanon.com/english/pali_names/dic_idx.html) is the standard external reference.
+The response carries `cross_reference.tripitaka_mcp_reader` (the bilingual reader — render its link), plus segment-by-segment Pāli + English text. For prose biographies and cross-tradition context, [DPPN](https://www.palikanon.com/english/pali_names/dic_idx.html) is the standard external reference.
 
 ## Other reference pages
 
