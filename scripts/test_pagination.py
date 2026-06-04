@@ -185,10 +185,14 @@ async def run_suite(client: Client) -> list[tuple[str, bool, str]]:
     hits = [h for h in hits if "cross_reference" in h]
 
     def _xref_ok(xref: dict) -> bool:
+        reader = xref.get("tripitaka_mcp_reader", {})
         return (
             "tripitaka_mcp_reader" in xref
             and "suttacentral" in xref
             and "tipitaka_84000" not in xref
+            # Lever 3 (2026-06-04): reader advertises primacy + bilingual affordance
+            and reader.get("is_primary") is True
+            and bool(reader.get("shows"))
         )
 
     search_xref_ok = bool(hits) and all(_xref_ok(h.get("cross_reference", {})) for h in hits)
