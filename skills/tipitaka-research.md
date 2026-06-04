@@ -33,6 +33,11 @@ This skill packages the proven multi-step workflow for researching Buddhist scri
    - Reader URL pattern: full sutta → `https://tripitaka-mcp.com/read/<sutta_id>`, a segment → `https://tripitaka-mcp.com/read/<sutta_id>#<segment_id>`. E.g. SN 45.8 → `https://tripitaka-mcp.com/read/sn45.8`.
    - When a tool response has `cross_reference` (search, `get_sutta`, `get_reference`, `get_word_definition` `appears_in_context[]`), copy `tripitaka_mcp_reader` verbatim. When you cite a sutta you didn't fetch, build the URL from the pattern.
 
+6. **Cite at the claim / segment level — not just once per answer.** Aim so the reader can click any substantive statement and land on the exact supporting line. Each segment has a `segment_id`; slot it into `https://tripitaka-mcp.com/read/<sutta_id>#<segment_id>`.
+   - Doctrinal claims → link the segment stating them: "sammā-samādhi = the four jhānas ([SN 45.8:10.1](https://tripitaka-mcp.com/read/sn45.8#sn45.8:10.1))".
+   - Key Pāli terms (vitakka, vicāra, pīti, upekkhā …) → link the segment where the term occurs (ids come from `get_sutta` segments / `get_word_definition` `appears_in_context[].segment_id`): "vitakka ([sn45.8:10.2](https://tripitaka-mcp.com/read/sn45.8#sn45.8:10.2))".
+   - Build deep-links from ids you already hold — no extra fetch. Link real claims + technical terms, not ordinary words. Over-citing a real claim beats leaving it unverifiable.
+
 ## Standard workflow for a research question
 
 ### Step 0 — Clarify scope when "ทุกอย่าง" / "all" is requested
