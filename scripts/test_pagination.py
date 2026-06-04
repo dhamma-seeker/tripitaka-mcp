@@ -199,6 +199,23 @@ async def run_suite(client: Client) -> list[tuple[str, bool, str]]:
         f"hits={len(hits)} search_ok={search_xref_ok} get_sutta_ok={gs_xref_ok}",
     )
 
+    # 6c) get_word_definition now carries cross_reference per appears_in context
+    #     (Fix A 2026-06-04 — dictionary is a heavily-used entry tool; without
+    #     reader URLs the model fabricated suttacentral.net links from memory)
+    wd = await client.call_tool("get_word_definition", {"word": "dukkha", "limit_context": 3})
+    wd_payload = json.loads(wd.content[0].text)
+    ctx = wd_payload.get("appears_in_context", []) if isinstance(wd_payload, dict) else []
+    wd_ok = bool(ctx) and all(
+        _xref_ok(c.get("cross_reference", {}))
+        and c.get("cross_reference", {}).get("tripitaka_mcp_reader", {}).get("segment_url")
+        for c in ctx
+    )
+    check(
+        "get_word_definition: every appears_in context carries reader+SC cross_reference",
+        wd_ok,
+        f"contexts={len(ctx)} all_have_reader_segment_url={wd_ok}",
+    )
+
     # 7) error cases
     e_around = await call(client, sutta_id=DN22, around="dn22:9999.9")
     e_multi = await call(client, sutta_id=DN22, around=anchor, offset=5)
