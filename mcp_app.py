@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import os
 
+from pydantic import BaseModel
+
 # ──────────────────────────────────────────────────────────────────────────
 # ui:// resource URIs
 # ──────────────────────────────────────────────────────────────────────────
@@ -40,22 +42,45 @@ from mcp_app_viewer_html import VIEWER_HTML as _SUTTA_VIEWER_HTML
 _VIEWER_MAX_SEGMENTS = 80
 
 
-def _to_viewer_payload(sutta: dict, target_segment_id: str | None) -> dict:
+class SegmentTranslation(BaseModel):
+    """คำแปล 1 segment ในภาษาของผู้ใช้ — สร้างโดย AI ฝั่ง client ระหว่างบทสนทนา.
+
+    หลักการ: DB เก็บเฉพาะบาลี + อังกฤษ (แก่นต้นฉบับ) — คำแปลภาษาที่สามเป็นของ
+    ชั่วคราวประจำบทสนทนา ไม่ persist. viewer แสดงบาลี+อังกฤษเหนือคำแปลเสมอ
+    เพื่อให้ผู้ใช้ตรวจสอบได้ทุกบรรทัด.
+    """
+
+    segment_id: str
+    text: str
+
+
+def _to_viewer_payload(
+    sutta: dict,
+    target_segment_id: str | None,
+    translations: list["SegmentTranslation"] | None = None,
+    translation_language: str | None = None,
+    translation_disclaimer: str | None = None,
+) -> dict:
     """แปลงผลจาก get_sutta(...) → shape ที่ UI ใช้: {ref,title,target_segment_id,
-    segments:[{id,pali,en}], total, truncated}."""
+    segments:[{id,pali,en,tr?}], total, truncated, translation_language?, ...}."""
     segs_in = sutta.get("segments") or []
     truncated = False
     if target_segment_id is None and len(segs_in) > _VIEWER_MAX_SEGMENTS:
         segs_in = segs_in[:_VIEWER_MAX_SEGMENTS]
         truncated = True
-    segments = [
-        {
-            "id": s.get("segment_id", ""),
+    # คำแปลผูกกับ segment ที่แสดงจริงเท่านั้น — id แปลกถูกทิ้ง (รายงานผ่าน dropped)
+    tr_map = {t.segment_id: t.text for t in (translations or [])}
+    segments = []
+    for s in segs_in:
+        seg_id = s.get("segment_id", "")
+        seg = {
+            "id": seg_id,
             "pali": s.get("text_pali") or "",
             "en": s.get("text_english") or "",
         }
-        for s in segs_in
-    ]
+        if seg_id in tr_map:
+            seg["tr"] = tr_map.pop(seg_id)
+        segments.append(seg)
     # title อาจเป็น dict {pali,thai,english} หรือ str → ทำเป็น string เดียวให้ UI
     raw_title = sutta.get("title")
     if isinstance(raw_title, dict):
@@ -63,7 +88,7 @@ def _to_viewer_payload(sutta: dict, target_segment_id: str | None) -> dict:
         title = " · ".join(p for p in parts if p) or sutta.get("sutta_id", "")
     else:
         title = raw_title or sutta.get("sutta_id", "")
-    return {
+    payload = {
         "ref": sutta.get("sutta_id", ""),
         "title": title,
         "target_segment_id": target_segment_id,
@@ -71,6 +96,14 @@ def _to_viewer_payload(sutta: dict, target_segment_id: str | None) -> dict:
         "total": sutta.get("total_segments", len(segments)),
         "truncated": truncated,
     }
+    if translation_language:
+        payload["translation_language"] = translation_language
+    if translation_disclaimer:
+        payload["translation_disclaimer"] = translation_disclaimer
+    if tr_map:
+        # คำแปลที่ไม่ match segment ใดที่แสดง — บอกโมเดลให้รู้ว่าหล่นเพราะอะไร
+        payload["translations_dropped"] = sorted(tr_map.keys())
+    return payload
 
 
 def register_mcp_app_ui(mcp, get_sutta) -> list[str]:
@@ -111,18 +144,45 @@ def register_mcp_app_ui(mcp, get_sutta) -> list[str]:
         sutta_id: str,
         around: str | None = None,
         window: int = 12,
+        translations: list[SegmentTranslation] | None = None,
+        translation_language: str | None = None,
+        translation_disclaimer: str | None = None,
     ) -> dict:
-        """Open an interactive bilingual sutta viewer inside the chat.
+        """Open an interactive sutta viewer inside the chat — Pāli + English,
+        plus an optional third row in the user's own language translated BY YOU.
 
-        Renders Pāli and the Bhikkhu Sujato English translation side by side
-        in an in-conversation panel. Prefer this over dumping raw segments when
-        the user wants to *read* a sutta.
+        Renders each segment as: Pāli on top (canonical), the Bhikkhu Sujato
+        English below it (verification anchor), and — when you supply
+        `translations` — your translation in the user's language, clearly
+        badged as AI-generated. Prefer this over dumping raw segments when the
+        user wants to *read* a sutta.
 
         - `sutta_id` — standard SuttaCentral id, e.g. `sn56.11`, `mn10`, `dn22`.
         - `around` — a segment_id (e.g. `dn22:18.1`, from a search hit) to centre
           on; that segment is highlighted and scrolled into view. Use this after
           a search so the reader lands on the exact cited line.
         - `window` — segments before/after `around` to include (default 12).
+
+        🌐 **Translating for the user (important):** when the conversation
+        language is neither English nor Pāli, you SHOULD translate the displayed
+        segments and pass them via `translations` so the user reads in their own
+        language while still seeing the originals:
+        1. Fetch the segments first (`get_sutta` with the same selector) so you
+           have the exact Pāli + English text.
+        2. Translate **from the Pāli as the source, using the English as a
+           semantic guide** — never relay-translate from English alone. Preserve
+           untranslatable doctrinal terms (dukkha, jhāna, taṇhā…) as loanwords
+           with a brief gloss instead of forcing equivalents.
+        3. Call this tool with `translations=[{segment_id, text}, ...]` covering
+           ONLY the segments being displayed (never a whole long sutta),
+           `translation_language` (BCP-47, e.g. "th", "es"), and
+           `translation_disclaimer` — one short line IN THE USER'S LANGUAGE
+           saying the translation is AI-generated in this conversation and
+           should be checked against the Pāli/English above.
+        Translations are conversation-ephemeral: nothing is stored server-side;
+        the canon stays Pāli + English only. Translations whose segment_id is
+        not in the displayed window are dropped (reported in
+        `translations_dropped`).
 
         Without `around`, shows the sutta from the top (capped for long suttas).
         """
@@ -135,7 +195,13 @@ def register_mcp_app_ui(mcp, get_sutta) -> list[str]:
         # get_sutta อาจคืน error dict (เช่น sutta ไม่พบ) — ส่งต่อให้โมเดลเห็น
         if "segments" not in sutta:
             return sutta
-        return _to_viewer_payload(sutta, target_segment_id=around)
+        return _to_viewer_payload(
+            sutta,
+            target_segment_id=around,
+            translations=translations,
+            translation_language=translation_language,
+            translation_disclaimer=translation_disclaimer,
+        )
 
     registered.append("open_sutta_viewer")
     return registered
