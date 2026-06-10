@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tipiṭaka — Sutta Viewer</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px;
+    font: 15px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: transparent;
+  }
+  .header { margin-bottom: 12px; }
+  .header .ref { font-size: 13px; opacity: 0.6; letter-spacing: 0.03em; }
+  .header .title { font-size: 18px; font-weight: 600; margin-top: 2px; }
+  .seg {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    padding: 8px 10px; border-radius: 8px;
+    border-left: 3px solid transparent;
+  }
+  .seg + .seg { margin-top: 2px; }
+  .seg:hover { background: rgba(127,127,127,0.07); }
+  .seg.target {
+    background: rgba(214,158,46,0.14);
+    border-left-color: #d69e2e;
+  }
+  .pali { font-style: italic; }
+  .en { opacity: 0.92; }
+  .seg .sid { grid-column: 1 / -1; font-size: 11px; opacity: 0.4; margin-bottom: 2px; }
+  @media (max-width: 560px) { .seg { grid-template-columns: 1fr; gap: 4px; } }
+  .poc-note {
+    margin-top: 16px; padding: 8px 12px; border-radius: 8px;
+    background: rgba(127,127,127,0.08); font-size: 12px; opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="ref" id="ref"></div>
+    <div class="title" id="title"></div>
+  </div>
+  <div id="segments"></div>
+  <div class="poc-note" id="status">Loading…</div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

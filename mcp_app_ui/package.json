@@ -1,0 +1,17 @@
+{
+  "name": "tripitaka-mcp-app-ui",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Build for the ui:// sutta viewer — bundles the MCP Apps SDK into one self-contained HTML, then embeds it as a generated Python module (no CDN at runtime, offline-capable).",
+  "type": "module",
+  "scripts": {
+    "build": "vite build && node embed.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "1.7.3"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0",
+    "vite-plugin-singlefile": "^2.0.0"
+  }
+}

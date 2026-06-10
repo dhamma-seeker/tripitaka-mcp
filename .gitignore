@@ -36,6 +36,10 @@ CLAUDE.md
 # Scratch / throwaway verify scripts + logs (local-only)
 scratch/
 
+# MCP App UI build (mcp_app_viewer_html.py = committed artifact; these are not)
+mcp_app_ui/node_modules/
+mcp_app_ui/dist/
+
 # Data files (large files — manage separately if needed)
 # data/*.json
 # data/*.csv
