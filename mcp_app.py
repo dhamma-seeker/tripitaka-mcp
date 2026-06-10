@@ -151,10 +151,15 @@ _SUTTA_VIEWER_HTML = """<!DOCTYPE html>
 </script>
 
 <!-- MCP Apps SDK — receives the tool result from the host and re-renders.
-     Loaded from esm.sh (allowed via the resource CSP). -->
+     Loaded from esm.sh (allowed via the resource CSP).
+     NOTE: must be the `/app-with-deps` entry — the bare entry resolves zod v4
+     through esm.sh to a broken module ("t.custom is not a function") and the
+     import dies. Dynamic import keeps that failure catchable. -->
 <script type="module">
-  import { App } from "https://esm.sh/@modelcontextprotocol/ext-apps@1.7.3";
   try {
+    const { App } = await import(
+      "https://esm.sh/@modelcontextprotocol/ext-apps@1.7.3/app-with-deps"
+    );
     const app = new App({ name: "Tipiṭaka Sutta Viewer", version: "0.1.0" });
     app.ontoolresult = (result) => window.renderResult(result);
     app.onerror = (e) => console.error("MCP App error:", e);
