@@ -76,6 +76,8 @@ services:
       MCP_TRANSPORT: ${MCP_TRANSPORT:-sse}
       MCP_HOST: ${MCP_HOST:-127.0.0.1}
       MCP_PORT: ${MCP_PORT:-8080}
+      # MCP Apps (interactive sutta viewer) — opt-in ผ่าน .env, default ปิด
+      TRIPITAKA_MCP_APP: ${TRIPITAKA_MCP_APP:-false}
     # expose เฉพาะ internal — ให้ reverse proxy เข้าถึง
     expose:
       - "8080"
@@ -128,6 +130,8 @@ services:
       MCP_TRANSPORT: streamable-http
       MCP_HOST: 0.0.0.0
       MCP_PORT: "8080"
+      # MCP Apps (interactive sutta viewer) — opt-in ผ่าน .env, default ปิด
+      TRIPITAKA_MCP_APP: ${TRIPITAKA_MCP_APP:-false}
     expose:
       - "8080"
     volumes:
