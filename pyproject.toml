@@ -51,7 +51,7 @@ Install = "https://tripitaka-mcp.com/install/"
 # โครงสร้าง flat layout — ไม่ย้ายไฟล์ (กัน Docker entrypoint กระทบ).
 # pipx แยก venv ให้ → top-level module ไม่ชนกับอะไร.
 [tool.setuptools]
-py-modules = ["main", "cli"]
+py-modules = ["main", "cli", "mcp_app", "mcp_app_viewer_html"]
 
 [tool.setuptools.packages.find]
 include = ["db*", "embedding*"]
