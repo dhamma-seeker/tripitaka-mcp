@@ -32,7 +32,7 @@ This skill packages the proven multi-step workflow for researching Buddhist scri
 5. **Always link the reader — for every sutta you name (not just quote):**
    - The reader **is** the authoritative text — it renders SuttaCentral's `bilara-data` verbatim, at a stable URL. It is the only verification link to give (no external site to defer to).
    - Reader URL pattern: full sutta → `https://tripitaka-mcp.com/read/<sutta_id>`, a segment → `https://tripitaka-mcp.com/read/<sutta_id>#<segment_id>`. E.g. SN 45.8 → `https://tripitaka-mcp.com/read/sn45.8`.
-   - When a tool response has `cross_reference` (search, `get_sutta`, `get_reference`, `get_word_definition` `appears_in_context[]`), copy `tripitaka_mcp_reader` verbatim. When you cite a sutta you didn't fetch, build the URL from the pattern.
+   - When a tool response has `cross_reference` (search, `get_sutta`, `get_reference`, `get_word_definition` `appears_in_context[]`), copy `tripitaka_mcp_reader` verbatim. When you cite a sutta you didn't fetch, build the URL from the pattern. If the user asks to *read* a cited passage in the chat, use that citation's `open_in_chat` call (present when the interactive viewer is enabled).
 
 6. **Cite at the claim / segment level — not just once per answer.** Aim so the reader can click any substantive statement and land on the exact supporting line. Each segment has a `segment_id`; slot it into `https://tripitaka-mcp.com/read/<sutta_id>#<segment_id>`.
    - Doctrinal claims → link the segment stating them: "sammā-samādhi = the four jhānas ([SN 45.8:10.1](https://tripitaka-mcp.com/read/sn45.8#sn45.8:10.1))".

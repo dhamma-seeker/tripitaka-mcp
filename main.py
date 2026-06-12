@@ -156,6 +156,12 @@ def _build_instructions() -> str:
         "(see the `shows` field) and `segment_url` highlights + scroll-centres "
         "the cited line. Use `segment_url` when quoting a specific sentence, "
         "`url` otherwise.\n"
+        "• Two ways to open a citation — links are for VERIFYING in the "
+        "browser; when the user instead asks to READ a cited passage here in "
+        "the chat (\"open it\", \"show me that one\"), use the ready-made call "
+        "in that citation's `cross_reference.tripitaka_mcp_reader.open_in_chat` "
+        "(present when the interactive viewer is enabled) — it opens the "
+        "in-chat viewer at the exact cited segment.\n"
         "\n🎯 **Cite at the CLAIM / SEGMENT level — not just once per answer:**\n"
         "Do not stop at one link for the whole reply. The goal: a reader can "
         "click ANY substantive statement and land on the exact line that backs "
@@ -394,6 +400,21 @@ def _tripitaka_reader_urls(
     urls: dict[str, Any] = {"url": base, "is_primary": True, "shows": shows}
     if segment_id:
         urls["segment_url"] = f"{base}#{segment_id}"
+    # Two-Door (2026-06-12): แนบ "สูตรเรียก viewer" ให้โมเดลถือไว้คู่ทุก citation —
+    # ผู้ใช้พูดถึง ref ไหนแล้วอยากอ่านในแชท โมเดลเรียกได้เป๊ะโดยไม่ต้องเดา/ค้นใหม่.
+    # gate ด้วย flag: ห้ามโฆษณา tool ที่ไม่ได้ register (local default ปิด).
+    from mcp_app import mcp_app_enabled  # lazy — ตาม Dual-Backend Discipline #5
+
+    if mcp_app_enabled():
+        call = f"open_sutta_viewer(sutta_id='{sutta_id}'"
+        if segment_id:
+            call += f", around='{segment_id}'"
+        call += ")"
+        urls["open_in_chat"] = (
+            f"{call} — when the user wants to READ this passage here in the "
+            "chat (instead of following the browser link), call this to render "
+            "it as an interactive panel at the exact cited segment."
+        )
     return urls
 
 
@@ -2801,7 +2822,9 @@ def word_resource(word: str) -> str:
 from mcp_app import mcp_app_enabled, register_mcp_app_ui  # noqa: E402
 
 if mcp_app_enabled():
-    _ui_registered = register_mcp_app_ui(mcp, get_sutta=get_sutta)
+    _ui_registered = register_mcp_app_ui(
+        mcp, get_sutta=get_sutta, reader_base=TRIPITAKA_READER_BASE
+    )
     print(f"🖼️  MCP App UI enabled — registered: {_ui_registered}")
 
 

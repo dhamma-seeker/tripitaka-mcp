@@ -150,10 +150,26 @@ function renderFooter() {
   }
 }
 
+function renderHeaderActions() {
+  const box = document.getElementById("header-actions");
+  box.innerHTML = "";
+  const url = state.data.reader_url;
+  if (!url || !state.app) return;
+  // Two-Door ประตู B: ออกไป reader เต็มบนเบราว์เซอร์ — host เด้ง dialog
+  // ยืนยันก่อนเปิดลิงก์เอง (พฤติกรรม built-in ของ openLink)
+  const btn = el("button", "tr-btn", "Open in reader ↗");
+  btn.title = url;
+  btn.addEventListener("click", () => {
+    state.app.openLink({ url }).catch((e) => console.error("openLink failed:", e));
+  });
+  box.appendChild(btn);
+}
+
 function renderAll() {
   const d = state.data;
   document.getElementById("ref").textContent = d.ref || "";
   document.getElementById("title").textContent = d.title || "";
+  renderHeaderActions();
   renderChips();
   renderSegments();
   renderFooter();
