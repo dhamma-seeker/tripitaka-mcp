@@ -18,6 +18,7 @@ This skill packages the proven multi-step workflow for researching Buddhist scri
    - "Best few passages for a word / quick keyword lookup" → `search_by_keyword` (trigram, ranked)
    - "Which suttas teach concept Y / discourses about topic Z?" → `search_hybrid` (RRF = keyword + semantic)
    - "Show me sutta X in full" → `get_sutta`
+   - The user wants to *read* a sutta and the host renders MCP Apps → `open_sutta_viewer` (interactive Pāli+English panel inline; highlight a segment with `around`; for non-English conversations attach your translation of the displayed segments via `translations`/`translation_language`/localized `translation_disclaimer`)
    - "What's the structure / table of contents / how many sections of sutta X?" → `get_sutta(sutta_id, mode="outline")` (section titles + counts, no text — cheap; don't fetch the whole sutta and parse it yourself)
    - "Read the context around this segment" → `get_sutta(sutta_id, around="<segment_id>", window=N)` (search tools hand you the segment_id)
    - "Compare translations of segment X" → `compare_translations`

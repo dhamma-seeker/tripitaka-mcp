@@ -78,7 +78,7 @@ which npx
 }
 ```
 
-**3.** Quit Claude Desktop completely (`⌘Q` on macOS, tray → Quit on Windows) and reopen. The 🔌 indicator in the bottom-left should show `tripitaka` with 11 tools available.
+**3.** Quit Claude Desktop completely (`⌘Q` on macOS, tray → Quit on Windows) and reopen. The 🔌 indicator in the bottom-left should show `tripitaka` with 12 tools available.
 
 > _First connection takes 5–10 seconds_ while `npx` downloads `mcp-remote` on demand — give Claude Desktop a moment after restart before assuming it failed.
 
@@ -124,7 +124,7 @@ Both serve the same ~444K-segment canon. The differences:
 
 | | Hosted (`mcp.tripitaka-mcp.com`) | Local (`pipx`) |
 |---|---|---|
-| Tools | all 11 | 9 — no `search_semantic` / `search_hybrid` |
+| Tools | all 12 | 9 (10 with `TRIPITAKA_MCP_APP=1`) — no `search_semantic` / `search_hybrid` |
 | Concept / semantic search | ✅ vector search (pgvector) | ❌ — use `search_by_keyword` instead |
 | Keyword search | PostgreSQL trigram — fuzzy, typo-tolerant, similarity-ranked | SQLite FTS5 — whole-word / token match; **results and ranking can differ** from hosted |
 | Canon data | always current | a snapshot from when you ran `init` — re-run `tripitaka-mcp init` to refresh |
@@ -270,7 +270,7 @@ cp skills/tipitaka-research.md ~/.claude/skills/
 
 Details in [`skills/README.md`](./skills/README.md).
 
-## 📦 MCP Tools (11 total)
+## 📦 MCP Tools (12 total)
 
 | Tool | Description |
 |---|---|
@@ -279,6 +279,7 @@ Details in [`skills/README.md`](./skills/README.md).
 | `survey_corpus` | **Exhaustive** corpus survey — exact total + per-pitaka breakdown + the matched word-forms, for "how many times / every place X appears" (coverage, not just best matches). `mode=thorough` adds concept-level semantic recall. |
 | `search_semantic` | Pure vector similarity — usually you want `search_hybrid` instead. |
 | `get_sutta` | Fetch a sutta by ID (e.g. `mn1`, `dn22`, `dhp1-20`) with cross-reference URLs. Whole sutta by default; for long ones use `mode="outline"` (table of contents, no text), `around="<segment_id>"`+`window` (context around a hit), or `segment_range`/`offset`+`limit` to fetch just a slice. |
+| `open_sutta_viewer` | **Interactive sutta viewer (MCP Apps)** — renders the sutta inline in the chat as Pāli + English side by side, with the cited segment highlighted. The calling model can attach an AI translation of the displayed segments into the user's own language (`translations` param) as a clearly-badged third row — the canon itself stays Pāli + English. Requires an MCP Apps-capable host (Claude, Claude Desktop, VS Code Copilot, …); other hosts get a graceful text fallback. |
 | `get_reference` | Generate a properly formatted academic citation with all source URLs. |
 | `compare_translations` | Compare renderings of a single segment across editions. |
 | `list_structure` | Show the Tipiṭaka structure with segment-count coverage per nikāya. |
@@ -301,7 +302,7 @@ Upgrading to a Pāli-trained embedding model (e.g. bge-m3) plus embedding the Th
 
 ```text
 tripitaka-mcp/
-├── main.py                       # Main MCP Server (11 tools + 3 resources)
+├── main.py                       # Main MCP Server (12 tools + 3 resources)
 ├── db/
 │   ├── connection.py             # Database connection pool
 │   └── schema.py                 # Schema (supports translation table)

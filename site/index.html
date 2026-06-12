@@ -393,13 +393,14 @@ footer p { margin: 0.5rem 0; }
 </section>
 
 <h2 id="what-it-does">What it does</h2>
-<p>The server exposes <strong>11 tools and 3 resources</strong> over MCP. Your AI agent can:</p>
+<p>The server exposes <strong>12 tools and 3 resources</strong> over MCP. Your AI agent can:</p>
 <ul>
 <li>Search the canon by keyword (trigram), meaning (vector), or both (RRF hybrid)</li>
 <li>Fetch any sutta — in full, as a table of contents (<code>mode="outline"</code>), or just the segments around a search hit — with a cross-reference URL to the project's own bilingual reader. Even the longest sutta (DN 16, 1,664 segments) stays usable without flooding the context window</li>
 <li>Compare translations side-by-side, segment-aligned across editions</li>
 <li>Resolve Pāli words against P. A. Payutto's dictionary, PTS, and DPPN — including inflected forms</li>
 <li>Cite any line back to the bilingual reader with <code>/read/{sutta_id}#{segment_id}</code> — the page opens with the line highlighted and scroll-centered (try <a href="/read/sn56.11#sn56.11:2.4">SN 56.11 segment 2.4</a>)</li>
+<li><strong>Open an interactive sutta viewer right inside the chat</strong> (MCP Apps) — Pāli and English side by side with the cited segment highlighted, plus an optional AI-translated third row in your own language, clearly badged and always verifiable against the originals. Works in MCP Apps-capable hosts such as Claude (web/desktop/mobile) and VS Code Copilot; other clients receive a regular text response</li>
 </ul>
 
 <h2>Coverage</h2>
@@ -456,7 +457,7 @@ footer p { margin: 0.5rem 0; }
     }
   }
 }</code></pre>
-<p><strong>3.</strong> Quit Claude Desktop completely (<kbd>⌘Q</kbd> / right-click tray → Quit), then reopen. The 🔌 indicator in the bottom-left should show <code>tripitaka</code> connected with 11 tools available.</p>
+<p><strong>3.</strong> Quit Claude Desktop completely (<kbd>⌘Q</kbd> / right-click tray → Quit), then reopen. The 🔌 indicator in the bottom-left should show <code>tripitaka</code> connected with 12 tools available.</p>
 <p><em>First connection takes 5–10 seconds</em> while <code>npx</code> downloads <code>mcp-remote</code> on demand — give Claude Desktop a moment after restart before assuming it failed. The repo's <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/claude_desktop_config.example.json">annotated example config</a> covers stdio (local install) and both remote transports.</p>
 
 <h3>Other MCP clients</h3>

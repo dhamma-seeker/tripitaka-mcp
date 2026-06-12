@@ -244,7 +244,7 @@ a:hover { color: var(--accent-dark); }
 <img class="brand-mark" src="/favicon-192.png" width="96" height="96" alt="Tripitaka MCP logo — folded hands over a dhammacakka in pixel art">
 <h1>Install in 1 click</h1>
 <p class="lead">Pick your AI client below. Each one connects to <code>mcp.tripitaka-mcp.com/mcp</code> — no API key, no signup, completely free.</p>
-<p class="endpoint-summary">11 tools · ~444K Pāli segments at parity with SuttaCentral · offered as <em>Dhamma Dāna</em></p>
+<p class="endpoint-summary">12 tools · ~444K Pāli segments at parity with SuttaCentral · offered as <em>Dhamma Dāna</em></p>
 </header>
 
 <section class="install-clients" aria-label="Install for your AI client">
@@ -321,7 +321,7 @@ a:hover { color: var(--accent-dark); }
 
 </div>
 
-<p class="local-note">Serves 9 of the 11 tools — everything except <code>search_semantic</code> and <code>search_hybrid</code>, which need the hosted server's vector database (<code>survey_corpus</code> works locally in lexical-only mode; <code>get_sutta</code>'s outline / <code>around</code> / pagination work fully offline too). Keyword search uses SQLite full-text (diacritic-insensitive) — it ranks results a little differently from the hosted trigram search, and the local database is a snapshot, so re-run <code>tripitaka-mcp init</code> to refresh it. Full hosted-vs-local comparison is in the <a href="https://github.com/dhamma-seeker/tripitaka-mcp">README</a>. Package on <a href="https://pypi.org/project/tripitaka-mcp/">PyPI</a> — works with any MCP client, and pairs with a local model (e.g. Ollama) for a fully offline AI stack.</p>
+<p class="local-note">Serves 9 of the 12 tools by default — everything except <code>search_semantic</code> / <code>search_hybrid</code> (which need the hosted server's vector database) and the interactive sutta viewer <code>open_sutta_viewer</code>, which is opt-in: set <code>TRIPITAKA_MCP_APP=1</code> in the server's env to enable it (fully offline — the viewer UI is bundled, no CDN) (<code>survey_corpus</code> works locally in lexical-only mode; <code>get_sutta</code>'s outline / <code>around</code> / pagination work fully offline too). Keyword search uses SQLite full-text (diacritic-insensitive) — it ranks results a little differently from the hosted trigram search, and the local database is a snapshot, so re-run <code>tripitaka-mcp init</code> to refresh it. Full hosted-vs-local comparison is in the <a href="https://github.com/dhamma-seeker/tripitaka-mcp">README</a>. Package on <a href="https://pypi.org/project/tripitaka-mcp/">PyPI</a> — works with any MCP client, and pairs with a local model (e.g. Ollama) for a fully offline AI stack.</p>
 </section>
 
 <details class="install-help">
