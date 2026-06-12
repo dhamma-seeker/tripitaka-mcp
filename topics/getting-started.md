@@ -4,7 +4,7 @@ A practical guide for AI clients (Claude Desktop, Cline, Cursor, etc.) and human
 
 ## What this server does
 
-The Tripitaka MCP server exposes **11 tools and 3 resources** giving an AI assistant first-class access to the Pāli Tipiṭaka — the foundational scripture of Theravāda Buddhism. The corpus loaded here is at parity with [SuttaCentral's bilara-data](https://github.com/suttacentral/bilara-data):
+The Tripitaka MCP server exposes **12 tools and 3 resources** giving an AI assistant first-class access to the Pāli Tipiṭaka — the foundational scripture of Theravāda Buddhism. The corpus loaded here is at parity with [SuttaCentral's bilara-data](https://github.com/suttacentral/bilara-data):
 
 - **Sutta Piṭaka** (~284K segments) — Pāli + Bhikkhu Sujato English
 - **Vinaya Piṭaka** (~71K segments) — Pāli + Bhikkhu Brahmali English
@@ -32,6 +32,7 @@ Tools are gated by question shape, not topic. Match what the user is asking agai
 | "Best few passages for a word / quick lookup" | `search_by_keyword` | Trigram match — ranked top results for canonical Pāli terms (`appamāda`, `ānāpānassati`) |
 | "Which suttas teach concept Z / discourses about X?" | `search_hybrid` | Combined keyword + semantic via RRF — best for concept landscape |
 | "Show me sutta X in full / quote it" | `get_sutta` | Returns segments with cross-reference URLs (whole sutta by default; for long ones see below) |
+| "The user wants to *read* a sutta" (host supports MCP Apps) | `open_sutta_viewer` | Renders an interactive Pāli + English panel inline in the chat, highlighting the cited segment. If the conversation language is neither English nor Pāli, translate the displayed segments (from the Pāli, guided by the English) and pass them via `translations` + `translation_language` + a localized `translation_disclaimer` — the viewer shows them as a clearly-badged third row |
 | "Structure / table of contents / how many sections of sutta X?" | `get_sutta(mode="outline")` | Section titles + counts + ids, **no text** — cheap; don't fetch the whole sutta to derive structure |
 | "Read the context around segment X (e.g. a search hit)" | `get_sutta(around="…", window=N)` | N segments either side of a segment_id — without pulling the whole sutta |
 | "Compare translations of segment X" | `compare_translations` | Side-by-side renderings across editions |

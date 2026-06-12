@@ -70,7 +70,7 @@ The client must be **fully quit and reopened** — closing the window is not eno
 
 ### Step 4: Verify
 
-After restart, the client's MCP indicator (🔌 in Claude Desktop's bottom-left) should show `tripitaka` connected with **11 tools** and **3 resources**.
+After restart, the client's MCP indicator (🔌 in Claude Desktop's bottom-left) should show `tripitaka` connected with **12 tools** and **3 resources**.
 
 > First-run takes 5–10 seconds while `npx` downloads the `mcp-remote` package on demand. Subsequent restarts are instant.
 
@@ -124,7 +124,7 @@ Then add this to the client's MCP config (no `npx`, no `mcp-remote`):
 }
 ```
 
-The local edition serves 9 of the 11 tools (everything except `search_semantic` / `search_hybrid`, which need the hosted server's vector database — `survey_corpus` works locally in lexical-only mode). Keyword search uses SQLite FTS5 and is diacritic-insensitive.
+The local edition serves 9 of the 12 tools by default (everything except `search_semantic` / `search_hybrid`, which need the hosted server's vector database — `survey_corpus` works locally in lexical-only mode). The interactive sutta viewer `open_sutta_viewer` is opt-in for local installs: add `"TRIPITAKA_MCP_APP": "1"` to the server's `env` block to enable it — it is fully offline (the viewer UI ships inside the package, no CDN). Keyword search uses SQLite FTS5 and is diacritic-insensitive.
 
 ## Self-host the full hosted stack (only if user asks)
 
