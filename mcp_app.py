@@ -60,6 +60,7 @@ def _to_viewer_payload(
     translations: list["SegmentTranslation"] | None = None,
     translation_language: str | None = None,
     translation_disclaimer: str | None = None,
+    reader_base: str | None = None,
 ) -> dict:
     """แปลงผลจาก get_sutta(...) → shape ที่ UI ใช้: {ref,title,target_segment_id,
     segments:[{id,pali,en,tr?}], total, truncated, translation_language?, ...}."""
@@ -96,6 +97,12 @@ def _to_viewer_payload(
         "total": sutta.get("total_segments", len(segments)),
         "truncated": truncated,
     }
+    # Two-Door ประตู B: ลิงก์ออกไป reader เต็มบนเบราว์เซอร์ (ปุ่มใน viewer header)
+    if reader_base:
+        sutta_id = sutta.get("sutta_id", "")
+        payload["reader_url"] = f"{reader_base}/read/{sutta_id}" + (
+            f"#{target_segment_id}" if target_segment_id else ""
+        )
     if translation_language:
         payload["translation_language"] = translation_language
     if translation_disclaimer:
@@ -120,11 +127,12 @@ def _to_viewer_payload(
     return payload
 
 
-def register_mcp_app_ui(mcp, get_sutta) -> list[str]:
+def register_mcp_app_ui(mcp, get_sutta, reader_base: str | None = None) -> list[str]:
     """ลงทะเบียน ui:// resource + entry-point tool. คืน list ชื่อสิ่งที่ register
     (ไว้ log/test). เรียกจาก main.py ต่อเมื่อ `mcp_app_enabled()` เป็น True.
 
     `get_sutta` = ฟังก์ชัน get_sutta จาก main (inject เพื่อเลี่ยง circular import).
+    `reader_base` = base URL ของ bilingual reader (ปุ่ม "Open in reader" ใน viewer).
     """
     from fastmcp.apps import AppConfig
     from fastmcp.utilities.mime import UI_MIME_TYPE
@@ -218,6 +226,7 @@ def register_mcp_app_ui(mcp, get_sutta) -> list[str]:
             translations=translations,
             translation_language=translation_language,
             translation_disclaimer=translation_disclaimer,
+            reader_base=reader_base,
         )
 
     registered.append("open_sutta_viewer")

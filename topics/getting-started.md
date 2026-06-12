@@ -68,7 +68,7 @@ Every time you **name** a sutta — quote it, paraphrase it, or merely mention i
 - a segment → `https://tripitaka-mcp.com/read/<sutta_id>#<segment_id>` (highlights + scroll-centres the verse)
 - e.g. SN 45.8 → `https://tripitaka-mcp.com/read/sn45.8`. `sutta_id` is the lowercase canonical id.
 
-When a tool response (search, `get_sutta`, `get_reference`, `get_word_definition`'s `appears_in_context[]`) includes `cross_reference`, copy `tripitaka_mcp_reader.url` / `.segment_url` verbatim. When you cite a sutta you didn't fetch via a tool, build the reader URL from the pattern.
+When a tool response (search, `get_sutta`, `get_reference`, `get_word_definition`'s `appears_in_context[]`) includes `cross_reference`, copy `tripitaka_mcp_reader.url` / `.segment_url` verbatim. When you cite a sutta you didn't fetch via a tool, build the reader URL from the pattern. Links are for *verifying* in the browser — when the user asks to *read* a cited passage in the chat, use the ready-made call in `cross_reference.tripitaka_mcp_reader.open_in_chat` (present when the interactive viewer is enabled) to open the in-chat viewer at that exact segment.
 
 ### Cite at the claim / segment level — not just once per answer
 
