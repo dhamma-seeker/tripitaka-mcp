@@ -103,6 +103,20 @@ def _to_viewer_payload(
     if tr_map:
         # คำแปลที่ไม่ match segment ใดที่แสดง — บอกโมเดลให้รู้ว่าหล่นเพราะอะไร
         payload["translations_dropped"] = sorted(tr_map.keys())
+    if not translations:
+        # payload-level steering (บทเรียน: hint ใน result ที่โมเดลอ่านทันที >
+        # docstring ที่อ่านผ่านตอน list tools) — จับ case โมเดลเรียก viewer
+        # ก่อน get_sutta แล้วไม่มีข้อความให้แปล (พบจริง: Fable 5 + คำถามญี่ปุ่น)
+        payload["translation_hint"] = (
+            "The viewer is currently showing Pali + English only. If the "
+            "user's conversation language is NOT English or Pali, translate "
+            "the segments above (from the Pali, guided by the English) and "
+            "call open_sutta_viewer AGAIN with the same selector plus "
+            "translations=[{segment_id, text}, ...], translation_language "
+            "(BCP-47), and a one-line translation_disclaimer in the user's "
+            "language. The segments in this result give you the exact text "
+            "to translate."
+        )
     return payload
 
 
@@ -168,7 +182,10 @@ def register_mcp_app_ui(mcp, get_sutta) -> list[str]:
         segments and pass them via `translations` so the user reads in their own
         language while still seeing the originals:
         1. Fetch the segments first (`get_sutta` with the same selector) so you
-           have the exact Pāli + English text.
+           have the exact Pāli + English text. (Already called this tool without
+           translations? The result contains the segments — translate them and
+           call this tool AGAIN with the same selector plus `translations` to
+           upgrade the view.)
         2. Translate **from the Pāli as the source, using the English as a
            semantic guide** — never relay-translate from English alone. Preserve
            untranslatable doctrinal terms (dukkha, jhāna, taṇhā…) as loanwords

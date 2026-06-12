@@ -129,10 +129,21 @@ function renderFooter() {
   const d = state.data;
   const foot = document.getElementById("footer");
   const hasTr = (d.segments || []).some((s) => s.tr);
+  foot.innerHTML = "";
   if (hasTr && state.view === "tri") {
     foot.textContent =
       d.translation_disclaimer ||
       "AI-translated in this conversation — not an official translation. Verify against the Pāli and English above.";
+    foot.style.display = "";
+  } else if (!hasTr && state.app) {
+    // ไม่มีคำแปลเลย (โมเดลเรียก viewer แบบ bilingual) — ให้ผู้ใช้กดขอแปลเองได้
+    const label = el("span", "tr-missing-label",
+      "Reading in another language?");
+    const btn = el("button", "tr-btn", "Translate to my language ↗");
+    btn.addEventListener("click", requestTranslation);
+    const wrap = el("div", "footer-translate");
+    wrap.append(label, btn);
+    foot.appendChild(wrap);
     foot.style.display = "";
   } else {
     foot.style.display = "none";
