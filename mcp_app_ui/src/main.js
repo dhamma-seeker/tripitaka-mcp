@@ -28,6 +28,7 @@ const state = {
   data: SAMPLE,
   view: "bi",        // "tri" | "bi" | "pali" | "en"
   app: null,
+  loading: false,    // true while callServerTool load-more is in flight
 };
 
 function autonym(code) {
@@ -125,29 +126,69 @@ function renderSegments() {
   if (targetEl) targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+async function loadMoreSegments() {
+  if (state.loading || !state.app || state.data.next_offset == null) return;
+  state.loading = true;
+  renderAll(); // disable button immediately
+  try {
+    const result = await state.app.callServerTool({
+      name: "open_sutta_viewer",
+      arguments: { sutta_id: state.data.ref, offset: state.data.next_offset },
+    });
+    if (result && !result.isError) {
+      renderResult(result);
+    } else {
+      setStatus("Could not load more segments.");
+    }
+  } catch (e) {
+    console.error("callServerTool failed:", e);
+    setStatus("Could not load more segments.");
+  } finally {
+    state.loading = false;
+    renderAll();
+  }
+}
+
 function renderFooter() {
   const d = state.data;
   const foot = document.getElementById("footer");
   const hasTr = (d.segments || []).some((s) => s.tr);
   foot.innerHTML = "";
+  let hasContent = false;
+
   if (hasTr && state.view === "tri") {
-    foot.textContent =
+    const disc = el("div", null,
       d.translation_disclaimer ||
-      "AI-translated in this conversation — not an official translation. Verify against the Pāli and English above.";
-    foot.style.display = "";
+      "AI-translated in this conversation — not an official translation. Verify against the Pāli and English above.");
+    foot.appendChild(disc);
+    hasContent = true;
   } else if (!hasTr && state.app) {
     // ไม่มีคำแปลเลย (โมเดลเรียก viewer แบบ bilingual) — ให้ผู้ใช้กดขอแปลเองได้
-    const label = el("span", "tr-missing-label",
-      "Reading in another language?");
+    const label = el("span", "tr-missing-label", "Reading in another language?");
     const btn = el("button", "tr-btn", "Translate to my language ↗");
     btn.addEventListener("click", requestTranslation);
     const wrap = el("div", "footer-translate");
     wrap.append(label, btn);
     foot.appendChild(wrap);
-    foot.style.display = "";
-  } else {
-    foot.style.display = "none";
+    hasContent = true;
   }
+
+  if (d.next_offset != null && state.app) {
+    const total = d.total || 0;
+    const shown = (d.segments || []).length;
+    const label = el("span", "tr-missing-label",
+      `Showing ${shown} of ${total} segments.`);
+    const btn = el("button", "tr-btn",
+      state.loading ? "Loading…" : "Load more ↓");
+    if (state.loading) btn.disabled = true;
+    btn.addEventListener("click", loadMoreSegments);
+    const wrap = el("div", "footer-translate");
+    wrap.append(label, btn);
+    foot.appendChild(wrap);
+    hasContent = true;
+  }
+
+  foot.style.display = hasContent ? "" : "none";
 }
 
 function renderHeaderActions() {
@@ -177,20 +218,43 @@ function renderAll() {
 
 function renderResult(result) {
   // tool result arrives as { structuredContent: {...} } (FastMCP dict return)
+  // or directly as the data dict (callServerTool direct call)
   const data = (result && result.structuredContent) || result || {};
   if (!data.segments) {
     if (data.error || data.message) setStatus("Server: " + (data.error || data.message));
+    state.loading = false;
     return;
   }
+
+  // Append mode: same sutta, offset > 0 (viewer-initiated load-more)
+  const isAppend = (data.offset > 0) && state.data && (data.ref === state.data.ref);
+  if (isAppend) {
+    state.data = {
+      ...state.data,
+      segments: [...state.data.segments, ...data.segments],
+      next_offset: data.next_offset,
+      truncated: data.next_offset != null,
+    };
+    state.loading = false;
+    renderAll();
+    const total = state.data.total || 0;
+    const shown = state.data.segments.length;
+    setStatus(`Loaded ${shown}${total > shown ? "/" + total : ""} segments.`);
+    return;
+  }
+
+  // Replace mode: new sutta or offset=0
   state.data = data;
+  state.loading = false;
   state.userPickedView = false;
   state.view = data.segments.some((s) => s.tr) ? "tri" : "bi";
   renderAll();
   const trCount = data.segments.filter((s) => s.tr).length;
+  const shown = data.segments.length;
+  const total = data.total || shown;
   setStatus(
-    "Rendered " + data.segments.length + " segments" +
-    (trCount ? ` (${trCount} translated)` : "") +
-    (data.truncated ? " — truncated, long sutta" : "") + "."
+    `Rendered ${shown}${total > shown ? "/" + total : ""} segments` +
+    (trCount ? ` (${trCount} translated)` : "") + "."
   );
 }
 

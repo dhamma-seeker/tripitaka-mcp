@@ -61,12 +61,18 @@ def _to_viewer_payload(
     translation_language: str | None = None,
     translation_disclaimer: str | None = None,
     reader_base: str | None = None,
+    page: dict | None = None,
 ) -> dict:
     """แปลงผลจาก get_sutta(...) → shape ที่ UI ใช้: {ref,title,target_segment_id,
-    segments:[{id,pali,en,tr?}], total, truncated, translation_language?, ...}."""
+    segments:[{id,pali,en,tr?}], total, offset?, next_offset?, ...}.
+
+    `page` — ส่งมาจาก get_sutta(..., limit=...) เมื่อใช้ offset paging; เมื่อมี
+    จะเพิ่ม `offset` + `next_offset` ใน payload แทนการ cap แบบเดิม.
+    เมื่อไม่มี (around mode หรือ full-sutta fetch) ยังคง cap ด้วย _VIEWER_MAX_SEGMENTS.
+    """
     segs_in = sutta.get("segments") or []
     truncated = False
-    if target_segment_id is None and len(segs_in) > _VIEWER_MAX_SEGMENTS:
+    if target_segment_id is None and page is None and len(segs_in) > _VIEWER_MAX_SEGMENTS:
         segs_in = segs_in[:_VIEWER_MAX_SEGMENTS]
         truncated = True
     # คำแปลผูกกับ segment ที่แสดงจริงเท่านั้น — id แปลกถูกทิ้ง (รายงานผ่าน dropped)
@@ -95,8 +101,11 @@ def _to_viewer_payload(
         "target_segment_id": target_segment_id,
         "segments": segments,
         "total": sutta.get("total_segments", len(segments)),
-        "truncated": truncated,
+        "truncated": truncated or (page is not None and page.get("has_more", False)),
     }
+    if page is not None:
+        payload["offset"] = page.get("offset", 0)
+        payload["next_offset"] = page.get("next_offset")  # null = no more pages
     # Two-Door ประตู B: ลิงก์ออกไป reader เต็มบนเบราว์เซอร์ (ปุ่มใน viewer header)
     if reader_base:
         sutta_id = sutta.get("sutta_id", "")
@@ -165,6 +174,7 @@ def register_mcp_app_ui(mcp, get_sutta, reader_base: str | None = None) -> list[
     def open_sutta_viewer(
         sutta_id: str,
         around: str | None = None,
+        offset: int = 0,
         window: int = 12,
         translations: list[SegmentTranslation] | None = None,
         translation_language: str | None = None,
@@ -183,6 +193,8 @@ def register_mcp_app_ui(mcp, get_sutta, reader_base: str | None = None) -> list[
         - `around` — a segment_id (e.g. `dn22:18.1`, from a search hit) to centre
           on; that segment is highlighted and scrolled into view. Use this after
           a search so the reader lands on the exact cited line.
+        - `offset` — 0-based segment index for paging long suttas (use
+          `next_offset` from the previous result). Do NOT combine with `around`.
         - `window` — segments before/after `around` to include (default 12).
 
         🌐 **Translating for the user (important):** when the conversation
@@ -211,12 +223,14 @@ def register_mcp_app_ui(mcp, get_sutta, reader_base: str | None = None) -> list[
 
         Without `around`, shows the sutta from the top (capped for long suttas).
         """
-        sutta = get_sutta(
-            sutta_id,
-            language="all",
-            around=around,
-            window=window,
-        )
+        if around is not None:
+            sutta = get_sutta(sutta_id, language="all", around=around, window=window)
+            page = None
+        else:
+            sutta = get_sutta(
+                sutta_id, language="all", offset=offset, limit=_VIEWER_MAX_SEGMENTS
+            )
+            page = sutta.get("page")
         # get_sutta อาจคืน error dict (เช่น sutta ไม่พบ) — ส่งต่อให้โมเดลเห็น
         if "segments" not in sutta:
             return sutta
@@ -227,6 +241,7 @@ def register_mcp_app_ui(mcp, get_sutta, reader_base: str | None = None) -> list[
             translation_language=translation_language,
             translation_disclaimer=translation_disclaimer,
             reader_base=reader_base,
+            page=page,
         )
 
     registered.append("open_sutta_viewer")
