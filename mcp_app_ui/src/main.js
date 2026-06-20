@@ -103,7 +103,16 @@ function renderSegments() {
   for (const s of d.segments || []) {
     const div = el("div", "seg" + (s.id === target ? " target" : ""));
     div.appendChild(el("div", "sid", s.id || ""));
-    if (state.view !== "en") div.appendChild(el("div", "pali", s.pali || ""));
+    if (state.view !== "en") {
+      const paliDiv = el("div", "pali", s.pali || "");
+      paliDiv.title = "Double-click a word to look up";
+      paliDiv.addEventListener("dblclick", (e) => {
+        const sel = window.getSelection();
+        const word = sel ? sel.toString().trim() : "";
+        if (word) lookupWord(word, e.clientX, e.clientY);
+      });
+      div.appendChild(paliDiv);
+    }
     if (state.view !== "pali") div.appendChild(el("div", "en", s.en || ""));
     if (state.view === "tri") {
       if (s.tr) {
@@ -146,6 +155,127 @@ async function loadMoreSegments() {
   } finally {
     state.loading = false;
     renderAll();
+  }
+}
+
+// ── Dictionary popover ──────────────────────────────────────────────────────
+
+function stripWord(text) {
+  return text.replace(/^[^a-zA-ZÀ-ɏḀ-ỿ]+|[^a-zA-ZÀ-ɏḀ-ỿ]+$/g, "");
+}
+
+function closePopover() {
+  const p = document.getElementById("dict-popover");
+  if (p) p.remove();
+}
+
+function showPopover({ word, stem, definitions, suffixes, stems, notFound, error, loading }, x, y) {
+  closePopover();
+  const pop = document.createElement("div");
+  pop.id = "dict-popover";
+  pop.className = "dict-popover";
+
+  // clamp to viewport so it doesn't overflow the iframe edges
+  const pw = Math.min(360, window.innerWidth - 20);
+  let left = x + 14;
+  if (left + pw > window.innerWidth - 8) left = x - pw - 14;
+  let top = y - 18;
+  if (top < 8) top = 8;
+  pop.style.left = Math.max(8, left) + "px";
+  pop.style.top = top + "px";
+  pop.style.width = pw + "px";
+
+  // header: headword (stem preferred over raw lookup) + optional ← original + close
+  const hdr = el("div", "dict-hdr");
+  hdr.appendChild(el("span", "dict-hw", stem && stem !== word ? stem : word));
+  if (stem && stem !== word) {
+    hdr.appendChild(el("span", "dict-stem-note", ` ← ${word}`));
+  }
+  const closeBtn = el("button", "dict-close", "×");
+  closeBtn.setAttribute("aria-label", "Close");
+  closeBtn.addEventListener("click", closePopover);
+  hdr.appendChild(closeBtn);
+  pop.appendChild(hdr);
+
+  // body
+  const body = el("div", "dict-body");
+  if (loading) {
+    body.appendChild(el("div", "dict-msg", "Looking up…"));
+  } else if (error) {
+    body.appendChild(el("div", "dict-msg dict-err", "Lookup failed."));
+  } else if (notFound) {
+    body.appendChild(el("div", "dict-msg", `No definition found for "${word}".`));
+  } else if (definitions && definitions.length > 0) {
+    for (const def of definitions.slice(0, 3)) {
+      const dEl = el("div", "dict-def");
+      if (def.source) dEl.appendChild(el("span", "dict-src", def.source.toUpperCase()));
+      const txtEl = el("div", "dict-txt");
+      txtEl.textContent = def.text || "";
+      dEl.appendChild(txtEl);
+      body.appendChild(dEl);
+    }
+  }
+  if (suffixes && suffixes.length > 0) {
+    const morph = el("div", "dict-morph");
+    morph.appendChild(el("span", "dict-morph-label", "Suffix: "));
+    morph.appendChild(document.createTextNode("-" + suffixes[0]));
+    if (stems && stems.length > 1) {
+      const clean = stems.filter((s) => s.length > 2).slice(0, 4);
+      morph.appendChild(el("span", "dict-morph-label", " · Stems: "));
+      morph.appendChild(document.createTextNode(clean.join(", ")));
+    }
+    body.appendChild(morph);
+  }
+  pop.appendChild(body);
+  document.body.appendChild(pop);
+}
+
+async function lookupWord(word, x, y) {
+  if (!state.app) return;
+  const clean = stripWord(word);
+  if (!clean || clean.length < 2) return;
+
+  showPopover({ word: clean, loading: true }, x, y);
+
+  try {
+    const r1 = await state.app.callServerTool({
+      name: "get_word_definition",
+      arguments: { word: clean, language: "en", limit_context: 0 },
+    });
+    const d1 = (r1 && r1.structuredContent) || r1 || {};
+
+    if (!d1.definitions || d1.definitions.length === 0) {
+      // no direct hit → parse inflection → try first stem
+      const rp = await state.app.callServerTool({
+        name: "parse_pali_word",
+        arguments: { word: clean },
+      });
+      const dp = (rp && rp.structuredContent) || rp || {};
+      const stemCandidates = (dp.possible_stems || []).filter((s) => s !== clean && s.length > 2);
+
+      if (stemCandidates.length > 0) {
+        const r2 = await state.app.callServerTool({
+          name: "get_word_definition",
+          arguments: { word: stemCandidates[0], language: "en", limit_context: 0 },
+        });
+        const d2 = (r2 && r2.structuredContent) || r2 || {};
+        showPopover({
+          word: clean,
+          stem: d2.word || stemCandidates[0],
+          definitions: d2.definitions || [],
+          suffixes: dp.matched_suffixes_removed,
+          stems: dp.possible_stems,
+          notFound: !d2.definitions || d2.definitions.length === 0,
+        }, x, y);
+      } else {
+        showPopover({ word: clean, notFound: true }, x, y);
+      }
+    } else {
+      showPopover({ word: clean, definitions: d1.definitions }, x, y);
+    }
+  } catch (e) {
+    console.error("lookupWord failed:", e);
+    showPopover({ word: clean, error: true }, x, y);
   }
 }
 
@@ -257,6 +387,13 @@ function renderResult(result) {
     (trCount ? ` (${trCount} translated)` : "") + "."
   );
 }
+
+// one-time global listeners: Escape closes popover, click outside closes popover
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePopover(); });
+document.addEventListener("click", (e) => {
+  const pop = document.getElementById("dict-popover");
+  if (pop && !pop.contains(e.target)) closePopover();
+});
 
 renderAll();
 setStatus("Connecting to host…");
