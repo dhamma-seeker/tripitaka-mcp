@@ -1,0 +1,25 @@
+{
+  "$schema": "https://glama.ai/mcp/schemas/server.json",
+  "name": "tripitaka-mcp",
+  "title": "Tripitaka MCP",
+  "description": "MCP server for the full Pāli Canon (Tipiṭaka) — ~444K segments at parity with SuttaCentral. Hybrid search (trigram+vector), full-sutta fetch with cross-reference URLs, segment-aligned translation comparison, and Pāli word lookup. Free hosted instance or self-hostable via Docker.",
+  "repository": "https://github.com/dhamma-seeker/tripitaka-mcp",
+  "homepage": "https://tripitaka-mcp.com",
+  "license": "MIT",
+  "language": "Python",
+  "runtime": "python",
+  "transport": ["http", "sse", "stdio"],
+  "maintainers": ["dhamma-seeker"],
+  "tags": [
+    "buddhism",
+    "pali-canon",
+    "tipitaka",
+    "sutta",
+    "research",
+    "translation",
+    "search",
+    "citation",
+    "dhamma"
+  ],
+  "categories": ["research", "knowledge-memory"]
+}
