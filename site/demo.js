@@ -50,25 +50,25 @@
       toolArgs: 'query="worry · anxiety · present moment"',
       statuses: ['scanning…', 'matching vectors…', '3 passages found'],
       toolDur: 3.8,
-      dur: 17,
-      type: 'narrative',
-      sections: [
-        {
-          heading: '1. Most of your pain is a second arrow — and you fired that one yourself.',
-          body: 'SN 36.6 — the untrained person, touched by pain, adds mental anguish on top. The trained person feels only the first: "one feeling — physical, not mental." The hours you spend rehearsing the worry in your head are the second arrow — and that one is optional.'
-        },
-        {
-          heading: '2. Worry has no home in the present.',
-          verse: "Don't run back to the past,\ndon't anticipate the future.\nWhat's past is left behind;\nthe future has not arrived.",
-          body: 'MN 131 — worry is always either re-chewing something finished or pre-living something not yet real. The cure is not to suppress it but to keep seeing the one thing that is real: this present moment.'
-        },
-        {
-          heading: 'The practical anchor — how you actually come back.',
-          body: 'MN 118 — when worry pulls the mind into the future, return to the breath: a long breath known as long, a short breath known as short. Not once — thousands of times. That repetition is the practice.'
-        }
-      ],
-      chips: ['SN 36.6', 'MN 131', 'MN 118'],
-      answer: 'When the mind is gripped by constant worry, the Buddha\'s guidance isn\'t "force yourself to stop." It\'s to see clearly how the mind manufactures its own suffering, then train it to put the extra weight down.'
+      dur: 30,
+      type: 'chat',
+      html:
+        '<div class="mcd-cp">When the mind is gripped by constant worry, the Buddha\'s guidance isn\'t "force yourself to stop." It\'s to see clearly <em>how</em> the mind manufactures its own suffering, then train it to put the extra weight down. Two teachings sit at the center of this.</div>' +
+        '<div class="mcd-ch3">1. Most of your pain is a second arrow — and you fired that one yourself.</div>' +
+        '<div class="mcd-cp">In the Sallatha Sutta (SN 36.6, <em>"The Dart"</em>), the Buddha describes someone struck by an arrow, who is then struck by a <em>second</em> arrow in the same wound. The first arrow is the actual painful thing: a loss, an uncertainty, an unpleasant feeling. Life delivers that one, and often you can\'t avoid it. The second arrow is everything the mind piles on top — the resisting, the dread, the rehearsing of disaster.</div>' +
+        '<div class="mcd-cp">He says the untrained person, touched by painful feeling, sorrows and laments and "falls into confusion," and so feels <em>two</em> feelings, bodily and mental. The trained person feels only the first: "one feeling — physical, not mental."</div>' +
+        '<div class="mcd-cp">Worry is almost entirely the second arrow. The thing you fear (the test result, the deadline, the conversation) is the first arrow, and it has a real, finite size. The hours spent rehearsing it in your head are the second arrow — and that one is optional. The practice begins the moment you catch yourself reaching for it, and choose not to.</div>' +
+        '<div class="mcd-ch3">2. Worry has no home in the present. It lives in a past that\'s gone and a future that hasn\'t come.</div>' +
+        '<div class="mcd-cp">This is the Bhaddekaratta Sutta (MN 131, <em>"One Fine Night"</em>). The core verse:</div>' +
+        '<div class="mcd-cverse">Don\'t run back to the past,<br>don\'t anticipate the future.<br>What\'s past is left behind,<br>the future has not arrived;<br>and any present phenomenon<br>you clearly discern in every case.</div>' +
+        '<div class="mcd-cp">Notice the structure of worry: it is always either <em>re-chewing</em> something already finished, or <em>pre-living</em> something not yet real. The Buddha\'s point is that neither actually exists right now — they exist only as thoughts the mind is generating. The cure is not to suppress them but to keep clearly seeing the one thing that is real: this present moment.</div>' +
+        '<div class="mcd-ch3">The practical anchor — how you actually come back.</div>' +
+        '<div class="mcd-cp">Seeing the present is a skill, and the standard training tool is mindfulness of breathing (<em>ānāpānasati</em>), set out in the Ānāpānasati Sutta (MN 118) and the Satipaṭṭhāna Sutta (MN 10, the foundational text on mindfulness). The instruction is plain: when worry pulls the mind into the future, bring attention to the physical sensation of breathing — a long breath known as long, a short breath known as short. You don\'t control it; you just <em>know</em> it. Each time the mind bolts back to the story, you notice, and gently return to the breath. Not once — thousands of times. That repetition <em>is</em> the practice. You\'re not trying to win an argument with the worry; you\'re training the mind to release it and rest where it\'s safe.</div>' +
+        '<div class="mcd-ch3">One honest note.</div>' +
+        '<div class="mcd-cp">This reframes worry and slowly retrains the mind, but it\'s a practice, not a switch — it works through repetition over time, not a single insight. And if your worry is severe enough to feel constant and overwhelming, the Dhamma sits well <em>alongside</em> professional support, not in place of it; the two don\'t conflict.</div>' +
+        '<div class="mcd-cp" style="margin-bottom:6px">If it would help, I can open either sutta in a reader panel right here so you can sit with the full passage.</div>' +
+        '<div class="mcd-csrcs"><span class="mcd-chip">SN 36.6</span><span class="mcd-chip">MN 131</span><span class="mcd-chip">MN 118</span><span class="mcd-chip">MN 10</span></div>',
+      answer: ''
     },
     {
       tab: 'survey_corpus',
@@ -259,6 +259,20 @@
       '.mcd-nverse{border-left:2px solid var(--d-acc);padding:5px 10px;margin:4px 0 5px;' +
         'font-size:12px;font-style:italic;color:var(--d-fg2);line-height:1.6;' +
         'background:var(--d-hbg);border-radius:0 4px 4px 0}' +
+      // chat response
+      '.mcd-chatbox{flex:999 1 0;min-height:0;overflow-y:auto;padding:4px 16px 12px;' +
+        'scrollbar-width:thin;scrollbar-color:var(--d-brd) transparent}' +
+      '.mcd-chatbox::-webkit-scrollbar{width:4px}' +
+      '.mcd-chatbox::-webkit-scrollbar-thumb{background:var(--d-brd);border-radius:2px}' +
+      '.mcd-cp{font-size:13px;line-height:1.65;color:var(--d-fg2);margin:0 0 10px;letter-spacing:-.01em}' +
+      '.mcd-cp em{font-style:italic;color:var(--d-fg)}' +
+      '.mcd-ch3{font-size:13.5px;font-weight:600;color:var(--d-fg);margin:16px 0 5px;line-height:1.38}' +
+      '.mcd-ch3:first-child{margin-top:2px}' +
+      '.mcd-cverse{border-left:2px solid var(--d-acc);padding:7px 12px;margin:4px 0 10px;' +
+        'font-size:12.5px;font-style:italic;color:var(--d-fg2);line-height:1.7;' +
+        'background:var(--d-hbg);border-radius:0 4px 4px 0}' +
+      '.mcd-csrcs{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;padding-top:10px;' +
+        'border-top:1px solid var(--d-brd)}' +
       // answer
       '.mcd-spacer{flex:1}' +
       '.mcd-ans{display:flex;gap:10px;align-items:flex-start}' +
@@ -308,6 +322,8 @@
     this._anims = [];
     this._chipEls = [];
     this._builtTab = -1;
+    this._chatEl = null;
+    this._scrollLocked = false;
     this._d = null;
   }
 
@@ -424,9 +440,18 @@
     this._builtTab = this.tab;
     this._anims = [];
     this._chipEls = [];
+
+    // Clean up chat overlay from previous scene
+    if (this._chatEl && this._chatEl.parentNode) {
+      this._chatEl.parentNode.removeChild(this._chatEl);
+      this._chatEl = null;
+    }
+    this._scrollLocked = false;
+
     var body = this._d.tbody;
     var chipsEl = this._d.chips;
     body.innerHTML = '';
+    body.style.padding = '';
     chipsEl.innerHTML = '';
     this._d.tool.style.opacity = 0;
     this._d.ans.style.opacity = 0;
@@ -535,6 +560,21 @@
         body.appendChild(d);
         self._anims.push({ el: d, s: base + i * 0.65, d: 0.48 });
       });
+
+    } else if (scn.type === 'chat') {
+      body.style.padding = '0'; // collapse empty tbody for chat type
+      var frame = body.parentElement.parentElement; // tbody → tool → frame
+      var spacer = frame.querySelector('.mcd-spacer');
+      var ce = document.createElement('div');
+      ce.className = 'mcd-chatbox';
+      ce.style.opacity = 0;
+      ce.innerHTML = scn.html;
+      frame.insertBefore(ce, spacer);
+      this._chatEl = ce;
+      this._anims.push({ el: ce, s: base, d: 0.5 });
+      var self2 = this;
+      ce.addEventListener('wheel',     function () { self2._scrollLocked = true; }, { passive: true });
+      ce.addEventListener('touchmove', function () { self2._scrollLocked = true; }, { passive: true });
     }
 
     // Chips
@@ -595,11 +635,13 @@
       a.el.style.transform = 'translateY(' + r.y + 'px)';
     }
 
-    // Answer block
-    var ar = riseR(t, scn.toolDur + 1.0, 0.52);
-    d.ans.style.opacity = ar.o;
-    d.ans.style.transform = 'translateY(' + ar.y + 'px)';
-    d.atxt.textContent = streamStr(scn.answer, t, scn.toolDur + 1.4, 2.8);
+    // Answer block (hidden for chat type)
+    if (scn.type !== 'chat') {
+      var ar = riseR(t, scn.toolDur + 1.0, 0.52);
+      d.ans.style.opacity = ar.o;
+      d.ans.style.transform = 'translateY(' + ar.y + 'px)';
+      d.atxt.textContent = streamStr(scn.answer, t, scn.toolDur + 1.4, 2.8);
+    }
 
     // Chips
     for (i = 0; i < this._chipEls.length; i++) {
@@ -607,6 +649,15 @@
       r = riseR(t, a.s, a.d);
       a.el.style.opacity = r.o;
       a.el.style.transform = 'translateY(' + r.y + 'px)';
+    }
+
+    // Auto-scroll chat response (cancelled when user scrolls manually)
+    if (this._chatEl && !this._scrollLocked) {
+      var sc0 = scn.toolDur + 1.5;
+      var sc1 = Math.max(1, scn.dur - sc0 - 2.0);
+      var scP = eoCubic(clamp((t - sc0) / sc1));
+      var maxSc = this._chatEl.scrollHeight - this._chatEl.clientHeight;
+      if (maxSc > 0) this._chatEl.scrollTop = Math.round(scP * maxSc);
     }
   };
 
