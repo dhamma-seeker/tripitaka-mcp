@@ -479,6 +479,16 @@ footer p { margin: 0.5rem 0; }
     text-decoration: none;
 }
 .uc-more:hover { text-decoration: underline; }
+/* demo breakout — escapes the 720px main column */
+.demo-intro { font-size: .9rem; color: var(--muted); margin: 2.5rem 0 .3rem; }
+.demo-wide {
+    width: 1100px;
+    margin-left: -214px;   /* centers 1100px within 720px max-width main: (672-1100)/2 */
+    margin-bottom: 3rem;
+}
+@media (max-width: 1100px) {
+    .demo-wide { width: calc(100% + 3rem); margin-left: -1.5rem; }
+}
 </style>
 </head>
 <body>
@@ -529,6 +539,9 @@ footer p { margin: 0.5rem 0; }
 <span class="track-cta">Browse topics →</span>
 </a>
 </section>
+
+<p class="demo-intro">See it in action — click any tab to jump to a scenario.</p>
+<div class="demo-wide"><div data-mcp-demo></div></div>
 
 <h2 id="what-it-does">What it does</h2>
 <p>The server exposes <strong>12 tools and 3 resources</strong> over MCP. Your AI agent can:</p>
@@ -594,10 +607,6 @@ footer p { margin: 0.5rem 0; }
   </div>
 </div>
 <a class="uc-more" href="/use-cases/">See all 6 worked examples with screenshots →</a>
-
-<h2 id="demo">See it in action</h2>
-<p>Each tab below shows a real MCP tool call — question typed in, tool invoked, result retrieved, answer streamed. Click any tab to jump to that scenario.</p>
-<div data-mcp-demo></div>
 
 <h2 id="connect">Connect your AI</h2>
 <p>The hosted server is free and runs at:</p>
