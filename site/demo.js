@@ -50,15 +50,25 @@
       toolArgs: 'query="worry · anxiety · present moment"',
       statuses: ['scanning…', 'matching vectors…', '3 passages found'],
       toolDur: 3.8,
-      dur: 15,
-      type: 'results',
-      results: [
-        { ref: 'SN 36.6', passage: 'Sallatha Sutta — the untrained person feels two feelings, bodily and mental. The trained person feels only the first: "one feeling — physical, not mental." Worry is almost entirely the second arrow — the hours spent rehearsing it in your head. That one is optional.' },
-        { ref: 'MN 131',  passage: 'Bhaddekaratta Sutta — "Don\'t run back to the past, don\'t anticipate the future. What\'s past is left behind; the future has not arrived. Any present phenomenon you clearly discern in every case."' },
-        { ref: 'MN 118',  passage: 'Ānāpānasati Sutta — when worry pulls the mind into the future, bring attention to the breath: a long breath known as long, a short breath known as short. Each time the mind bolts back to the story, notice, and gently return. Not once — thousands of times. That repetition is the practice.' }
+      dur: 17,
+      type: 'narrative',
+      sections: [
+        {
+          heading: '1. Most of your pain is a second arrow — and you fired that one yourself.',
+          body: 'SN 36.6 — the untrained person, touched by pain, adds mental anguish on top. The trained person feels only the first: "one feeling — physical, not mental." The hours you spend rehearsing the worry in your head are the second arrow — and that one is optional.'
+        },
+        {
+          heading: '2. Worry has no home in the present.',
+          verse: "Don't run back to the past,\ndon't anticipate the future.\nWhat's past is left behind;\nthe future has not arrived.",
+          body: 'MN 131 — worry is always either re-chewing something finished or pre-living something not yet real. The cure is not to suppress it but to keep seeing the one thing that is real: this present moment.'
+        },
+        {
+          heading: 'The practical anchor — how you actually come back.',
+          body: 'MN 118 — when worry pulls the mind into the future, return to the breath: a long breath known as long, a short breath known as short. Not once — thousands of times. That repetition is the practice.'
+        }
       ],
       chips: ['SN 36.6', 'MN 131', 'MN 118'],
-      answer: 'When the mind is gripped by constant worry, the Buddha\'s guidance isn\'t "force yourself to stop." Worry is almost entirely the second arrow — the hours spent rehearsing it in your head are optional (SN 36.6). It has no home in the present; it lives only in a past that\'s gone or a future that hasn\'t come (MN 131). The anchor: return to the breath — not once, thousands of times. That repetition is the training (MN 118).'
+      answer: 'When the mind is gripped by constant worry, the Buddha\'s guidance isn\'t "force yourself to stop." It\'s to see clearly how the mind manufactures its own suffering, then train it to put the extra weight down.'
     },
     {
       tab: 'survey_corpus',
@@ -242,6 +252,13 @@
         'flex:none;white-space:nowrap}' +
       '.mcd-btotal{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--d-dim);' +
         'padding:5px 3px 0;margin-top:2px;border-top:1px solid var(--d-brd)}' +
+      // narrative
+      '.mcd-nsec{margin-bottom:9px}' +
+      '.mcd-nhead{font-size:13.5px;font-weight:600;color:var(--d-fg);line-height:1.4;margin-bottom:4px}' +
+      '.mcd-nbody{font-size:12.5px;line-height:1.55;color:var(--d-fg2)}' +
+      '.mcd-nverse{border-left:2px solid var(--d-acc);padding:5px 10px;margin:4px 0 5px;' +
+        'font-size:12px;font-style:italic;color:var(--d-fg2);line-height:1.6;' +
+        'background:var(--d-hbg);border-radius:0 4px 4px 0}' +
       // answer
       '.mcd-spacer{flex:1}' +
       '.mcd-ans{display:flex;gap:10px;align-items:flex-start}' +
@@ -502,6 +519,22 @@
       }
       body.appendChild(bwrap);
       this._anims.push({ el: bwrap, s: base, d: 0.52 });
+
+    } else if (scn.type === 'narrative') {
+      scn.sections.forEach(function (sec, i) {
+        var d = document.createElement('div');
+        d.className = 'mcd-nsec'; d.style.opacity = 0;
+        var html = '<div class="mcd-nhead">' + sec.heading + '</div>';
+        if (sec.verse) {
+          html += '<div class="mcd-nverse">' + sec.verse.replace(/\n/g, '<br>') + '</div>';
+        }
+        if (sec.body) {
+          html += '<div class="mcd-nbody">' + sec.body + '</div>';
+        }
+        d.innerHTML = html;
+        body.appendChild(d);
+        self._anims.push({ el: d, s: base + i * 0.65, d: 0.48 });
+      });
     }
 
     // Chips
