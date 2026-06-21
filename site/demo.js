@@ -45,20 +45,20 @@
   var SCENARIOS = [
     {
       tab: 'search_hybrid',
-      question: 'What did the Buddha teach about responding to insults? Cite the texts.',
+      question: 'What is the Buddha\'s guidance for someone tormented by constant worry?',
       toolName: 'search_hybrid',
-      toolArgs: 'query="anger · insults · non-retaliation"',
+      toolArgs: 'query="worry · anxiety · present moment"',
       statuses: ['scanning…', 'matching vectors…', '3 passages found'],
       toolDur: 3.8,
       dur: 15,
       type: 'results',
       results: [
-        { ref: 'SN 7.2', passage: 'Akkosa Sutta — the refused gift returns to its giver. "Your anger, brahmin, remains with you."' },
-        { ref: 'Iti 4',  passage: 'Kodha Sutta — one who stays calm when provoked wins the battle hard to win.' },
-        { ref: 'AN 4.84',passage: 'Valuing Anger — he who does not repay anger with anger wins that same hard battle.' }
+        { ref: 'SN 36.6', passage: 'Sallatha Sutta — the untrained person hit by pain fires a second arrow on top: mental anguish. The trained person feels one arrow only — physical, not mental.' },
+        { ref: 'MN 131',  passage: 'Bhaddekaratta Sutta — "Don\'t hark back to the past; don\'t hope for the future\'s coming. What\'s past is left behind; the future has not arrived."' },
+        { ref: 'MN 118',  passage: 'Ānāpānasati Sutta — when worry pulls the mind toward the future, return to the breath: breathing in long, he knows he breathes in long.' }
       ],
-      chips: ['SN 7.2', 'Iti 4', 'AN 4.84'],
-      answer: 'The Buddha met insults with equanimity, comparing unaccepted anger to a gift returned to its giver (SN 7.2). He taught that staying calm under provocation is itself a victory — "the battle hard to win" (Iti 4, AN 4.84).'
+      chips: ['SN 36.6', 'MN 131', 'MN 118'],
+      answer: 'Most worry is the second arrow (SN 36.6) — suffering we add on top of what life already brought. Worry lives in the past or future, neither of which exists now (MN 131). The concrete anchor: return to the breath (MN 118). Every time the mind reaches for the worry, notice and come back — that repetition is the training.'
     },
     {
       tab: 'survey_corpus',
