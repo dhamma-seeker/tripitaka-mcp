@@ -53,12 +53,12 @@
       dur: 15,
       type: 'results',
       results: [
-        { ref: 'SN 36.6', passage: 'Sallatha Sutta — the untrained person hit by pain fires a second arrow on top: mental anguish. The trained person feels one arrow only — physical, not mental.' },
-        { ref: 'MN 131',  passage: 'Bhaddekaratta Sutta — "Don\'t hark back to the past; don\'t hope for the future\'s coming. What\'s past is left behind; the future has not arrived."' },
-        { ref: 'MN 118',  passage: 'Ānāpānasati Sutta — when worry pulls the mind toward the future, return to the breath: breathing in long, he knows he breathes in long.' }
+        { ref: 'SN 36.6', passage: 'Sallatha Sutta — the untrained person feels two feelings, bodily and mental. The trained person feels only the first: "one feeling — physical, not mental." Worry is almost entirely the second arrow — the hours spent rehearsing it in your head. That one is optional.' },
+        { ref: 'MN 131',  passage: 'Bhaddekaratta Sutta — "Don\'t run back to the past, don\'t anticipate the future. What\'s past is left behind; the future has not arrived. Any present phenomenon you clearly discern in every case."' },
+        { ref: 'MN 118',  passage: 'Ānāpānasati Sutta — when worry pulls the mind into the future, bring attention to the breath: a long breath known as long, a short breath known as short. Each time the mind bolts back to the story, notice, and gently return. Not once — thousands of times. That repetition is the practice.' }
       ],
       chips: ['SN 36.6', 'MN 131', 'MN 118'],
-      answer: 'Most worry is the second arrow (SN 36.6) — suffering we add on top of what life already brought. Worry lives in the past or future, neither of which exists now (MN 131). The concrete anchor: return to the breath (MN 118). Every time the mind reaches for the worry, notice and come back — that repetition is the training.'
+      answer: 'When the mind is gripped by constant worry, the Buddha\'s guidance isn\'t "force yourself to stop." Worry is almost entirely the second arrow — the hours spent rehearsing it in your head are optional (SN 36.6). It has no home in the present; it lives only in a past that\'s gone or a future that hasn\'t come (MN 131). The anchor: return to the breath — not once, thousands of times. That repetition is the training (MN 118).'
     },
     {
       tab: 'survey_corpus',
