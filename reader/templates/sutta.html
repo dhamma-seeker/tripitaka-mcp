@@ -8,6 +8,12 @@
 {% endblock %}
 
 {% block content %}
+<aside class="outline-sidebar" id="outline-sidebar" aria-label="Table of contents">
+  <div class="outline-inner">
+    <p class="outline-heading">Contents</p>
+    <nav id="outline-nav" aria-label="Sutta sections"></nav>
+  </div>
+</aside>
 <article class="sutta">
   <header class="sutta-head">
     <p class="breadcrumb">
@@ -519,6 +525,75 @@
       if (banner.hidden) return;
       if (e.target.closest('.text-pali')) dismiss();
     });
+  })();
+
+  // Outline sidebar — build section TOC from segment IDs, track scroll.
+  (function () {
+    var sidebar = document.getElementById('outline-sidebar');
+    var nav = document.getElementById('outline-nav');
+    if (!sidebar || !nav) return;
+
+    var segs = Array.prototype.slice.call(
+      document.querySelectorAll('#segments .segment')
+    );
+    if (!segs.length) return;
+
+    // Extract section number from "sn56.11:2.4" → 2
+    function secNum(id) {
+      var m = id && id.match(/:(\d+)\./);
+      return m ? parseInt(m[1], 10) : -1;
+    }
+
+    // Collect first segment of each section
+    var sections = [];
+    var seen = Object.create(null);
+    segs.forEach(function (seg) {
+      var n = secNum(seg.id);
+      if (n < 0 || seen[n]) return;
+      seen[n] = true;
+      var paliEl = seg.querySelector('.text-pali');
+      var raw = paliEl ? paliEl.textContent.trim() : '';
+      var label = raw.length > 38 ? raw.slice(0, 37) + '…' : raw;
+      if (!label || label.length < 3) label = '§ ' + n;
+      sections.push({ n: n, id: seg.id, label: label, el: seg });
+    });
+
+    if (sections.length < 3) { sidebar.style.display = 'none'; return; }
+
+    var links = sections.map(function (s) {
+      var a = document.createElement('a');
+      a.className = 'outline-nav-link';
+      a.href = '#' + s.id;
+      a.textContent = s.label;
+      a.title = s.label;
+      nav.appendChild(a);
+      return a;
+    });
+
+    var activeIdx = 0;
+    links[0].classList.add('is-active');
+
+    function updateActive() {
+      var scrollY = window.scrollY || window.pageYOffset;
+      var buffer = 120;
+      var next = 0;
+      for (var i = 0; i < sections.length; i++) {
+        var top = sections[i].el.getBoundingClientRect().top + scrollY;
+        if (top - buffer <= scrollY) next = i;
+      }
+      if (next === activeIdx) return;
+      links[activeIdx].classList.remove('is-active');
+      activeIdx = next;
+      links[activeIdx].classList.add('is-active');
+    }
+
+    var rafPending = false;
+    window.addEventListener('scroll', function () {
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(function () { rafPending = false; updateActive(); });
+    }, { passive: true });
+    updateActive();
   })();
 </script>
 {% endblock %}
