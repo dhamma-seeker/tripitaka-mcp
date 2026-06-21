@@ -519,12 +519,6 @@
     var scn = SCENARIOS[this.tab];
     var elapsed = (Date.now() - this.sceneStart) / 1000;
 
-    // Auto-advance
-    if (elapsed > scn.dur + 0.4) {
-      this._goto((this.tab + 1) % SCENARIOS.length);
-      return;
-    }
-
     var t = elapsed % scn.dur;
     if (this._builtTab !== this.tab) this._buildScene(scn);
 
