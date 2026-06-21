@@ -519,15 +519,14 @@
     var scn = SCENARIOS[this.tab];
     var elapsed = (Date.now() - this.sceneStart) / 1000;
 
-    var t = elapsed % scn.dur;
+    var t = Math.min(elapsed, scn.dur);
     if (this._builtTab !== this.tab) this._buildScene(scn);
 
     var d = this._d;
 
-    // Fade in / out
-    var fIn  = clamp(t / 0.38);
-    var fOut = 1 - clamp((t - (scn.dur - 1.8)) / 1.4);
-    d.bg.style.opacity = Math.min(fIn, Math.max(0, fOut)).toFixed(3);
+    // Fade in only — scene holds at end state
+    var fIn = clamp(t / 0.38);
+    d.bg.style.opacity = fIn.toFixed(3);
 
     // Question typewriter
     d.qt.textContent = streamStr(scn.question, t, 0.4, 1.9);
