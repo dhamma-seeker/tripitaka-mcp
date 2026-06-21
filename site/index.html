@@ -432,6 +432,53 @@ footer p { margin: 0.5rem 0; }
 .chart-count { font-size: 0.82rem; font-weight: 600; color: var(--accent); text-align: right; }
 .chart-row:nth-child(2) .chart-count { color: var(--chart-2); }
 .chart-row:nth-child(3) .chart-count { color: var(--chart-3); }
+/* -- Use cases preview ----------------------------------------------------- */
+.use-cases-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.9rem;
+    margin: 1.25rem 0 0.75rem;
+}
+.uc-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+    background: var(--bg);
+    transition: border-color 0.15s, transform 0.15s;
+}
+.uc-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.uc-type {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin: 0 0 0.4rem;
+}
+.uc-q {
+    font-size: 0.91rem;
+    font-style: italic;
+    color: var(--fg);
+    line-height: 1.45;
+    margin: 0 0 0.35rem;
+    border-left: 2px solid var(--border);
+    padding-left: 0.65rem;
+}
+.uc-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.5;
+}
+.uc-more {
+    font-size: 0.88rem;
+    display: block;
+    text-align: right;
+    margin: 0.25rem 0 2rem;
+    color: var(--accent);
+    text-decoration: none;
+}
+.uc-more:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -442,6 +489,7 @@ footer p { margin: 0.5rem 0; }
   </a>
   <div class="nav-links">
     <a href="/read/" class="nav-hide-sm">Reader</a>
+    <a href="/use-cases/" class="nav-hide-sm">Use cases</a>
     <a href="https://mcp.tripitaka-mcp.com/topics/" class="nav-hide-sm">Topics</a>
     <a href="https://github.com/dhamma-seeker/tripitaka-mcp" class="nav-hide-sm">GitHub</a>
     <a href="/install/" class="nav-cta">Install →</a>
@@ -521,6 +569,32 @@ footer p { margin: 0.5rem 0; }
   </div>
 </div>
 
+<h2 id="use-cases">Use cases</h2>
+<p>Questions the server is built for — aggregation, comparison, and deep lookup across all ~444K segments.</p>
+<div class="use-cases-grid">
+  <div class="uc-card">
+    <p class="uc-type">Thematic survey</p>
+    <p class="uc-q">"What does the Buddha teach about anger across the canon? Quote foundational passages with citations."</p>
+    <p class="uc-desc">Runs <code>search_hybrid</code> across varied Pāli anger vocabulary, fetches top suttas, cites every segment.</p>
+  </div>
+  <div class="uc-card">
+    <p class="uc-type">Translation comparison</p>
+    <p class="uc-q">"How do Bhikkhu Sujato and Bhikkhu Brahmali render <em>dukkha</em> differently in the Vinaya?"</p>
+    <p class="uc-desc">Uses <code>compare_translations</code> for segment-aligned side-by-side output across editions.</p>
+  </div>
+  <div class="uc-card">
+    <p class="uc-type">Pāli word study</p>
+    <p class="uc-q">"What does <em>jhāna</em> mean according to the Payutto dictionary? Show 5 canonical passages."</p>
+    <p class="uc-desc">Combines Payutto + PTS dictionary lookup with canonical usage examples from across the Tipiṭaka.</p>
+  </div>
+  <div class="uc-card">
+    <p class="uc-type">Locus classicus</p>
+    <p class="uc-q">"Where does the Buddha first formulate the Four Noble Truths? Quote the full discourse."</p>
+    <p class="uc-desc">Resolves to SN 56.11, fetches verbatim Pāli + English with a deep-link to the bilingual reader.</p>
+  </div>
+</div>
+<a class="uc-more" href="/use-cases/">See all 6 worked examples with screenshots →</a>
+
 <h2 id="connect">Connect your AI</h2>
 <p>The hosted server is free and runs at:</p>
 <p><span class="endpoint">https://mcp.tripitaka-mcp.com/mcp</span> &nbsp; (Streamable HTTP, MCP spec 2025-03-26)<br>
@@ -576,16 +650,8 @@ footer p { margin: 0.5rem 0; }
 </ul>
 <p>The <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/claude_desktop_config.example.json">example config in the repo</a> documents the full set of transports.</p>
 
-<h3>Try asking</h3>
-<p>Once connected, ask Claude things like:</p>
-<ul>
-<li>"What does the Buddha teach about mindfulness of breathing? Quote the relevant passages from MN 118 with citations."</li>
-<li>"Show me the full text of the Karaṇīyamettasutta in Pāli and English."</li>
-<li>"Compare how Bhikkhu Sujato and Bhikkhu Brahmali render the term <em>sīla</em> across the Vinaya."</li>
-<li>"What does the Pāli word <em>sati</em> mean according to the Payutto dictionary?"</li>
-<li>"Find suttas where the Buddha discusses anger. Cite the locus classicus."</li>
-</ul>
-<p>Claude will pick the right tool, fetch the canonical Pāli (and English where available), and surface a clickable link to the project's bilingual reader so you can verify the source.</p>
+<h3>What to ask</h3>
+<p>See <a href="/use-cases/">worked use cases with screenshots</a> for six full examples — thematic surveys, translation comparisons, Pāli word studies, reading paths, and more. Claude picks the right tool automatically and links back to the bilingual reader for source verification.</p>
 
 <h3>Optional research skill</h3>
 <p>Drop <a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/skills/tipitaka-research.md"><code>skills/tipitaka-research.md</code></a> into <code>~/.claude/skills/</code> to activate a multi-step research workflow (clarify → verify coverage → search → drill → cite) tailored to scriptural research.</p>
