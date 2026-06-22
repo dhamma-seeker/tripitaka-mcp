@@ -154,6 +154,24 @@
           { label: 'Word forms',     value: 'appamāda, appamādena, appamādaṃ…' }
         ],
         answer: 'appamāda — "heedfulness / non-negligence" — appears 187 times across 95 suttas. These were the Buddha\'s last words: "All conditioned things are impermanent — strive on with heedfulness." (DN 16:6.1)'
+      },
+      {
+        question: 'How often does "dukkha" appear across the three Piṭakas combined?',
+        toolName: 'survey_corpus',
+        toolArgs: '"dukkha", match_scope="stem"',
+        statuses: ['counting segments…', 'tallying pitakas…', '7,836 segments found'],
+        toolDur: 3.2,
+        dur: 16,
+        type: 'stats',
+        stats: [
+          { label: 'Total segments — stem (all inflections + compounds)', value: '7,836', big: true },
+          { label: 'Distinct suttas',   value: '1,377' },
+          { label: 'Sutta Piṭaka',     value: '5,346' },
+          { label: 'Vinaya Piṭaka',    value: '176' },
+          { label: 'Abhidhamma Piṭaka',value: '2,314' },
+          { label: 'Bare word only (exact match)',    value: '617' }
+        ],
+        answer: 'Stem: 7,836 segments in 1,377 suttas — roughly half the canon. Bare word (exact): only 617. The Abhidhamma\'s 2,314 reflects systematic enumeration of every dukkha compound across 7 books.'
       }]
     },
     {
