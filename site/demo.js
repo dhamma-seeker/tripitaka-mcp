@@ -255,12 +255,12 @@
         'box-shadow:0 0 0 3px rgba(123,189,142,.16)}' +
       '.mcd-tabs{display:flex;gap:5px;flex:1;overflow:hidden}' +
       '.mcd-tab{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:500;' +
-        'padding:4px 10px;border-radius:5px;border:1px solid var(--d-brd);background:transparent;' +
-        'color:var(--d-dim);cursor:pointer;white-space:nowrap;transition:all .15s}' +
+        'padding:4px 10px;border-radius:5px;border:1px solid var(--d-brd2);background:transparent;' +
+        'color:var(--d-fg2);cursor:pointer;white-space:nowrap;transition:all .15s}' +
       '.mcd-tab.on{background:var(--d-abg);border-color:var(--d-acc);color:var(--d-acc)}' +
-      '.mcd-tab:hover:not(.on){border-color:var(--d-brd2);color:var(--d-fg2)}' +
-      '.mcd-tbtn{width:28px;height:28px;border-radius:6px;border:1px solid var(--d-brd);' +
-        'background:transparent;color:var(--d-dim);cursor:pointer;flex:none;' +
+      '.mcd-tab:hover:not(.on){border-color:var(--d-acc);color:var(--d-fg)}' +
+      '.mcd-tbtn{width:28px;height:28px;border-radius:6px;border:1px solid var(--d-brd2);' +
+        'background:transparent;color:var(--d-fg2);cursor:pointer;flex:none;' +
         'display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s}' +
       '.mcd-tbtn:hover{border-color:var(--d-acc);color:var(--d-acc)}' +
       '.mcd-frame{flex:1;background:var(--d-bg2);border:1px solid var(--d-brd);border-radius:11px;' +
@@ -383,7 +383,18 @@
       '.mcd-chip{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--d-fg2);' +
         'background:var(--d-hbg);border:1px solid var(--d-hbrd);border-radius:5px;' +
         'padding:3px 8px;display:inline-flex;align-items:center;gap:4px}' +
-      '.mcd-chip::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--d-grn);display:block}';
+      '.mcd-chip::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--d-grn);display:block}' +
+      // fullscreen
+      '.mcd-outer:fullscreen{aspect-ratio:unset!important;border-radius:0}' +
+      '.mcd-outer:-webkit-full-screen{aspect-ratio:unset!important;border-radius:0}' +
+      // mobile mode (toggled via JS class .mcd-mobile when width < 640)
+      '.mcd-mobile{aspect-ratio:unset!important;height:auto!important}' +
+      '.mcd-mobile .mcd-inner{position:relative!important;top:auto!important;left:auto!important;width:100%!important;height:auto!important;transform:none!important}' +
+      '.mcd-mobile .mcd-bg{position:relative!important;inset:unset!important;height:auto!important;padding:12px 14px 16px!important}' +
+      '.mcd-mobile .mcd-tabs{overflow-x:auto!important;flex-wrap:nowrap!important;scrollbar-width:none}' +
+      '.mcd-mobile .mcd-tabs::-webkit-scrollbar{display:none}' +
+      '.mcd-mobile .mcd-targ{flex:1!important;min-width:0!important;max-width:none!important}' +
+      '.mcd-mobile .mcd-frame{flex:none!important;height:460px;padding:12px 14px!important}';
     document.head.appendChild(el);
   }
 
@@ -407,6 +418,8 @@
       '<path d="M2.5 7.5l3 3 6-7" stroke="' + c + '" stroke-width="2"' +
       ' stroke-linecap="round" stroke-linejoin="round"/></svg>';
   }
+  var FS_ON  = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 1H1V4.5M7.5 1H11V4.5M11 7.5V11H7.5M1 7.5V11H4.5"/></svg>';
+  var FS_OFF = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 1V4.5H1M7.5 1V4.5H11M7.5 11V7.5H11M4.5 11V7.5H1"/></svg>';
 
   // ── McpDemo ─────────────────────────────────────────────────────────────────
   function McpDemo(container) {
@@ -439,7 +452,14 @@
       var wrap = this.el.querySelector('.mcd-outer');
       var inner = this.el.querySelector('.mcd-inner');
       function resize() {
-        inner.style.transform = 'scale(' + (wrap.clientWidth / 1280) + ')';
+        var w = wrap.clientWidth;
+        if (w >= 640) {
+          wrap.classList.remove('mcd-mobile');
+          inner.style.transform = 'scale(' + (w / 1280) + ')';
+        } else {
+          wrap.classList.add('mcd-mobile');
+          inner.style.transform = 'none';
+        }
       }
       resize();
       this._ro = new ResizeObserver(resize);
@@ -460,6 +480,7 @@
         '<div class="mcd-logo"><div class="mcd-ldot"></div>tripiṭaka·mcp</div>' +
         '<div class="mcd-tabs" id="mcd-tabs"></div>' +
         '<button class="mcd-tbtn" id="mcd-tbtn" title="Toggle light / dark">☀</button>' +
+        '<button class="mcd-tbtn" id="mcd-fsbtn" title="Fullscreen">' + FS_ON + '</button>' +
       '</div>' +
       '<div class="mcd-frame">' +
         '<div class="mcd-qrow"><div class="mcd-qbub">' +
@@ -501,6 +522,20 @@
       self.theme = self.theme === 'dark' ? 'light' : 'dark';
       self._applyTheme();
       self.el.querySelector('#mcd-tbtn').textContent = self.theme === 'dark' ? '☀' : '☾';
+    });
+
+    // Fullscreen toggle
+    var fsBtn = this.el.querySelector('#mcd-fsbtn');
+    var outerEl = this.el.querySelector('.mcd-outer');
+    fsBtn.addEventListener('click', function () {
+      if (!document.fullscreenElement) {
+        outerEl.requestFullscreen && outerEl.requestFullscreen().catch(function () {});
+      } else {
+        document.exitFullscreen && document.exitFullscreen();
+      }
+    });
+    document.addEventListener('fullscreenchange', function () {
+      fsBtn.innerHTML = document.fullscreenElement ? FS_OFF : FS_ON;
     });
 
     this._d = {
