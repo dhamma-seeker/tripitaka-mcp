@@ -370,6 +370,12 @@
         'transition:all .18s;flex:none}' +
       '.mcd-dot.on{background:var(--d-acc);transform:scale(1.25)}' +
       '.mcd-dot:hover:not(.on){background:var(--d-dim)}' +
+      '@keyframes mcd-nudge{0%,55%,100%{transform:translateX(0)}' +
+        '60%{transform:translateX(4px);color:var(--d-acc);border-color:var(--d-acc)}' +
+        '70%{transform:translateX(0)}' +
+        '75%{transform:translateX(3px);color:var(--d-acc);border-color:var(--d-acc)}' +
+        '85%{transform:translateX(0)}}' +
+      '.mcd-narr-hint{transition:none;animation:mcd-nudge 5s ease 2.5s infinite}' +
       // answer
       '.mcd-spacer{flex:1}' +
       '.mcd-ans{display:flex;gap:10px;align-items:flex-start}' +
@@ -614,7 +620,7 @@
     qnav.appendChild(dots);
 
     var r = document.createElement('button');
-    r.className = 'mcd-narr';
+    r.className = 'mcd-narr' + (qi < total - 1 ? ' mcd-narr-hint' : '');
     r.innerHTML = '&#8250;';
     if (qi === total - 1) r.setAttribute('disabled', '');
     r.addEventListener('click', function () { if (qi < total - 1) self._gotoQ(qi + 1); });
