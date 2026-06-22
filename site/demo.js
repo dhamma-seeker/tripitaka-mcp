@@ -162,6 +162,33 @@
           '<div class="mcd-cp" style="margin-bottom:6px">The honest count — all inflections but excluding compounds — sits between the two. The tool doesn\'t isolate it directly. Either way, <em>dukkha</em> touches roughly half the entire canon by stem.</div>' +
           '<div class="mcd-csrcs"><span class="mcd-chip">DN 22</span><span class="mcd-chip">SN 56.11</span><span class="mcd-chip">DN 33</span></div>',
         answer: ''
+      },
+      {
+        question: 'Which appears more often in the Canon — "sati" (mindfulness) or "paññā" (wisdom)?',
+        toolName: 'survey_corpus',
+        toolArgs: '"sati" vs "paññā", match_scope="stem"',
+        statuses: ['surveying sati…', 'surveying paññā…', '4 runs · forms audited'],
+        toolDur: 3.8,
+        dur: 34,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp"><strong>Short answer: basically a tie on the bare word</strong> — and the "wisdom wins" result from a naive search is mostly a measurement artifact. The exhaustive survey reveals a different homonym trap on each side.</div>' +
+          '<div class="mcd-ch3">What four survey runs return</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:2fr 1.4fr 1.4fr"><span>Method</span><span>sati (mindfulness)</span><span>paññā (wisdom)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 1.4fr 1.4fr"><span class="mcd-tpali">bare word (exact)</span><span>1,432 · 385 suttas</span><span>1,446 · 230 suttas</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 1.4fr 1.4fr"><span style="padding-left:14px;color:var(--d-dim)">↳ Sutta Piṭaka</span><span>1,207</span><span>903</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 1.4fr 1.4fr"><span style="padding-left:14px;color:var(--d-dim)">↳ Abhidhamma</span><span>181</span><span style="color:var(--d-acc)">531 ← ranking flips</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 1.4fr 1.4fr"><span class="mcd-tpali">stem (inflections + compounds)</span><span>3,752 · 961 suttas</span><span>8,461 · 1,508 suttas</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">Two homonym traps — why the raw numbers lie</div>' +
+          '<div class="mcd-cp"><strong>sati\'s 1,432 is inflated.</strong> A large share of bare hits are the locative participle of <em>atthi</em> ("when there is") — the dependent-origination formula <em>imasmiṁ sati idaṁ hoti</em> ("when this exists, this comes to be") appears constantly. Same spelling, unrelated word. Genuine mindfulness-sati is materially below 1,432.</div>' +
+          '<div class="mcd-cp"><strong>paññā\'s stem 8,461 is wrecked.</strong> Four false-friend families dominate: <em>paññatti / paññāpeti</em> ("concept / to declare"), <em>pannarasa</em> (the number <em>fifteen</em> — in every Vinaya observance-day recitation), <em>paṇṇa</em> (leaf, as in <em>paṇṇasālā</em> = leaf hut), and <em>panna</em> (laid down — the arahant epithet <em>pannabhāra</em>).</div>' +
+          '<div class="mcd-ch3">The honest bottom line</div>' +
+          '<div class="mcd-cp">Bare word: <strong>dead heat</strong>, slight real edge to paññā once sati\'s participle is discounted. Most interesting finding: <strong>the answer depends on which collection you ask.</strong> In the Abhidhamma, paññā clearly leads (531 vs 181) — wisdom is a discrete <em>cetasika</em> dissected exhaustively. In the Suttas, bare sati leads (1,207 vs 903), partly due to the participle artifact.</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">A definitive ranking would require de-contaminating both stem lists form by form — the tool returns every surface form for exactly this purpose — but it cannot collapse to a single headline number.</div>' +
+          '<div class="mcd-csrcs"><span class="mcd-chip">MN 38</span><span class="mcd-chip">SN 12.23</span><span class="mcd-chip">DN 22</span></div>',
+        answer: ''
       }]
     },
     {
