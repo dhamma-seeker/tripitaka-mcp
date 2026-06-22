@@ -102,6 +102,37 @@
           '<div class="mcd-cp" style="margin-bottom:6px">This is also why you\'ll often see <em>dukkha</em> left untranslated — to keep its full meaning and sidestep the "life is misery" reading you\'ve correctly questioned.</div>' +
           '<div class="mcd-csrcs"><span class="mcd-chip">SN 56.11</span><span class="mcd-chip">DN 33</span></div>',
         answer: ''
+      },
+      {
+        question: 'Is Buddhism pessimistic? What does the Buddha say about joy, pleasure, and happiness?',
+        toolName: 'search_hybrid',
+        toolArgs: 'query="sukha happiness · pessimism · joy nibbāna"',
+        statuses: ['scanning…', 'matching vectors…', '5 passages found'],
+        toolDur: 3.8,
+        dur: 32,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp"><strong>Short answer: no</strong> — calling Buddhism pessimistic is largely a 19th-century Western misreading (Schopenhauer-flavored). The Buddha taught a great deal about happiness, sorted it into types, and explicitly said some types <em>should</em> be actively pursued. What he refused to do was pretend that fragile happiness is reliable happiness.</div>' +
+          '<div class="mcd-ch3">Why "pessimistic" misses the point</div>' +
+          '<div class="mcd-cp">The charge usually rests on the First Noble Truth: <em>dukkha</em>. But <em>dukkha</em> doesn\'t mean "everything is pain." It\'s closer to <em>unsatisfactoriness</em> — conditioned things can\'t give lasting contentment because they keep changing. Pleasant things are real; they just don\'t stay, and clinging to what won\'t stay is where the ache comes from.</div>' +
+          '<div class="mcd-cp">The Buddha framed his whole teaching like a physician\'s: diagnosis (there is dukkha), cause (<em>taṇhā</em> — craving), prognosis (it can end), prescription (the eightfold path). A doctor who names your illness isn\'t a pessimist. The entire structure is engineered to <em>end</em> suffering — the opposite of resignation.</div>' +
+          '<div class="mcd-cp">He was also explicit that punishing yourself is not the path. In his very first discourse he rejected two dead ends — chasing sense pleasure (<em>kāmasukhallikānuyoga</em>) and self-torture (<em>attakilamathānuyoga</em>) — and called his way the Middle Way (SN 56.11). Buddhism rejects life-denial as one of its two named errors.</div>' +
+          '<div class="mcd-ch3">What the Buddha actually says about joy and happiness</div>' +
+          '<div class="mcd-cp">Quite a lot — there is even a whole chapter of the Dhammapada titled <em>Sukhavagga</em>, "Happiness" (Dhp 197–208). The key move is that he never treats "pleasure" as a single thing. He grades it by whether it holds up:</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr"><span>Kind of happiness (<em>sukha</em>)</span><span>What it is</span><span>The Buddha\'s stance</span></div>' +
+            '<div class="mcd-trow"><span class="mcd-tpali">Sense pleasure (<em>kāmasukha</em>)</span><span>Pleasure from sights, food, sex, comfort</span><span>Real, but unreliable — feeds craving. Fine for laypeople, not where lasting peace lives</span></div>' +
+            '<div class="mcd-trow"><span class="mcd-tpali">Householder happiness</span><span>Ordinary goods of a well-lived lay life (AN 4.62)</span><span>Explicitly praised and legitimate</span></div>' +
+            '<div class="mcd-trow"><span class="mcd-tpali">Happiness of renunciation &amp; meditation</span><span>Joy of a calm, uncluttered mind (MN 66)</span><span>Should be actively cultivated</span></div>' +
+            '<div class="mcd-trow"><span class="mcd-tpali">Nibbāna</span><span>Peace of a mind free of craving (Dhp 204)</span><span>The highest happiness of all</span></div>' +
+          '</div>' +
+          '<div class="mcd-cp">To the layman Anāthapiṇḍika, the Buddha named four happinesses a householder can rightly enjoy: honestly-earned wealth (<em>atthi-sukha</em>), using it (<em>bhoga-sukha</em>), freedom from debt (<em>ānaṇya-sukha</em>), and blameless living (<em>anavajja-sukha</em>) — AN 4.62. He ranks them, but still calls all four happiness and treats them as worth having.</div>' +
+          '<div class="mcd-cp">The most decisive point: in MN 66 (Laṭukikopama Sutta) the Buddha names "the pleasure of renunciation, of seclusion, of peace, of awakening" and says this pleasure <em>should be cultivated and developed, and should not be feared.</em> Joy is on the road, not against it. The rapture (<em>pīti</em>) and bliss (<em>sukha</em>) of meditative absorption (<em>jhāna</em>) are actual path factors (SN 45.8).</div>' +
+          '<div class="mcd-cp">At the top sits <em>nibbāna</em>, described flatly as the supreme happiness: <em>nibbānaṃ paramaṃ sukhaṃ</em> (Dhp 204).</div>' +
+          '<div class="mcd-ch3">So the through-line</div>' +
+          '<div class="mcd-cp">The Buddha isn\'t anti-happiness — he\'s re-educating you about <em>which</em> happiness holds up. Sense pleasure is like borrowing: it feels good now, but the bill arrives when the pleasant thing ends. The happiness of a clear, peaceful, undefiled mind doesn\'t depend on acquiring or keeping anything, so nothing can take it away. Diagnosing the first honestly, and pointing to the second, is realism — not pessimism.</div>' +
+          '<div class="mcd-csrcs"><span class="mcd-chip">SN 56.11</span><span class="mcd-chip">AN 4.62</span><span class="mcd-chip">MN 66</span><span class="mcd-chip">SN 45.8</span><span class="mcd-chip">Dhp 204</span></div>',
+        answer: ''
       }
       ]  // end search_hybrid.scenarios
     },
