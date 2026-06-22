@@ -42,9 +42,11 @@
   };
 
   // ── Scenarios — real MCP API responses ─────────────────────────────────────
-  var SCENARIOS = [
+  var TAB_GROUPS = [
     {
       tab: 'search_hybrid',
+      scenarios: [
+      {
       question: 'What is the Buddha\'s guidance for someone tormented by constant worry?',
       toolName: 'search_hybrid',
       toolArgs: 'query="worry · anxiety · present moment"',
@@ -69,91 +71,134 @@
         '<div class="mcd-cp" style="margin-bottom:6px">If it would help, I can open either sutta in a reader panel right here so you can sit with the full passage.</div>' +
         '<div class="mcd-csrcs"><span class="mcd-chip">SN 36.6</span><span class="mcd-chip">MN 131</span><span class="mcd-chip">MN 118</span><span class="mcd-chip">MN 10</span></div>',
       answer: ''
+      },
+      {
+        question: 'The First Noble Truth says life is suffering — does the Buddha mean existence is inherently painful?',
+        toolName: 'search_hybrid',
+        toolArgs: 'query="dukkha meaning · first noble truth · pessimism"',
+        statuses: ['scanning…', 'matching vectors…', '4 passages found'],
+        toolDur: 3.8,
+        dur: 30,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp"><strong>Short answer: no</strong> — not "painful" in the sense that every moment hurts. The phrase "life is suffering" is a loose translation that creates exactly this misunderstanding. The Buddha\'s actual claim is narrower: anything you grasp at for <em>lasting</em> happiness can\'t give it, because it doesn\'t last. That gap is what he\'s pointing to.</div>' +
+          '<div class="mcd-ch3">1. "Suffering" is a thin translation of <em>dukkha</em></div>' +
+          '<div class="mcd-cp">The First Noble Truth uses the Pāli word <em>dukkha</em>. "Suffering" only captures one slice of it. <em>Dukkha</em> also covers stress, dissatisfaction, and unreliability — the sense that something can\'t be leaned on.</div>' +
+          '<div class="mcd-cp">In the Buddha\'s first discourse (Dhammacakkappavattana Sutta, SN 56.11) he does <em>not</em> say "all life is dukkha." He lists specific things — birth, aging, sickness, death — and then sums up: the five grasping-aggregates are dukkha. The key word is <em>grasping</em> (Pāli <em>upādāna</em>). The problem isn\'t that these exist. The problem is grasping at them — treating impermanent things as if they could be a permanent source of satisfaction.</div>' +
+          '<div class="mcd-ch3">2. The three kinds of <em>dukkha</em> — only one is actual pain</div>' +
+          '<div class="mcd-cp">Sāriputta (Saṅgītisutta, DN 33) breaks <em>dukkha</em> into three kinds:</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr"><span>Pāli</span><span>Meaning</span><span>Example</span></div>' +
+            '<div class="mcd-trow"><span class="mcd-tpali">dukkha-dukkhatā</span><span>ordinary pain</span><span>a headache, grief</span></div>' +
+            '<div class="mcd-trow"><span class="mcd-tpali">vipariṇāma-dukkhatā</span><span>ache of change</span><span>a good moment ending</span></div>' +
+            '<div class="mcd-trow"><span class="mcd-tpali">saṅkhāra-dukkhatā</span><span>unsatisfactoriness in all conditioned things</span><span>even calm pleasure can\'t fully last</span></div>' +
+          '</div>' +
+          '<div class="mcd-cp">Only the first is "pain." Even a genuinely pleasant experience counts as <em>dukkha</em> — not because it feels bad, but because it can\'t last. <em>"Inherently unable to give lasting satisfaction"</em> is closer than "inherently painful."</div>' +
+          '<div class="mcd-ch3">3. Why this is a diagnosis, not a verdict on existence</div>' +
+          '<div class="mcd-cp">The Buddha says the First Noble Truth is to be <em>fully understood</em> — framed like a doctor\'s diagnosis, not a sentence. The Four Noble Truths follow a medical shape: symptom (<em>dukkha</em>) → cause (craving, <em>taṇhā</em>) → it can end (<em>nirodha</em>) → the treatment (the eightfold path).</div>' +
+          '<div class="mcd-cp">There\'s also a Third Noble Truth: the <em>cessation</em> of dukkha (SN 56.11:4.6). If it can end, it isn\'t a permanent feature of existence. And <em>nibbāna</em> (the unconditioned, the goal) is explicitly <em>not</em> dukkha. Existence is not a closed trap.</div>' +
+          '<div class="mcd-ch3">So, precisely</div>' +
+          '<div class="mcd-cp">The claim is: <em>as long as you reach for impermanent things to give you lasting peace, there\'s a built-in mismatch — they can\'t deliver it — and that mismatch is dukkha.</em> His point is that the mismatch can be ended by changing your relationship to those things, not by escaping existence.</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">This is also why you\'ll often see <em>dukkha</em> left untranslated — to keep its full meaning and sidestep the "life is misery" reading you\'ve correctly questioned.</div>' +
+          '<div class="mcd-csrcs"><span class="mcd-chip">SN 56.11</span><span class="mcd-chip">DN 33</span></div>',
+        answer: ''
+      }
+      ]  // end search_hybrid.scenarios
     },
     {
       tab: 'survey_corpus',
-      question: 'How many times does appamāda appear across the entire Pāli canon?',
-      toolName: 'survey_corpus',
-      toolArgs: '"appamāda", match_scope="stem"',
-      statuses: ['counting segments…', 'tallying pitakas…', '187 segments found'],
-      toolDur: 3.2,
-      dur: 14,
-      type: 'stats',
-      stats: [
-        { label: 'Total segments',  value: '187',                          big: true },
-        { label: 'Distinct suttas', value: '95' },
-        { label: 'Sutta Piṭaka',   value: '186' },
-        { label: 'Vinaya Piṭaka',  value: '1' },
-        { label: 'Word forms',     value: 'appamāda, appamādena, appamādaṃ…' }
-      ],
-      answer: 'appamāda — "heedfulness / non-negligence" — appears 187 times across 95 suttas. These were the Buddha\'s last words: "All conditioned things are impermanent — strive on with heedfulness." (DN 16:6.1)'
+      scenarios: [{
+        question: 'How many times does appamāda appear across the entire Pāli canon?',
+        toolName: 'survey_corpus',
+        toolArgs: '"appamāda", match_scope="stem"',
+        statuses: ['counting segments…', 'tallying pitakas…', '187 segments found'],
+        toolDur: 3.2,
+        dur: 14,
+        type: 'stats',
+        stats: [
+          { label: 'Total segments',  value: '187',                          big: true },
+          { label: 'Distinct suttas', value: '95' },
+          { label: 'Sutta Piṭaka',   value: '186' },
+          { label: 'Vinaya Piṭaka',  value: '1' },
+          { label: 'Word forms',     value: 'appamāda, appamādena, appamādaṃ…' }
+        ],
+        answer: 'appamāda — "heedfulness / non-negligence" — appears 187 times across 95 suttas. These were the Buddha\'s last words: "All conditioned things are impermanent — strive on with heedfulness." (DN 16:6.1)'
+      }]
     },
     {
       tab: 'get_word_definition',
-      question: 'What does the word jhāna mean? Show the dictionary definition.',
-      toolName: 'get_word_definition',
-      toolArgs: '"jhāna"',
-      statuses: ['looking up…', 'PTS + Payutto found'],
-      toolDur: 2.5,
-      dur: 13,
-      type: 'def',
-      def: {
-        word: 'jhāna',
-        gram: 'nt.',
-        text: 'Meditation, contemplation — the four meditative absorptions. A state of alert mental stillness, not trance; characterised as enhanced vitality rather than mental suppression. The four jhānas are the direct basis for liberating insight.',
-        sources: ['PTS Dictionary', 'Payutto']
-      },
-      answer: 'jhāna = the four meditative absorptions — states of deep, unified attention. The PTS dictionary emphasises: not trance, but "enhanced vitality." The path to Nibbāna runs through all four.'
+      scenarios: [{
+        question: 'What does the word jhāna mean? Show the dictionary definition.',
+        toolName: 'get_word_definition',
+        toolArgs: '"jhāna"',
+        statuses: ['looking up…', 'PTS + Payutto found'],
+        toolDur: 2.5,
+        dur: 13,
+        type: 'def',
+        def: {
+          word: 'jhāna',
+          gram: 'nt.',
+          text: 'Meditation, contemplation — the four meditative absorptions. A state of alert mental stillness, not trance; characterised as enhanced vitality rather than mental suppression. The four jhānas are the direct basis for liberating insight.',
+          sources: ['PTS Dictionary', 'Payutto']
+        },
+        answer: 'jhāna = the four meditative absorptions — states of deep, unified attention. The PTS dictionary emphasises: not trance, but "enhanced vitality." The path to Nibbāna runs through all four.'
+      }]
     },
     {
       tab: 'compare_translations',
-      question: 'Compare Pāli and English in SN 56.11 — the First Discourse.',
-      toolName: 'compare_translations',
-      toolArgs: '"sn56.11:5.1"',
-      statuses: ['fetching editions…', '2 editions aligned'],
-      toolDur: 2.8,
-      dur: 14,
-      type: 'pairs',
-      pairs: [
-        { label: 'Pāli (canonical)', text: 'Idaṃ kho pana, bhikkhave, dukkhaṃ ariyasaccaṃ: jātipi dukkhā, jarāpi dukkhā, maraṇampi dukkhaṃ…' },
-        { label: 'Sujato (EN)',      text: 'Now this is the noble truth of suffering: rebirth is suffering, old age is suffering, death is suffering…' }
-      ],
-      answer: 'SN 56.11:5.1 — the First Noble Truth as a list. Sujato renders dukkha as "suffering" and preserves the enumerated structure closely. No additional editions are indexed for this segment.'
+      scenarios: [{
+        question: 'Compare Pāli and English in SN 56.11 — the First Discourse.',
+        toolName: 'compare_translations',
+        toolArgs: '"sn56.11:5.1"',
+        statuses: ['fetching editions…', '2 editions aligned'],
+        toolDur: 2.8,
+        dur: 14,
+        type: 'pairs',
+        pairs: [
+          { label: 'Pāli (canonical)', text: 'Idaṃ kho pana, bhikkhave, dukkhaṃ ariyasaccaṃ: jātipi dukkhā, jarāpi dukkhā, maraṇampi dukkhaṃ…' },
+          { label: 'Sujato (EN)',      text: 'Now this is the noble truth of suffering: rebirth is suffering, old age is suffering, death is suffering…' }
+        ],
+        answer: 'SN 56.11:5.1 — the First Noble Truth as a list. Sujato renders dukkha as "suffering" and preserves the enumerated structure closely. No additional editions are indexed for this segment.'
+      }]
     },
     {
       tab: 'get_sutta',
-      question: 'Show me the structure of the Ānāpānassati Sutta (MN 118).',
-      toolName: 'get_sutta',
-      toolArgs: '"mn118", mode="outline"',
-      statuses: ['fetching outline…', '44 sections loaded'],
-      toolDur: 2.6,
-      dur: 13,
-      type: 'outline',
-      outline: [
-        { range: '§1–4',   title: 'First tetrad — mindfulness of body',     sub: '4 steps' },
-        { range: '§5–8',   title: 'Second tetrad — mindfulness of feelings', sub: '4 steps' },
-        { range: '§9–12',  title: 'Third tetrad — mindfulness of mind',      sub: '4 steps' },
-        { range: '§13–16', title: 'Fourth tetrad — mindfulness of phenomena',sub: '4 steps' }
-      ],
-      meta: '44 sections · 154 segments total',
-      answer: 'MN 118 has 44 sections and 154 segments. It maps ānāpānasati onto the four satipaṭṭhānas via four tetrads — a structural key unifying the entire meditation path.'
+      scenarios: [{
+        question: 'Show me the structure of the Ānāpānassati Sutta (MN 118).',
+        toolName: 'get_sutta',
+        toolArgs: '"mn118", mode="outline"',
+        statuses: ['fetching outline…', '44 sections loaded'],
+        toolDur: 2.6,
+        dur: 13,
+        type: 'outline',
+        outline: [
+          { range: '§1–4',   title: 'First tetrad — mindfulness of body',     sub: '4 steps' },
+          { range: '§5–8',   title: 'Second tetrad — mindfulness of feelings', sub: '4 steps' },
+          { range: '§9–12',  title: 'Third tetrad — mindfulness of mind',      sub: '4 steps' },
+          { range: '§13–16', title: 'Fourth tetrad — mindfulness of phenomena',sub: '4 steps' }
+        ],
+        meta: '44 sections · 154 segments total',
+        answer: 'MN 118 has 44 sections and 154 segments. It maps ānāpānasati onto the four satipaṭṭhānas via four tetrads — a structural key unifying the entire meditation path.'
+      }]
     },
     {
       tab: 'list_structure',
-      question: 'How is the Pāli Canon structured? What is the full coverage?',
-      toolName: 'list_structure',
-      toolArgs: '',
-      statuses: ['querying…', 'structure loaded'],
-      toolDur: 2.0,
-      dur: 12,
-      type: 'baskets',
-      baskets: [
-        { name: 'Sutta Piṭaka',      segs: '284,702', note: 'DN · MN · SN · AN · KN' },
-        { name: 'Abhidhamma Piṭaka', segs: '88,414',  note: '7 books — Pāli only' },
-        { name: 'Vinaya Piṭaka',     segs: '71,557',  note: 'Monks · Nuns · Khandhaka · Parivāra' }
-      ],
-      total: '≈ 444,673 segments — at parity with SuttaCentral bilara-data',
-      answer: 'The three piṭakas cover ~444,673 segments: Sutta (284K), Abhidhamma (88K), and Vinaya (71K). All text is indexed and embedded. Sujato EN + Brahmali EN included.'
+      scenarios: [{
+        question: 'How is the Pāli Canon structured? What is the full coverage?',
+        toolName: 'list_structure',
+        toolArgs: '',
+        statuses: ['querying…', 'structure loaded'],
+        toolDur: 2.0,
+        dur: 12,
+        type: 'baskets',
+        baskets: [
+          { name: 'Sutta Piṭaka',      segs: '284,702', note: 'DN · MN · SN · AN · KN' },
+          { name: 'Abhidhamma Piṭaka', segs: '88,414',  note: '7 books — Pāli only' },
+          { name: 'Vinaya Piṭaka',     segs: '71,557',  note: 'Monks · Nuns · Khandhaka · Parivāra' }
+        ],
+        total: '≈ 444,673 segments — at parity with SuttaCentral bilara-data',
+        answer: 'The three piṭakas cover ~444,673 segments: Sutta (284K), Abhidhamma (88K), and Vinaya (71K). All text is indexed and embedded. Sujato EN + Brahmali EN included.'
+      }]
     }
   ];
 
@@ -260,7 +305,7 @@
         'font-size:12px;font-style:italic;color:var(--d-fg2);line-height:1.6;' +
         'background:var(--d-hbg);border-radius:0 4px 4px 0}' +
       // chat response
-      '.mcd-chatbox{flex:999 1 0;min-height:0;overflow-y:auto;padding:4px 16px 12px;' +
+      '.mcd-chatbox{flex:1;min-height:0;overflow-y:auto;padding:4px 16px 12px;' +
         'scrollbar-width:thin;scrollbar-color:var(--d-brd) transparent}' +
       '.mcd-chatbox::-webkit-scrollbar{width:4px}' +
       '.mcd-chatbox::-webkit-scrollbar-thumb{background:var(--d-brd);border-radius:2px}' +
@@ -273,6 +318,27 @@
         'background:var(--d-hbg);border-radius:0 4px 4px 0}' +
       '.mcd-csrcs{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;padding-top:10px;' +
         'border-top:1px solid var(--d-brd)}' +
+      // chat table
+      '.mcd-ctable{display:flex;flex-direction:column;border:1px solid var(--d-brd);border-radius:6px;' +
+        'overflow:hidden;margin:4px 0 10px;font-size:12px}' +
+      '.mcd-trow{display:grid;grid-template-columns:1.6fr 1.4fr 1.8fr}' +
+      '.mcd-trow:not(:last-child){border-bottom:1px solid var(--d-brd)}' +
+      '.mcd-trow span{padding:5px 9px;color:var(--d-fg2);line-height:1.4}' +
+      '.mcd-thr span{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.04em;' +
+        'text-transform:uppercase;color:var(--d-dim);background:var(--d-bg3)}' +
+      '.mcd-tpali{font-style:italic;color:var(--d-fg)!important}' +
+      // question nav (arrows + dots)
+      '.mcd-qnav{display:flex;align-items:center;justify-content:center;gap:10px;flex:none;padding:7px 0 2px}' +
+      '.mcd-narr{width:24px;height:24px;border-radius:5px;border:1px solid var(--d-brd);' +
+        'background:transparent;color:var(--d-dim);cursor:pointer;font-size:16px;line-height:1;' +
+        'display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0}' +
+      '.mcd-narr:hover:not([disabled]){border-color:var(--d-acc);color:var(--d-acc)}' +
+      '.mcd-narr[disabled]{opacity:.28;cursor:default}' +
+      '.mcd-ndots{display:flex;gap:6px;align-items:center}' +
+      '.mcd-dot{width:6px;height:6px;border-radius:50%;background:var(--d-brd2);cursor:pointer;' +
+        'transition:all .18s;flex:none}' +
+      '.mcd-dot.on{background:var(--d-acc);transform:scale(1.25)}' +
+      '.mcd-dot:hover:not(.on){background:var(--d-dim)}' +
       // answer
       '.mcd-spacer{flex:1}' +
       '.mcd-ans{display:flex;gap:10px;align-items:flex-start}' +
@@ -321,8 +387,11 @@
     this._ro = null;
     this._anims = [];
     this._chipEls = [];
+    this.scIdx = 0;
     this._builtTab = -1;
+    this._builtScIdx = -1;
     this._chatEl = null;
+    this._spacerEl = null;
     this._scrollLocked = false;
     this._d = null;
   }
@@ -331,6 +400,7 @@
     injectCSS();
     this._buildDOM();
     this._applyTheme();
+    this._updateQNav();
     this.sceneStart = Date.now();
     this._timer = setInterval(this._tick.bind(this), 33);
     var self = this;
@@ -381,15 +451,16 @@
             '<div id="mcd-chips" class="mcd-chips"></div>' +
           '</div>' +
         '</div>' +
+        '<div id="mcd-qnav" class="mcd-qnav" style="display:none"></div>' +
       '</div>' +
       '</div></div></div>';
 
     // Tab buttons
     var tabsEl = this.el.querySelector('#mcd-tabs');
-    SCENARIOS.forEach(function (s, i) {
+    TAB_GROUPS.forEach(function (g, i) {
       var btn = document.createElement('button');
       btn.className = 'mcd-tab' + (i === 0 ? ' on' : '');
-      btn.textContent = s.tab;
+      btn.textContent = g.tab;
       btn.addEventListener('click', function () { self._goto(i); });
       tabsEl.appendChild(btn);
     });
@@ -415,7 +486,8 @@
       tbody:  this.el.querySelector('#mcd-tbody'),
       ans:    this.el.querySelector('#mcd-ans'),
       atxt:   this.el.querySelector('#mcd-atxt'),
-      chips:  this.el.querySelector('#mcd-chips')
+      chips:  this.el.querySelector('#mcd-chips'),
+      qnav:   this.el.querySelector('#mcd-qnav')
     };
   };
 
@@ -428,16 +500,64 @@
 
   McpDemo.prototype._goto = function (idx) {
     this.tab = idx;
+    this.scIdx = 0;
     this.sceneStart = Date.now();
     this._builtTab = -1;
+    this._builtScIdx = -1;
     var tabs = this._d.tabs;
     for (var i = 0; i < tabs.length; i++) {
       tabs[i].classList.toggle('on', i === idx);
     }
+    this._updateQNav();
+  };
+
+  McpDemo.prototype._gotoQ = function (qIdx) {
+    this.scIdx = qIdx;
+    this.sceneStart = Date.now();
+    this._builtScIdx = -1;
+    this._updateQNav();
+  };
+
+  McpDemo.prototype._updateQNav = function () {
+    var group = TAB_GROUPS[this.tab];
+    var total = group.scenarios.length;
+    var qi = this.scIdx;
+    var qnav = this._d.qnav;
+    qnav.innerHTML = '';
+    if (total <= 1) { qnav.style.display = 'none'; return; }
+    qnav.style.display = 'flex';
+    var self = this;
+
+    var l = document.createElement('button');
+    l.className = 'mcd-narr';
+    l.innerHTML = '&#8249;';
+    if (qi === 0) l.setAttribute('disabled', '');
+    l.addEventListener('click', function () { if (qi > 0) self._gotoQ(qi - 1); });
+    qnav.appendChild(l);
+
+    var dots = document.createElement('div');
+    dots.className = 'mcd-ndots';
+    for (var i = 0; i < total; i++) {
+      var dot = document.createElement('span');
+      dot.className = 'mcd-dot' + (i === qi ? ' on' : '');
+      (function (idx) {
+        dot.addEventListener('click', function () { self._gotoQ(idx); });
+      })(i);
+      dots.appendChild(dot);
+    }
+    qnav.appendChild(dots);
+
+    var r = document.createElement('button');
+    r.className = 'mcd-narr';
+    r.innerHTML = '&#8250;';
+    if (qi === total - 1) r.setAttribute('disabled', '');
+    r.addEventListener('click', function () { if (qi < total - 1) self._gotoQ(qi + 1); });
+    qnav.appendChild(r);
   };
 
   McpDemo.prototype._buildScene = function (scn) {
     this._builtTab = this.tab;
+    this._builtScIdx = this.scIdx;
     this._anims = [];
     this._chipEls = [];
 
@@ -446,7 +566,9 @@
       this._chatEl.parentNode.removeChild(this._chatEl);
       this._chatEl = null;
     }
+    if (this._spacerEl) { this._spacerEl.style.display = ''; this._spacerEl = null; }
     this._scrollLocked = false;
+    this._d.ans.style.display = '';
 
     var body = this._d.tbody;
     var chipsEl = this._d.chips;
@@ -562,9 +684,12 @@
       });
 
     } else if (scn.type === 'chat') {
-      body.style.padding = '0'; // collapse empty tbody for chat type
+      body.style.padding = '0';
+      this._d.ans.style.display = 'none'; // hide avatar/empty answer for chat type
       var frame = body.parentElement.parentElement; // tbody → tool → frame
       var spacer = frame.querySelector('.mcd-spacer');
+      spacer.style.display = 'none'; // chatbox fills space directly
+      this._spacerEl = spacer;
       var ce = document.createElement('div');
       ce.className = 'mcd-chatbox';
       ce.style.opacity = 0;
@@ -589,11 +714,11 @@
   };
 
   McpDemo.prototype._tick = function () {
-    var scn = SCENARIOS[this.tab];
+    var scn = TAB_GROUPS[this.tab].scenarios[this.scIdx];
     var elapsed = (Date.now() - this.sceneStart) / 1000;
 
     var t = Math.min(elapsed, scn.dur);
-    if (this._builtTab !== this.tab) this._buildScene(scn);
+    if (this._builtTab !== this.tab || this._builtScIdx !== this.scIdx) this._buildScene(scn);
 
     var d = this._d;
 
