@@ -479,15 +479,21 @@ footer p { margin: 0.5rem 0; }
     text-decoration: none;
 }
 .uc-more:hover { text-decoration: underline; }
-/* demo breakout — escapes the 720px main column */
-.demo-intro { font-size: .9rem; color: var(--muted); margin: 2.5rem 0 .3rem; }
-.demo-wide {
-    width: 1100px;
-    margin-left: -214px;   /* centers 1100px within 720px max-width main: (672-1100)/2 */
-    margin-bottom: 3rem;
+/* hero demo — full-width section above main */
+.hero-demo {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
 }
-@media (max-width: 1100px) {
-    .demo-wide { width: calc(100% + 3rem); margin-left: -1.5rem; }
+.hero-demo-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 0;
+}
+.hero-demo .mcd-outer {
+    margin-top: 0 !important;
+}
+@media (max-width: 800px) {
+    .hero-demo-wrap { padding: 1rem 0 0; }
 }
 </style>
 </head>
@@ -505,6 +511,11 @@ footer p { margin: 0.5rem 0; }
     <a href="/install/" class="nav-cta">Install →</a>
   </div>
 </nav>
+<section class="hero-demo" aria-label="Live demo">
+  <div class="hero-demo-wrap">
+    <div data-mcp-demo></div>
+  </div>
+</section>
 <main>
 
 <header>
@@ -516,10 +527,6 @@ footer p { margin: 0.5rem 0; }
 <a class="hero-cta" href="/install/">Install in 1 click →</a>
 <span class="hero-cta-secondary">or <a href="/read/">browse the canon</a> · <a href="#what-it-does">learn what it does ↓</a></span>
 </p>
-<picture>
-<source srcset="/cover.webp" type="image/webp">
-<img class="cover" src="/cover.png" width="1376" height="768" alt="The Buddha teaching a small group of monastic disciples in a forest clearing, with a stream and snow-capped mountains in the distance" loading="eager" decoding="async">
-</picture>
 </header>
 
 <section class="tracks" aria-label="Where to begin">
@@ -539,9 +546,6 @@ footer p { margin: 0.5rem 0; }
 <span class="track-cta">Browse topics →</span>
 </a>
 </section>
-
-<p class="demo-intro">See it in action — click any tab to jump to a scenario.</p>
-<div class="demo-wide"><div data-mcp-demo></div></div>
 
 <h2 id="what-it-does">What it does</h2>
 <p>The server exposes <strong>12 tools and 3 resources</strong> over MCP. Your AI agent can:</p>
