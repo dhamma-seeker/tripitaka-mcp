@@ -139,39 +139,29 @@
     {
       tab: 'survey_corpus',
       scenarios: [{
-        question: 'How many times does appamāda appear across the entire Pāli canon?',
-        toolName: 'survey_corpus',
-        toolArgs: '"appamāda", match_scope="stem"',
-        statuses: ['counting segments…', 'tallying pitakas…', '187 segments found'],
-        toolDur: 3.2,
-        dur: 14,
-        type: 'stats',
-        stats: [
-          { label: 'Total segments',  value: '187',                          big: true },
-          { label: 'Distinct suttas', value: '95' },
-          { label: 'Sutta Piṭaka',   value: '186' },
-          { label: 'Vinaya Piṭaka',  value: '1' },
-          { label: 'Word forms',     value: 'appamāda, appamādena, appamādaṃ…' }
-        ],
-        answer: 'appamāda — "heedfulness / non-negligence" — appears 187 times across 95 suttas. These were the Buddha\'s last words: "All conditioned things are impermanent — strive on with heedfulness." (DN 16:6.1)'
-      },
-      {
         question: 'How often does "dukkha" appear across the three Piṭakas combined?',
         toolName: 'survey_corpus',
         toolArgs: '"dukkha", match_scope="stem"',
         statuses: ['counting segments…', 'tallying pitakas…', '7,836 segments found'],
         toolDur: 3.2,
-        dur: 16,
-        type: 'stats',
-        stats: [
-          { label: 'Total segments — stem (all inflections + compounds)', value: '7,836', big: true },
-          { label: 'Distinct suttas',   value: '1,377' },
-          { label: 'Sutta Piṭaka',     value: '5,346' },
-          { label: 'Vinaya Piṭaka',    value: '176' },
-          { label: 'Abhidhamma Piṭaka',value: '2,314' },
-          { label: 'Bare word only (exact match)',    value: '617' }
-        ],
-        answer: 'Stem: 7,836 segments in 1,377 suttas — roughly half the canon. Bare word (exact): only 617. The Abhidhamma\'s 2,314 reflects systematic enumeration of every dukkha compound across 7 books.'
+        dur: 32,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp">Short answer: <strong>it depends on what you count</strong> — the two reasonable readings differ by roughly 12×. Both are from this corpus (SuttaCentral <em>bilara-data</em>, Pāli text), flagged complete with nothing dropped.</div>' +
+          '<div class="mcd-ch3">Key caveat: segments, not tokens</div>' +
+          '<div class="mcd-cp">The tool counts <em>segments</em> (canonical lines) containing the term, not raw word tokens. A single line like <em>"Jātipi dukkhā, jarāpi dukkhā, maraṇampi dukkhaṁ…"</em> (DN 22) may contain the word many times but counts as <strong>one segment</strong>. So this is "how many lines mention it" — the closest available proxy.</div>' +
+          '<div class="mcd-ch3">The two readings</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.9fr 0.7fr 0.8fr 1.1fr 1fr"><span>Scope</span><span>Total</span><span>Sutta</span><span>Abhidhamma</span><span>Distinct suttas</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.9fr 0.7fr 0.8fr 1.1fr 1fr"><span class="mcd-tpali">exact "dukkha" (nominative only)</span><span>617</span><span>529</span><span>59</span><span>235</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.9fr 0.7fr 0.8fr 1.1fr 1fr"><span class="mcd-tpali">stem dukkha- (all inflections + compounds)</span><span>7,836</span><span>5,346</span><span>2,314</span><span>1,377</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">Why neither number is exactly right</div>' +
+          '<div class="mcd-cp"><strong>617 undercounts</strong> — it\'s a literal string match, missing common inflections like <em>dukkhaṁ</em> and <em>dukkhassa</em>. It captures basically the nominative forms only.</div>' +
+          '<div class="mcd-cp"><strong>7,836 overcounts</strong> — the stem sweeps in compounds: <em>dukkhanirodha</em> (cessation of suffering), <em>dukkhasamudaya</em> (origin), <em>dukkhasacca</em> (the truth of suffering). Those are arguably distinct technical terms, not bare "dukkha."</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">The honest count — all inflections but excluding compounds — sits between the two. The tool doesn\'t isolate it directly. Either way, <em>dukkha</em> touches roughly half the entire canon by stem.</div>' +
+          '<div class="mcd-csrcs"><span class="mcd-chip">DN 22</span><span class="mcd-chip">SN 56.11</span><span class="mcd-chip">DN 33</span></div>',
+        answer: ''
       }]
     },
     {
