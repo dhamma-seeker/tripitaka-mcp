@@ -286,15 +286,55 @@ h1 {
 .legal-links a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 .legal-links a:hover { color: var(--accent); }
 .legal-links .sep { color: var(--border); margin: 0 0.4em; }
+
+/* ── Hero / cover ── */
+.uc-hero {
+    padding: 1.75rem 1.25rem 0;
+}
+.uc-hero-hd {
+    max-width: 880px;
+    margin: 0 auto 1.25rem;
+}
+.uc-hero-hd h1 {
+    font-size: 2rem;
+    margin: 0.5rem 0 0.3rem;
+    line-height: 1.15;
+}
+.uc-hero-hd .subtitle {
+    color: var(--muted);
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+}
+.uc-hero-tagline {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin: 0;
+}
+.uc-hero-demo {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+.uc-hero-demo .mcd-outer {
+    margin-bottom: 0;
+    border-radius: 10px 10px 0 0;
+}
 </style>
 </head>
 <body>
+
+<section class="uc-hero">
+  <div class="uc-hero-hd">
+    <a href="/" class="back-home">← Tripitaka MCP</a>
+    <h1>Use cases</h1>
+    <p class="subtitle">What people actually ask, and what the assistant does behind the scenes.</p>
+    <p class="uc-hero-tagline">Click any tab — real tool calls, real results.</p>
+  </div>
+  <div class="uc-hero-demo">
+    <div data-mcp-demo></div>
+  </div>
+</section>
+
 <main>
-
-<a href="/" class="back-home">← Tripitaka MCP</a>
-
-<h1>Use cases</h1>
-<p class="subtitle">What people actually ask, and what the assistant does behind the scenes.</p>
 
 <p class="intro">
 Six worked examples of <em>aggregation-style</em> questions — the kind where you don't already
@@ -309,10 +349,6 @@ first (<code>get_sutta(…, mode="outline")</code>), then fetches just the secti
 segments around a search hit (<code>around="…"</code>). So even DN 16 (1,664 segments) stays a
 precise lookup rather than a context-window flood.
 </p>
-
-<h2 style="margin:2rem 0 0.4rem;font-size:1.15rem">Live demo — each tool in action</h2>
-<p style="color:var(--muted);font-size:0.92rem;margin:0 0 0.25rem">Click any tab to jump to that scenario. Real tool calls, real results.</p>
-<div data-mcp-demo></div>
 
 <!-- 1. Thematic survey -->
 <article class="case">
