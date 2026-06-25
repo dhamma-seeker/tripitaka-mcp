@@ -904,54 +904,148 @@
     },
     {
       tab: 'list_editions',
-      scenarios: [{
-        question: 'What translation editions are available? Which translators are included?',
-        toolName: 'list_editions',
-        toolArgs: '',
-        statuses: ['querying editions…', 'editions loaded'],
-        toolDur: 0.5,
-        dur: 24,
-        type: 'chat',
-        html:
-          '<div class="mcd-cp"><em>list_editions</em> shows which translation editions are indexed and available for <em>compare_translations</em>. Call this first to confirm which edition codes are valid on the running server instance.</div>' +
-          '<div class="mcd-ctable">' +
-            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span>Edition code</span><span>Translator</span><span>Language</span><span>Status</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali">pali</span><span>—</span><span>Pāli</span><span>✓ always present</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">sujato ★</span><span>Bhikkhu Sujato</span><span>English</span><span>✓ loaded — Sutta Piṭaka</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali">brahmali</span><span>Bhikkhu Brahmali</span><span>English</span><span>✓ loaded — Vinaya</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">dhiranandi</span><span style="color:var(--d-fg2)">Phra Dhiranandi</span><span style="color:var(--d-fg2)">Thai</span><span style="color:var(--d-fg2)">pending</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">jayasaro</span><span style="color:var(--d-fg2)">Ajahn Jayasaro</span><span style="color:var(--d-fg2)">Thai</span><span style="color:var(--d-fg2)">pending</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">mbu</span><span style="color:var(--d-fg2)">Mahamakut</span><span style="color:var(--d-fg2)">Thai</span><span style="color:var(--d-fg2)">pending</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">royal</span><span style="color:var(--d-fg2)">Royal Institute</span><span style="color:var(--d-fg2)">Thai</span><span style="color:var(--d-fg2)">pending</span></div>' +
-          '</div>' +
-          '<div class="mcd-cp" style="margin-bottom:6px">The server currently returns "No additional translation editions loaded" — meaning only the defaults (Pāli + Sujato EN + Brahmali EN) are active. Once Thai editions are indexed, <em>compare_translations</em> can show up to 4 languages side by side: Pāli + English + any two Thai editions.</div>',
-        answer: ''
-      }]
+      scenarios: [
+        {
+          question: 'What translation editions are available on this server? Which translators are included?',
+          toolName: 'list_editions',
+          toolArgs: '',
+          statuses: ['querying editions…', 'editions loaded'],
+          toolDur: 0.5,
+          dur: 22,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp"><em>list_editions</em> returns every translation indexed on the running server — edition code, translator, language, and load status. Call this before <em>compare_translations</em> to confirm which codes are valid for this instance.</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.2fr 1.8fr 0.7fr 1.4fr"><span>Code</span><span>Translator</span><span>Lang</span><span>Status</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.8fr 0.7fr 1.4fr"><span class="mcd-tpali">pali</span><span>—</span><span>Pāli</span><span>✓ always present</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.8fr 0.7fr 1.4fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">sujato ★</span><span>Bhikkhu Sujato</span><span>EN</span><span>✓ loaded — Sutta Piṭaka</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.8fr 0.7fr 1.4fr"><span class="mcd-tpali">brahmali</span><span>Bhikkhu Brahmali</span><span>EN</span><span>✓ loaded — Vinaya</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.8fr 0.7fr 1.4fr"><span class="mcd-tpali" style="color:var(--d-fg2)">dhiranandi</span><span style="color:var(--d-fg2)">Phra Dhiranandi</span><span style="color:var(--d-fg2)">TH</span><span style="color:var(--d-fg2)">pending</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.8fr 0.7fr 1.4fr"><span class="mcd-tpali" style="color:var(--d-fg2)">jayasaro</span><span style="color:var(--d-fg2)">Ajahn Jayasaro</span><span style="color:var(--d-fg2)">TH</span><span style="color:var(--d-fg2)">pending</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.8fr 0.7fr 1.4fr"><span class="mcd-tpali" style="color:var(--d-fg2)">mbu</span><span style="color:var(--d-fg2)">Mahamakut</span><span style="color:var(--d-fg2)">TH</span><span style="color:var(--d-fg2)">pending</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.8fr 0.7fr 1.4fr"><span class="mcd-tpali" style="color:var(--d-fg2)">royal</span><span style="color:var(--d-fg2)">Royal Institute</span><span style="color:var(--d-fg2)">TH</span><span style="color:var(--d-fg2)">pending</span></div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">Three editions are live now: Pāli original, Sujato English (Sutta Piṭaka), and Brahmali English (Vinaya). Four Thai editions — Dhiranandi, Jayasaro, Mahamakut, and Royal — are indexed and pending final verification before release.</div>',
+          answer: ''
+        },
+        {
+          question: 'Which edition codes do I need to pass to compare_translations? I want to see Pāli and English side by side.',
+          toolName: 'list_editions',
+          toolArgs: '',
+          statuses: ['querying editions…', 'editions loaded'],
+          toolDur: 0.5,
+          dur: 20,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp">The edition codes from <em>list_editions</em> are exactly what you pass to <em>compare_translations</em>. Only editions marked <em>loaded</em> work right now — the three usable codes are:</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1fr 2fr 2.5fr"><span>Code</span><span>What it gives you</span><span>Example</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1fr 2fr 2.5fr"><span class="mcd-tpali">pali</span><span>Original Pāli text</span><span><code>editions=["pali","sujato"]</code></span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1fr 2fr 2.5fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">sujato ★</span><span>Sujato English</span><span><code>editions=["sujato"]</code> (default)</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1fr 2fr 2.5fr"><span class="mcd-tpali">brahmali</span><span>Brahmali English — Vinaya only</span><span><code>editions=["pali","brahmali"]</code></span></div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">If you pass an edition code that is not loaded, <em>compare_translations</em> returns an error listing the valid codes for this server. Four Thai editions are planned — once released, <code>editions=["pali","sujato","jayasaro"]</code> will enable trilingual comparison.</div>',
+          answer: ''
+        },
+        {
+          question: 'My study group reads Thai — does this database include a Thai translation?',
+          toolName: 'list_editions',
+          toolArgs: '',
+          statuses: ['querying editions…', 'editions loaded'],
+          toolDur: 0.5,
+          dur: 22,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp"><em>list_editions</em> shows four Thai translation projects in the database, all currently marked <em>pending</em> — indexed but not yet released. Here is what each one covers:</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.2fr 1.8fr 2.5fr"><span>Code</span><span>Translator</span><span>Notes</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.8fr 2.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">dhiranandi</span><span style="color:var(--d-fg2)">Phra Dhiranandi</span><span style="color:var(--d-fg2)">Modern Thai prose, Sutta Piṭaka focus</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.8fr 2.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">jayasaro</span><span style="color:var(--d-fg2)">Ajahn Jayasaro</span><span style="color:var(--d-fg2)">Contemporary Thai — Forest tradition voice</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.8fr 2.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">mbu</span><span style="color:var(--d-fg2)">Mahamakut</span><span style="color:var(--d-fg2)">Mahamakut Buddhist University edition</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.8fr 2.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">royal</span><span style="color:var(--d-fg2)">Royal Institute</span><span style="color:var(--d-fg2)">Thai Tipiṭaka Foundation official edition</span></div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">Until a Thai edition is released, <code>editions=["pali","sujato"]</code> is the best available combination. Once <em>jayasaro</em> or <em>dhiranandi</em> goes live, trilingual study — Pāli · English · Thai — will be a single <em>compare_translations</em> call.</div>',
+          answer: ''
+        }
+      ]
     },
     {
       tab: 'open_sutta_viewer',
-      scenarios: [{
-        question: 'Open SN 56.11 right at the passage where the Buddha describes the three rounds of knowledge.',
-        toolName: 'open_sutta_viewer',
-        toolArgs: '"sn56.11", around="sn56.11:5.1"',
-        statuses: ['loading SN 56.11…', 'viewer centred at §5.1'],
-        toolDur: 1.1,
-        dur: 26,
-        type: 'chat',
-        html:
-          '<div class="mcd-cp"><em>open_sutta_viewer</em> renders a sutta inline as a Pāli + English panel, centred on a specific segment. The <em>around</em> parameter targets a segment ID; the viewer highlights it and the reader scrolls to that exact line. SN 56.11 has 60 segments total — this call centres at §5.1.</div>' +
-          '<div class="mcd-ch3">SN 56.11 §5.1–5.3 — three rounds for the First Noble Truth</div>' +
-          '<div class="mcd-ctable">' +
-            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.9fr 4fr"><span>Segment</span><span>English (Sujato) — verified</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:0.9fr 4fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">§5.1 ★</span><span><em>"This is the noble truth of suffering."</em> — vision, knowledge, wisdom, realization, and light arose in me regarding teachings not learned before from another. <span style="color:var(--d-dim);font-size:11px">(Round 1: recognition)</span></span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:0.9fr 4fr"><span class="mcd-tpali">§5.2</span><span><em>"This noble truth of suffering should be completely understood."</em> — vision arose … <span style="color:var(--d-dim);font-size:11px">(Round 2: task)</span></span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:0.9fr 4fr"><span class="mcd-tpali">§5.3</span><span><em>"This noble truth of suffering has been completely understood."</em> — vision arose … <span style="color:var(--d-dim);font-size:11px">(Round 3: completion)</span></span></div>' +
-          '</div>' +
-          '<div class="mcd-cp">The same three rounds repeat for all four Noble Truths (§5–8): recognition → task → completion. 4 truths × 3 rounds = the "twelve aspects" (<em>tiparivaṭṭa dvādasākāra</em>) — the canonical declaration that the first discourse is also the moment of complete awakening.</div>' +
-          '<div class="mcd-cp" style="margin-bottom:6px">After a search hit, pass the matched <em>segment_id</em> as <em>around</em> to open the reader at exactly the cited line — the viewer renders ±12 segments of context by default.</div>' +
-          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11#sn56.11:5.1" target="_blank" rel="noopener">SN 56.11 §5.1</a></div>',
-        answer: ''
-      }]
+      scenarios: [
+        {
+          question: 'Can you open the Mindfulness of Breathing sutta right at the part where the Buddha describes sitting down and starting the practice?',
+          toolName: 'open_sutta_viewer',
+          toolArgs: '"mn118", around="mn118:17.1"',
+          statuses: ['loading MN 118…', 'viewer centred at §17.1'],
+          toolDur: 1.1,
+          dur: 28,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp"><em>open_sutta_viewer</em> renders a Pāli / English reader panel centred on a specific segment (▶). The highlighted row is the jump target; the viewer shows ±12 segments of context on each side. MN 118 · Ānāpānassatisutta has 154 segments total — this opens at step one of the 16-step breath practice.</div>' +
+            '<div class="mcd-vwr">' +
+              '<div class="mcd-vhdr"><span>MN 118 · Ānāpānassatisutta · Mindfulness of Breathing</span><span style="color:var(--d-dim)">154 seg</span></div>' +
+              '<div class="mcd-vsegs">' +
+                '<div class="mcd-vseg"><div class="mcd-sid">mn118:15.1</div><div class="mcd-vp">Ānāpānassati, bhikkhave, bhāvitā bahulīkatā mahapphalā hoti mahānisaṁsā.</div><div class="mcd-ve">Mendicants, when mindfulness of breathing is developed and cultivated it is very fruitful and beneficial.</div></div>' +
+                '<div class="mcd-vseg"><div class="mcd-sid">mn118:16.1</div><div class="mcd-vp">Kathaṁ bhāvitā ca, bhikkhave, ānāpānassati kathaṁ bahulīkatā mahapphalā hoti mahānisaṁsā?</div><div class="mcd-ve">And how is mindfulness of breathing developed and cultivated to be very fruitful and beneficial?</div></div>' +
+                '<div class="mcd-vseg hi"><div class="mcd-sid">mn118:17.1 ▶</div><div class="mcd-vp">Idha, bhikkhave, bhikkhu araññagato vā rukkhamūlagato vā suññāgāragato vā nisīdati pallaṅkaṁ ābhujitvā ujuṁ kāyaṁ paṇidhāya parimukhaṁ satiṁ upaṭṭhapetvā.</div><div class="mcd-ve">It\'s when a mendicant—gone to a wilderness, or to the root of a tree, or to an empty hut—sits down cross-legged, sets their body straight, and brings mindfulness to the present.</div></div>' +
+                '<div class="mcd-vseg"><div class="mcd-sid">mn118:17.2</div><div class="mcd-vp">So satova assasati satova passasati.</div><div class="mcd-ve">Just mindful, they breathe in. Mindful, they breathe out.</div></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">The 16 steps of ānāpānassati begin at §18 and cover all four satipaṭṭhānas — body, feeling tone, mind, and phenomena. Use <em>open_sutta_viewer</em> after a search hit: pass the returned <em>segment_id</em> as <em>around</em> to jump to exactly the cited line.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn118#mn118:17.1" target="_blank" rel="noopener">MN 118 §17.1</a></div>',
+          answer: ''
+        },
+        {
+          question: 'I heard the Attadaṇḍa Sutta is one of the most personal poems the Buddha ever spoke — can you open it?',
+          toolName: 'open_sutta_viewer',
+          toolArgs: '"snp4.15", around="snp4.15:1.1"',
+          statuses: ['loading snp4.15…', 'viewer centred at §1.1'],
+          toolDur: 1.1,
+          dur: 28,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp"><em>Attadaṇḍasutta</em> (Snp 4.15, "Taking Up Arms") is considered one of the most autobiographical suttas in the Canon — the Buddha describes his own response to witnessing human violence and how urgency drove him toward renunciation. Snp 4 (the Aṭṭhakavagga) is among the oldest strata. 84 segments, all verse.</div>' +
+            '<div class="mcd-vwr">' +
+              '<div class="mcd-vhdr"><span>Snp 4.15 · Attadaṇḍasutta · Taking Up Arms</span><span style="color:var(--d-dim)">84 seg</span></div>' +
+              '<div class="mcd-vsegs">' +
+                '<div class="mcd-vseg"><div class="mcd-sid">snp4.15:0.2</div><div class="mcd-vp">Attadaṇḍasutta</div><div class="mcd-ve">Taking Up Arms</div></div>' +
+                '<div class="mcd-vseg hi"><div class="mcd-sid">snp4.15:1.1 ▶</div><div class="mcd-vp">Attadaṇḍā bhayaṁ jātaṁ,</div><div class="mcd-ve">Peril stems from those who take up arms—</div></div>' +
+                '<div class="mcd-vseg"><div class="mcd-sid">snp4.15:1.2</div><div class="mcd-vp">janaṁ passatha medhagaṁ;</div><div class="mcd-ve">just look how people conflict!</div></div>' +
+                '<div class="mcd-vseg"><div class="mcd-sid">snp4.15:1.3</div><div class="mcd-vp">Saṁvegaṁ kittayissāmi,</div><div class="mcd-ve">I shall extol how I came to be</div></div>' +
+                '<div class="mcd-vseg"><div class="mcd-sid">snp4.15:1.4</div><div class="mcd-vp">yathā saṁvijitaṁ mayā.</div><div class="mcd-ve">stirred with a sense of urgency.</div></div>' +
+                '<div class="mcd-vseg"><div class="mcd-sid">snp4.15:2.1</div><div class="mcd-vp">Phandamānaṁ pajaṁ disvā,</div><div class="mcd-ve">I saw this population flounder,</div></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">Each segment is one pāda (quarter-verse). The poem traces a journey from witnessing conflict, through fear and restlessness, to the discovery of inner stillness — ending with the Buddha describing his own attainment of peace. One of the few first-person accounts of awakening in the Canon.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/snp4.15#snp4.15:1.1" target="_blank" rel="noopener">Snp 4.15 §1.1</a></div>',
+          answer: ''
+        },
+        {
+          question: 'Can you open the Metta Sutta so I can read the Pāli and English side by side?',
+          toolName: 'open_sutta_viewer',
+          toolArgs: '"kp9", around="kp9:1.1"',
+          statuses: ['loading kp9…', 'viewer centred at §1.1'],
+          toolDur: 1.1,
+          dur: 28,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp">kp9 (Khuddakapāṭha 9) is the shortest standalone sutta in the Canon — 44 segments, all verse. <em>open_sutta_viewer</em> renders the Pāli and Sujato English columns side by side for line-by-line study. Segment kp9:3.3 contains the metta dedication chanted in monasteries worldwide.</div>' +
+            '<div class="mcd-vwr">' +
+              '<div class="mcd-vhdr"><span>kp9 · Mettasutta · The Discourse on Love</span><span style="color:var(--d-dim)">44 seg</span></div>' +
+              '<div class="mcd-vsegs">' +
+                '<div class="mcd-vseg"><div class="mcd-sid">kp9:0.2</div><div class="mcd-vp">Mettasutta</div><div class="mcd-ve">The Discourse on Love</div></div>' +
+                '<div class="mcd-vseg hi"><div class="mcd-sid">kp9:1.1 ▶</div><div class="mcd-vp">Karaṇīyamatthakusalena,</div><div class="mcd-ve">Those who are skilled in the meaning of scripture</div></div>' +
+                '<div class="mcd-vseg"><div class="mcd-sid">kp9:1.2</div><div class="mcd-vp">Yanta santaṁ padaṁ abhisamecca;</div><div class="mcd-ve">should practice like this so as to realize the state of peace.</div></div>' +
+                '<div class="mcd-vseg"><div class="mcd-sid">kp9:1.3</div><div class="mcd-vp">Sakko ujū ca suhujū ca,</div><div class="mcd-ve">Let them be capable and upright, very upright,</div></div>' +
+                '<div class="mcd-vseg"><div class="mcd-sid">kp9:1.4</div><div class="mcd-vp">Sūvaco cassa mudu anatimānī.</div><div class="mcd-ve">easy to speak to, gentle and humble;</div></div>' +
+                '<div class="mcd-vseg"><div class="mcd-sid">kp9:3.3</div><div class="mcd-vp">Sukhino va khemino hontu,</div><div class="mcd-ve" style="color:var(--d-acc)">May they be happy and safe!</div></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">The sutta opens with qualities the practitioner cultivates (kp9:1–2), then radiates metta outward in widening circles — from all nearby beings, to all directions, to all beings everywhere. It closes with the image of a mother protecting her only child as the model for unbounded loving-kindness.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/kp9#kp9:1.1" target="_blank" rel="noopener">kp9 §1.1</a></div>',
+          answer: ''
+        }
+      ]
     }
   ];
 
@@ -1157,7 +1251,20 @@
       '.mcd-mobile .mcd-subtabs{display:none!important}' +
       '.mcd-mobile .mcd-main{padding:10px 14px 16px!important}' +
       '.mcd-mobile .mcd-targ{flex:1!important;min-width:0!important;max-width:none!important}' +
-      '.mcd-mobile .mcd-frame{flex:none!important;height:460px;padding:12px 14px!important}';
+      '.mcd-mobile .mcd-frame{flex:none!important;height:460px;padding:12px 14px!important}' +
+      // sutta viewer
+      '.mcd-vwr{border:1px solid var(--d-brd);border-radius:6px;overflow:hidden;margin-bottom:10px}' +
+      '.mcd-vhdr{padding:5px 10px;border-bottom:1px solid var(--d-brd);font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:600;color:var(--d-fg2);display:flex;justify-content:space-between;align-items:center;background:var(--d-bg3)}' +
+      '.mcd-vsegs{max-height:180px;overflow-y:auto;scrollbar-width:none}' +
+      '.mcd-vsegs::-webkit-scrollbar{display:none}' +
+      '.mcd-vseg{display:grid;grid-template-columns:80px 1fr 1fr;border-bottom:1px solid var(--d-brd)}' +
+      '.mcd-vseg:last-child{border-bottom:none}' +
+      '.mcd-vseg.hi{background:var(--d-abg)}' +
+      '.mcd-sid{font-family:"JetBrains Mono",monospace;font-size:9px;color:var(--d-dim);padding:5px 6px;border-right:1px solid var(--d-brd);line-height:1.4;word-break:break-all}' +
+      '.mcd-vseg.hi .mcd-sid{color:var(--d-acc);font-weight:600}' +
+      '.mcd-vp{padding:5px 8px;font-style:italic;color:var(--d-fg2);font-size:11px;line-height:1.5;border-right:1px solid var(--d-brd)}' +
+      '.mcd-ve{padding:5px 8px;color:var(--d-fg2);font-size:11px;line-height:1.5}' +
+      '.mcd-vseg.hi .mcd-vp,.mcd-vseg.hi .mcd-ve{color:var(--d-fg)}';
     document.head.appendChild(el);
   }
 
