@@ -73,7 +73,7 @@
       answer: ''
       },
       {
-        question: 'The First Noble Truth says life is suffering — does the Buddha mean existence is inherently painful?',
+        question: 'The First Noble Truth says life is suffering, does the Buddha mean existence is inherently painful?',
         toolName: 'search_hybrid',
         toolArgs: 'query="dukkha meaning · first noble truth · pessimism"',
         statuses: ['scanning…', 'matching vectors…', '4 passages found'],
@@ -177,7 +177,7 @@
         answer: ''
       },
       {
-        question: 'How often does "dukkha" appear across the three Piṭakas combined?',
+        question: 'How often does "dukkha" appear across the three Pitakas combined?',
         toolName: 'survey_corpus',
         toolArgs: '"dukkha", match_scope="stem"',
         statuses: ['counting segments…', 'tallying pitakas…', '7,836 segments found'],
@@ -202,7 +202,7 @@
         answer: ''
       },
       {
-        question: 'Which appears more often in the Canon — "sati" (mindfulness) or "paññā" (wisdom)?',
+        question: 'Which appears more often in the Canon, "sati" (mindfulness) or "panna" (wisdom)?',
         toolName: 'survey_corpus',
         toolArgs: '"sati" vs "paññā", match_scope="stem"',
         statuses: ['surveying sati…', 'surveying paññā…', '4 runs · forms audited'],
@@ -232,7 +232,7 @@
     {
       tab: 'get_word_definition',
       scenarios: [{
-        question: 'What does the word "nibbāna" mean? Show the dictionary definition.',
+        question: 'What does the word "nibbana" mean? Show the dictionary definition.',
         toolName: 'get_word_definition',
         toolArgs: '"nibbāna"',
         statuses: ['looking up nibbāna…', 'PTS Dictionary · Payutto found'],
@@ -289,7 +289,7 @@
         answer: ''
       },
       {
-        question: 'What does the word "saṅkhāra" mean? Show the dictionary definition.',
+        question: 'What does the word "sankhara" mean? Show the dictionary definition.',
         toolName: 'get_word_definition',
         toolArgs: '"saṅkhāra"',
         statuses: ['looking up saṅkhāra…', 'PTS Dictionary found · 4 senses'],
@@ -320,7 +320,7 @@
     {
       tab: 'compare_translations',
       scenarios: [{
-        question: 'Compare translations of Dhammapada verse 1 (Dhp 1) — show Pāli and English side by side.',
+        question: 'Compare translations of Dhammapada verse 1 (Dhp 1), show Pali and English side by side.',
         toolName: 'compare_translations',
         toolArgs: '"dhp1:1"',
         statuses: ['fetching editions…', 'Pāli + Sujato aligned'],
@@ -353,7 +353,7 @@
         answer: ''
       },
       {
-        question: 'I keep seeing different English translations of the Satipaṭṭhāna Sutta opening\nsome say "direct path," others say "one-way path." Can you show me the Pāli\noriginal alongside an English translation?',
+        question: 'I keep seeing different English translations of the Satipatthana Sutta opening\nsome say "direct path," others say "one-way path." Can you show me the Pali\noriginal alongside an English translation?',
         toolName: 'compare_translations',
         toolArgs: '"mn10:2.1"',
         statuses: ['fetching MN 10…', 'Pāli + Sujato aligned'],
@@ -387,7 +387,7 @@
         answer: ''
       },
       {
-        question: 'Compare translations of the Buddha\'s last words Pāli and France, Thai, Japanese side by side.',
+        question: 'Compare translations of the Buddha\'s last words Pali and France, Thai, Japanese side by side.',
         toolName: 'compare_translations',
         toolArgs: '"dn16:6.7.3", languages=["pali","en","fr","th","ja"]',
         statuses: ['fetching DN 16…', 'Pāli + Sujato + 3 languages'],
@@ -418,7 +418,7 @@
     {
       tab: 'get_sutta',
       scenarios: [{
-        question: 'Show me the full breath meditation instructions — the Ānāpānasati Sutta.',
+        question: 'Show me the full breath meditation instructions, the Anapanasati Sutta.',
         toolName: 'get_sutta',
         toolArgs: '"mn118"',
         statuses: ['fetching MN 118…', '16 steps mapped'],
@@ -536,7 +536,7 @@
     {
       tab: 'list_structure',
       scenarios: [{
-        question: 'How is the Pāli Canon structured? What are the three baskets?',
+        question: 'How is the Pali Canon structured? What are the three baskets?',
         toolName: 'list_structure',
         toolArgs: '',
         statuses: ['querying…', 'Canon structure loaded'],
@@ -613,7 +613,7 @@
       tab: 'search_by_keyword',
       scenarios: [
         {
-          question: 'I keep seeing "anatta" in dharma books — where does it actually appear in the original Pali?',
+          question: 'I keep seeing "anatta" in dharma books, where does it actually appear in the original Pali?',
           toolName: 'search_by_keyword',
           toolArgs: '"anatta"',
           statuses: ['searching Pāli index…', 'anatt* → 6 title matches'],
@@ -636,7 +636,7 @@
           answer: ''
         },
         {
-          question: 'My teacher always mentions the Metta Sutta — is it actually in the Canon?',
+          question: 'My teacher always mentions the Metta Sutta, is it actually in the Canon?',
           toolName: 'search_by_keyword',
           toolArgs: '"metta", language="pali"',
           statuses: ['searching Pāli index…', 'metta → 4 title matches'],
@@ -659,7 +659,7 @@
           answer: ''
         },
         {
-          question: 'I heard a monk tried to split the Buddhist community in the Buddha\'s time — what does the Canon say?',
+          question: 'I heard a monk tried to split the Buddhist community in the Buddha\'s time, what does the Canon say?',
           toolName: 'search_by_keyword',
           toolArgs: '"Devadatta"',
           statuses: ['searching Pāli index…', 'Devadatta → 6 Vinaya segments'],
@@ -708,7 +708,7 @@
           answer: ''
         },
         {
-          question: 'I keep hearing Buddhism is all about suffering — but does the Canon ever talk about happiness or joy?',
+          question: 'I keep hearing Buddhism is all about suffering, but does the Canon ever talk about happiness or joy?',
           toolName: 'search_semantic',
           toolArgs: '"the joy and lightness that arises when the mind becomes clear and undisturbed"',
           statuses: ['embedding query…', 'vector search complete'],
@@ -757,7 +757,7 @@
       tab: 'get_reference',
       scenarios: [
         {
-          question: 'What\'s the correct citation for the Buddha\'s first ever discourse — the one about the Four Noble Truths?',
+          question: 'What\'s the correct citation for the Buddha\'s first ever discourse, the one about the Four Noble Truths?',
           toolName: 'get_reference',
           toolArgs: '"sn56.11"',
           statuses: ['looking up sn56.11…', 'citation ready'],
@@ -779,7 +779,7 @@
           answer: ''
         },
         {
-          question: 'I want to cite the Parable of the Raft — what\'s the full reference for that sutta?',
+          question: 'I want to cite the Parable of the Raft, what\'s the full reference for that sutta?',
           toolName: 'get_reference',
           toolArgs: '"mn22"',
           statuses: ['looking up mn22…', 'citation ready'],
@@ -801,7 +801,7 @@
           answer: ''
         },
         {
-          question: 'I want to reference the sutta about the Buddha\'s final days and death — how do I cite it?',
+          question: 'I want to reference the sutta about the Buddha\'s final days and death, how do I cite it?',
           toolName: 'get_reference',
           toolArgs: '"dn16"',
           statuses: ['looking up dn16…', 'citation ready'],
@@ -828,7 +828,7 @@
       tab: 'parse_pali_word',
       scenarios: [
         {
-          question: 'I\'m reading about the Second Noble Truth and keep seeing the word "tanhāya" — what grammatical form is that?',
+          question: 'I\'m reading about the Second Noble Truth and keep seeing the word "tanhaya", what grammatical form is that?',
           toolName: 'parse_pali_word',
           toolArgs: '"tanhāya"',
           statuses: ['stripping suffixes…', 'stems found'],
@@ -853,7 +853,7 @@
           answer: ''
         },
         {
-          question: 'I found "kusalāni" in a text about cultivating good qualities — what exactly does this form mean?',
+          question: 'I found "kusalani" in a text about cultivating good qualities, what exactly does this form mean?',
           toolName: 'parse_pali_word',
           toolArgs: '"kusalāni"',
           statuses: ['stripping suffixes…', 'stems found'],
@@ -877,7 +877,7 @@
           answer: ''
         },
         {
-          question: 'The Buddha seems to say "bhikkhave" constantly — what word is that exactly?',
+          question: 'The Buddha seems to say "bhikkhave" constantly, what word is that exactly?',
           toolName: 'parse_pali_word',
           toolArgs: '"bhikkhave"',
           statuses: ['stripping suffixes…', 'stems found'],
@@ -929,7 +929,7 @@
           answer: ''
         },
         {
-          question: 'Which edition codes do I need to pass to compare_translations? I want to see Pāli and English side by side.',
+          question: 'Which edition codes do I need to pass to compare_translations? I want to see Pali and English side by side.',
           toolName: 'list_editions',
           toolArgs: '',
           statuses: ['querying editions…', 'editions loaded'],
@@ -948,7 +948,7 @@
           answer: ''
         },
         {
-          question: 'My study group reads Thai — does this database include a Thai translation?',
+          question: 'My study group reads Thai, does this database include a Thai translation?',
           toolName: 'list_editions',
           toolArgs: '',
           statuses: ['querying editions…', 'editions loaded'],
@@ -996,7 +996,7 @@
           answer: ''
         },
         {
-          question: 'I heard the Attadaṇḍa Sutta is one of the most personal poems the Buddha ever spoke — can you open it?',
+          question: 'I heard the Attadanda Sutta is one of the most personal poems the Buddha ever spoke, can you open it?',
           toolName: 'open_sutta_viewer',
           toolArgs: '"snp4.15", around="snp4.15:1.1"',
           statuses: ['loading snp4.15…', 'viewer centred at §1.1'],
@@ -1021,7 +1021,7 @@
           answer: ''
         },
         {
-          question: 'Can you open the Metta Sutta so I can read the Pāli and English side by side?',
+          question: 'Can you open the Metta Sutta so I can read the Pali and English side by side?',
           toolName: 'open_sutta_viewer',
           toolArgs: '"kp9", around="kp9:1.1"',
           statuses: ['loading kp9…', 'viewer centred at §1.1'],
