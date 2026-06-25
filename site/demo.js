@@ -826,32 +826,81 @@
     },
     {
       tab: 'parse_pali_word',
-      scenarios: [{
-        question: 'I found the word "dukkhassa" in a text but can\'t look it up in the dictionary — what form is it?',
-        toolName: 'parse_pali_word',
-        toolArgs: '"dukkhassa"',
-        statuses: ['stripping suffixes…', 'stems found'],
-        toolDur: 0.4,
-        dur: 20,
-        type: 'chat',
-        html:
-          '<div class="mcd-cp">Pāli nouns inflect across 7 cases × 2 numbers — up to ~16 surface forms per root word. <em>parse_pali_word</em> strips the inflectional ending to recover the dictionary stem.</div>' +
-          '<div class="mcd-ctable">' +
-            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1fr 1.5fr 2.5fr"><span>Input</span><span>Suffix removed</span><span>Meaning of the ending</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1fr 1.5fr 2.5fr"><span class="mcd-tpali">dukkhassa</span><span class="mcd-tpali">-assa</span><span>Genitive singular — "of dukkha" / "suffering\'s"</span></div>' +
-          '</div>' +
-          '<div class="mcd-ch3">Possible stems returned — pick the real one</div>' +
-          '<div class="mcd-ctable">' +
-            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 0.5fr 3fr"><span>Stem</span><span>Valid?</span><span>Note</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">dukkha ★</span><span>✓</span><span>Real dictionary word — look up with <em>get_word_definition</em></span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">dukkhau</span><span>—</span><span>Rule-based artifact; not a real Pāli stem</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">dukkhaa</span><span>—</span><span>Artifact</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">dukkhai</span><span>—</span><span>Artifact</span></div>' +
-          '</div>' +
-          '<div class="mcd-cp" style="margin-bottom:6px">The tool is rule-based, not a full morphological analyzer — it returns <em>possible</em> stems for you to verify. <em>dukkha</em> is the only real entry here. Limitation: compound words (<em>dukkhanirodha</em>) and sandhi fusions are not split.</div>' +
-          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11" target="_blank" rel="noopener">SN 56.11</a></div>',
-        answer: ''
-      }]
+      scenarios: [
+        {
+          question: 'I\'m reading about the Second Noble Truth and keep seeing the word "tanhāya" — what grammatical form is that?',
+          toolName: 'parse_pali_word',
+          toolArgs: '"tanhāya"',
+          statuses: ['stripping suffixes…', 'stems found'],
+          toolDur: 0.4,
+          dur: 20,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp">Pāli nouns inflect across 7 cases × 2 numbers. <em>parse_pali_word</em> strips the ending to recover the dictionary stem.</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1fr 1.5fr 2.5fr"><span>Input</span><span>Suffix removed</span><span>Meaning of the ending</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1fr 1.5fr 2.5fr"><span class="mcd-tpali">tanhāya</span><span class="mcd-tpali">-āya</span><span>Dative <em>or</em> Ablative singular — ā-stem nouns use the same form for both</span></div>' +
+            '</div>' +
+            '<div class="mcd-ch3">Possible stems — pick the real one</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 0.5fr 3fr"><span>Stem</span><span>Valid?</span><span>Note</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">tanhā ★</span><span>✓</span><span>Real dictionary word — craving, thirst</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">tanha</span><span>—</span><span>Simplified spelling, not standard Pāli</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">tanhāya</span><span>—</span><span>Artifact (the original input returned as-is)</span></div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px"><em>Taṇhā</em> (craving/thirst) is the central concept of the Second Noble Truth: craving is what causes suffering. The <strong>-āya</strong> ending on an ā-stem serves double duty — dative ("toward craving") and ablative ("from craving"). Context determines which: in the Second Noble Truth formula, it is ablative — suffering <em>arises from</em> taṇhā.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11" target="_blank" rel="noopener">SN 56.11</a></div>',
+          answer: ''
+        },
+        {
+          question: 'I found "kusalāni" in a text about cultivating good qualities — what exactly does this form mean?',
+          toolName: 'parse_pali_word',
+          toolArgs: '"kusalāni"',
+          statuses: ['stripping suffixes…', 'stems found'],
+          toolDur: 0.4,
+          dur: 20,
+          type: 'chat',
+          html:
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1fr 1.5fr 2.5fr"><span>Input</span><span>Suffix removed</span><span>Meaning of the ending</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1fr 1.5fr 2.5fr"><span class="mcd-tpali">kusalāni</span><span class="mcd-tpali">-āni</span><span>Nominative / Accusative plural neuter — "wholesome things"</span></div>' +
+            '</div>' +
+            '<div class="mcd-ch3">Possible stems — pick the real one</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 0.5fr 3fr"><span>Stem</span><span>Valid?</span><span>Note</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">kusala ★</span><span>✓</span><span>Wholesome, skillful — key ethical term</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">kusalāi</span><span>—</span><span>Artifact</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">kusalāu</span><span>—</span><span>Artifact</span></div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px"><em>Kusala</em> (wholesome/skillful) is one of the most frequent ethical terms in the Canon. The <strong>-āni</strong> ending marks neuter nouns in the nominative or accusative plural — <em>kusalāni</em> = "wholesome things/actions." It appears in stock phrases like <em>sabbāni kusalāni dhammāni</em> ("all wholesome qualities") and as the object of <em>samādapeti</em> ("encourages [in wholesome actions]") throughout the Suttas.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn8" target="_blank" rel="noopener">MN 8</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/an10.176" target="_blank" rel="noopener">AN 10.176</a></div>',
+          answer: ''
+        },
+        {
+          question: 'The Buddha seems to say "bhikkhave" constantly — what word is that exactly?',
+          toolName: 'parse_pali_word',
+          toolArgs: '"bhikkhave"',
+          statuses: ['stripping suffixes…', 'stems found'],
+          toolDur: 0.4,
+          dur: 22,
+          type: 'chat',
+          html:
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1fr 1.5fr 2.5fr"><span>Input</span><span>Suffix removed</span><span>Meaning of the ending</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1fr 1.5fr 2.5fr"><span class="mcd-tpali">bhikkhave</span><span class="mcd-tpali">-e</span><span>Vocative plural — direct address: "O monks!"</span></div>' +
+            '</div>' +
+            '<div class="mcd-ch3">Possible stems — <em>none match the real entry</em></div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 0.5fr 3fr"><span>Stem returned</span><span>Valid?</span><span>Note</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">bhikkhava</span><span>—</span><span>Rule-based artifact — not a real Pāli word</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">bhikkhave</span><span>—</span><span>The original input returned as-is</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">bhikkhu ★</span><span>✓</span><span>The real stem — look up in <em>get_word_definition</em></span></div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px"><strong>Bhikkhave</strong> is the vocative plural of <em>bhikkhu</em> (monk/mendicant) — it means "O monks!" and is the most common opening address in the entire Canon. The parser correctly identifies the <strong>-e</strong> ending but returns <em>bhikkhava</em> as the stem; that\'s an artifact. <em>Bhikkhu</em> is a u-stem noun, and the vocative plural of u-stem nouns involves a vowel change (u → ave) that the rule-based parser doesn\'t model. This is a known limitation — the stem to look up is <em>bhikkhu</em>, not the parser\'s output.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11" target="_blank" rel="noopener">SN 56.11</a></div>',
+          answer: ''
+        }
+      ]
     },
     {
       tab: 'list_editions',
