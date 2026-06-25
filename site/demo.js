@@ -755,29 +755,74 @@
     },
     {
       tab: 'get_reference',
-      scenarios: [{
-        question: 'How do I cite the Satipaṭṭhāna Sutta (MN 10) in an academic paper?',
-        toolName: 'get_reference',
-        toolArgs: '"mn10"',
-        statuses: ['looking up mn10…', 'citation ready'],
-        toolDur: 0.6,
-        dur: 18,
-        type: 'chat',
-        html:
-          '<div class="mcd-cp"><em>get_reference</em> returns a formatted citation string and location metadata — without fetching the full sutta text. Use it before writing a paper, or to confirm which nikāya a sutta belongs to.</div>' +
-          '<div class="mcd-cverse">"Mindfulness Meditation (Satipaṭṭhānasutta, MN10), Middle Discourses"<br><span style="color:var(--d-dim);font-size:11px">— canonical citation format returned by the API</span></div>' +
-          '<div class="mcd-ctable">' +
-            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 3fr"><span>Field</span><span>Value</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Pāli title</span><span class="mcd-tpali">Satipaṭṭhānasutta</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>English title</span><span>Mindfulness Meditation</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Nikāya</span><span>Majjhimanikāya — Middle Discourses (MN)</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Piṭaka</span><span>Suttantapiṭaka — Basket of Discourses</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Segments</span><span>235</span></div>' +
-          '</div>' +
-          '<div class="mcd-cp" style="margin-bottom:6px">For a full academic citation: "Bhikkhu Sujato, trans., <em>Mindfulness Meditation</em> (Satipaṭṭhānasutta, MN10), Middle Discourses, SuttaCentral, CC0." Pair with <em>get_sutta</em> to fetch the text, or <em>open_sutta_viewer</em> to render it inline.</div>' +
-          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn10" target="_blank" rel="noopener">MN 10</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn22" target="_blank" rel="noopener">DN 22</a></div>',
-        answer: ''
-      }]
+      scenarios: [
+        {
+          question: 'What\'s the correct citation for the Buddha\'s first ever discourse — the one about the Four Noble Truths?',
+          toolName: 'get_reference',
+          toolArgs: '"sn56.11"',
+          statuses: ['looking up sn56.11…', 'citation ready'],
+          toolDur: 0.6,
+          dur: 18,
+          type: 'chat',
+          html:
+            '<div class="mcd-cverse">"2. Rolling Forth the Wheel of Dhamma<br>(2. Dhammacakkappavattanavagga, SN56.11), Connected Discourses"<br><span style="color:var(--d-dim);font-size:11px">— citation string returned by the API</span></div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 3fr"><span>Field</span><span>Value</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Pāli title</span><span class="mcd-tpali">Dhammacakkappavattanavagga</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>English title</span><span>Rolling Forth the Wheel of Dhamma</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Nikāya</span><span>Saṁyuttanikāya — Connected Discourses (SN)</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Piṭaka</span><span>Suttantapiṭaka — Basket of Discourses</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Segments</span><span>60</span></div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">The "2." prefix in the title is the vagga (chapter) number — strip it for academic use. Full citation: "Bhikkhu Sujato, trans., <em>Rolling Forth the Wheel of Dhamma</em> (Dhammacakkappavattanasutta, SN 56.11), Connected Discourses, SuttaCentral, CC0."</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11" target="_blank" rel="noopener">SN 56.11</a></div>',
+          answer: ''
+        },
+        {
+          question: 'I want to cite the Parable of the Raft — what\'s the full reference for that sutta?',
+          toolName: 'get_reference',
+          toolArgs: '"mn22"',
+          statuses: ['looking up mn22…', 'citation ready'],
+          toolDur: 0.6,
+          dur: 20,
+          type: 'chat',
+          html:
+            '<div class="mcd-cverse">"The Simile of the Cobra (Alagaddūpamasutta, MN22), Middle Discourses"<br><span style="color:var(--d-dim);font-size:11px">— citation string returned by the API</span></div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 3fr"><span>Field</span><span>Value</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Pāli title</span><span class="mcd-tpali">Alagaddūpamasutta</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>English title</span><span>The Simile of the Cobra</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Nikāya</span><span>Majjhimanikāya — Middle Discourses (MN)</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Piṭaka</span><span>Suttantapiṭaka — Basket of Discourses</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Segments</span><span>359</span></div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">The sutta\'s official title is <strong>The Simile of the Cobra</strong> (<em>Alagaddūpama</em> = cobra/snake), named after the opening simile about mishandling a snake. The Parable of the Raft — the teaching that the Dhamma is "like a raft, for crossing, not for carrying" — is in §§13–14 of the same 359-segment sutta. Full citation: "Bhikkhu Sujato, trans., <em>The Simile of the Cobra</em> (Alagaddūpamasutta, MN22), Middle Discourses, SuttaCentral, CC0."</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn22" target="_blank" rel="noopener">MN 22</a></div>',
+          answer: ''
+        },
+        {
+          question: 'I want to reference the sutta about the Buddha\'s final days and death — how do I cite it?',
+          toolName: 'get_reference',
+          toolArgs: '"dn16"',
+          statuses: ['looking up dn16…', 'citation ready'],
+          toolDur: 0.6,
+          dur: 20,
+          type: 'chat',
+          html:
+            '<div class="mcd-cverse">"The Great Discourse on the Buddha\'s Extinguishment<br>(Mahāparinibbānasutta, DN16), Long Discourses"<br><span style="color:var(--d-dim);font-size:11px">— citation string returned by the API</span></div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 3fr"><span>Field</span><span>Value</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Pāli title</span><span class="mcd-tpali">Mahāparinibbānasutta</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>English title</span><span>The Great Discourse on the Buddha\'s Extinguishment</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Nikāya</span><span>Dīghanikāya — Long Discourses (DN)</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Piṭaka</span><span>Suttantapiṭaka — Basket of Discourses</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Segments</span><span style="color:var(--d-acc)!important"><strong>1,664</strong> — longest sutta in the Canon</span></div>' +
+            '</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">At 1,664 segments, DN 16 is the longest sutta in the Pāli Canon — it spans the Buddha\'s final three months, from his last journey through Vesālī to his passing at Kusinārā. Full citation: "Bhikkhu Sujato, trans., <em>The Great Discourse on the Buddha\'s Extinguishment</em> (Mahāparinibbānasutta, DN16), Long Discourses, SuttaCentral, CC0."</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn16" target="_blank" rel="noopener">DN 16</a></div>',
+          answer: ''
+        }
+      ]
     },
     {
       tab: 'parse_pali_word',
