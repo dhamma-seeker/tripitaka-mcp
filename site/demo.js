@@ -684,28 +684,74 @@
     },
     {
       tab: 'search_semantic',
-      scenarios: [{
-        question: 'What does the Canon say about the mind becoming still and unified in meditation?',
-        toolName: 'search_semantic',
-        toolArgs: '"what happens to the mind when it becomes completely still and unified"',
-        statuses: ['embedding query…', 'vector search complete'],
-        toolDur: 1.4,
-        dur: 30,
-        type: 'chat',
-        html:
-          '<div class="mcd-cp"><em>search_semantic</em> uses vector embeddings — no exact word needed. It finds passages that share <em>meaning</em> with the query. Lower distance = closer conceptual match. This query retrieved both jhāna (absorption) passages and passages about mind consciousness.</div>' +
-          '<div class="mcd-ctable">' +
-            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span>Sutta</span><span>English (Sujato)</span><span>Distance</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali">SN 35.93</span><span>"Mind consciousness is impermanent, decaying, and perishing."</span><span>0.328</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali">SN 25.3</span><span>"...mind consciousness are impermanent, decaying, and perishing."</span><span>0.332</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">MN 108 ★</span><span>"...second absorption, rapture and bliss born of immersion, with internal clarity and <strong>mind at one</strong>, without placing the mind and keeping it connected."</span><span>0.334</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali">SN 18.3</span><span>"Is mind consciousness permanent or impermanent?"</span><span>0.341</span></div>' +
-            '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">AN 3.58 ★</span><span>"...second absorption... rapture and bliss born of immersion, with internal clarity and <strong>mind at one</strong>."</span><span>0.345</span></div>' +
-          '</div>' +
-          '<div class="mcd-cp" style="margin-bottom:6px">Results 1, 2, 4 ranked higher by distance but describe impermanence, not stillness. Results 3 and 5 (MN 108 + AN 3.58) match the actual concept: the second jhāna — <em>cetaso ekodibhāva</em> ("mind unified at one point") — where applied and sustained thought are stilled. Distance scores cluster tightly (0.33–0.35): reading multiple results matters more than trusting rank alone.</div>' +
-          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn108" target="_blank" rel="noopener">MN 108</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/an3.58" target="_blank" rel="noopener">AN 3.58</a></div>',
-        answer: ''
-      }]
+      scenarios: [
+        {
+          question: 'I want to find passages where the Buddha actually describes what liberation or peace feels like',
+          toolName: 'search_semantic',
+          toolArgs: '"the feeling of peace and release after letting go of everything you were clinging to"',
+          statuses: ['embedding query…', 'vector search complete'],
+          toolDur: 1.5,
+          dur: 28,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp">All 5 results feature the <em>same canonical Pāli formula</em> for nibbāna — appearing verbatim in 4 different suttas across the Aṅguttara Nikāya.</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.8fr 4fr 0.8fr"><span>Sutta</span><span>English (Sujato)</span><span>Dist.</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 4fr 0.8fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">AN 10.60 ★</span><span>"This is peaceful; this is sublime — the stilling of all activities, the letting go of all attachments, the ending of craving, fading away, extinguishment."</span><span>0.361</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 4fr 0.8fr"><span class="mcd-tpali">AN 3.32</span><span>same formula (+ "cessation")</span><span>0.363</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 4fr 0.8fr"><span class="mcd-tpali">AN 10.6</span><span>same formula</span><span>0.363</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 4fr 0.8fr"><span class="mcd-tpali">AN 9.36</span><span>same formula ×2 (appears in §8 and §9)</span><span>0.363</span></div>' +
+            '</div>' +
+            '<div class="mcd-cverse"><em>etaṁ santaṁ etaṁ paṇītaṁ yadidaṁ sabbasaṅkhārasamatho<br>sabbūpadhipaṭinissaggo taṇhākkhayo virāgo nirodho nibbānan</em><br>"This is peaceful; this is sublime — the stilling of all activities,<br>the letting go of all attachments, the ending of craving,<br>fading away, cessation, extinguishment."</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">This is the standard formula a disciple meditates on as a contemplation of nibbāna. A keyword search for "peace" or "liberation" would miss most instances; semantic search found all four suttas from a plain-language description of the <em>feeling</em>.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/an10.60" target="_blank" rel="noopener">AN 10.60</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/an3.32" target="_blank" rel="noopener">AN 3.32</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/an9.36" target="_blank" rel="noopener">AN 9.36</a></div>',
+          answer: ''
+        },
+        {
+          question: 'I keep hearing Buddhism is all about suffering — but does the Canon ever talk about happiness or joy?',
+          toolName: 'search_semantic',
+          toolArgs: '"the joy and lightness that arises when the mind becomes clear and undisturbed"',
+          statuses: ['embedding query…', 'vector search complete'],
+          toolDur: 1.5,
+          dur: 28,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp">The two closest results are back-to-back verses from Dhammapada chapter 3 — the <em>Cittavagga</em>, the "Mind" chapter. The third is a prose passage from SN 35.97.</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span>Sutta</span><span>English (Sujato)</span><span>Dist.</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">Dhp 35 ★</span><span><strong>"a tamed mind leads to bliss."</strong></span><span>0.276</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali">Dhp 36</span><span>"a guarded mind leads to bliss."</span><span>0.327</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali">SN 35.97</span><span>"When the mind isn\'t polluted, joy springs up."</span><span>0.327</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali">SN 5.2</span><span>"when the mind is serene"</span><span>0.338</span></div>' +
+            '</div>' +
+            '<div class="mcd-cverse"><em>Cittaṁ dantaṁ sukhāvahaṁ</em> — Dhp 35<br>"A tamed mind leads to bliss."<br><em>Cittaṁ guttaṁ sukhāvahaṁ</em> — Dhp 36<br>"A guarded mind leads to bliss."</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">The Canon distinguishes <em>dukkha</em> (the unsatisfactoriness of conditioned existence) from <em>sukha</em> (genuine happiness). These results all say the same thing: joy isn\'t found by seeking pleasure but by working with the mind. Neither "happiness" nor "joy" appears in the matched Pāli — the semantic match worked across the translation gap.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dhp33-43" target="_blank" rel="noopener">Dhp 33–43</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn35.97" target="_blank" rel="noopener">SN 35.97</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn5.2" target="_blank" rel="noopener">SN 5.2</a></div>',
+          answer: ''
+        },
+        {
+          question: 'Are there any poems or verses in the Canon about monks meditating alone in the forest?',
+          toolName: 'search_semantic',
+          toolArgs: '"a monk who lives alone in the forest content with little"',
+          statuses: ['embedding query…', 'vector search complete'],
+          toolDur: 1.5,
+          dur: 28,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp">Semantic search surfaced results from three different layers of the Canon — Vinaya (procedural narrative), Sutta Nipāta (verse), and the Theragāthā (personal poems of awakened elders).</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span>Sutta</span><span>English (Sujato)</span><span>Dist.</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali">Vinaya Pj 4</span><span>"At one time a monk lived in the wilderness."</span><span>0.285</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">Snp 1.9 ★</span><span>"the sage meditating alone in the forest"</span><span>0.307</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">Thag 10.2 ★</span><span>"to be dwelling alone in a forest grove."</span><span>0.316</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">Thag 6.11 ★</span><span>"while dwelling in a forest grove"</span><span>0.323</span></div>' +
+            '</div>' +
+            '<div class="mcd-cverse"><em>Muniṁ vanasmiṁ jhāyantaṁ</em><br>"the sage meditating alone in the forest"<br><span style="color:var(--d-dim);font-size:11px">— Snp 1.9 (Hemavatasutta)</span></div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">The <strong>Theragāthā</strong> (Verses of the Elder Monks) collects personal spiritual poetry by the direct disciples of the Buddha. Thag 10.2 and Thag 6.11 are genuine verses by named elders describing their own forest practice — the kind of result a keyword search for "forest" or "monk" would likely miss.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/snp1.9" target="_blank" rel="noopener">Snp 1.9</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/thag10.2" target="_blank" rel="noopener">Thag 10.2</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/thag6.11" target="_blank" rel="noopener">Thag 6.11</a></div>',
+          answer: ''
+        }
+      ]
     },
     {
       tab: 'get_reference',
