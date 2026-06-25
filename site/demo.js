@@ -69,7 +69,7 @@
         '<div class="mcd-ch3">One honest note.</div>' +
         '<div class="mcd-cp">This reframes worry and slowly retrains the mind, but it\'s a practice, not a switch — it works through repetition over time, not a single insight. And if your worry is severe enough to feel constant and overwhelming, the Dhamma sits well <em>alongside</em> professional support, not in place of it; the two don\'t conflict.</div>' +
         '<div class="mcd-cp" style="margin-bottom:6px">If it would help, I can open either sutta in a reader panel right here so you can sit with the full passage.</div>' +
-        '<div class="mcd-csrcs"><span class="mcd-chip">SN 36.6</span><span class="mcd-chip">MN 131</span><span class="mcd-chip">MN 118</span><span class="mcd-chip">MN 10</span></div>',
+        '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn36.6" target="_blank" rel="noopener">SN 36.6</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn131" target="_blank" rel="noopener">MN 131</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn118" target="_blank" rel="noopener">MN 118</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn10" target="_blank" rel="noopener">MN 10</a></div>',
       answer: ''
       },
       {
@@ -100,7 +100,7 @@
           '<div class="mcd-ch3">So, precisely</div>' +
           '<div class="mcd-cp">The claim is: <em>as long as you reach for impermanent things to give you lasting peace, there\'s a built-in mismatch — they can\'t deliver it — and that mismatch is dukkha.</em> His point is that the mismatch can be ended by changing your relationship to those things, not by escaping existence.</div>' +
           '<div class="mcd-cp" style="margin-bottom:6px">This is also why you\'ll often see <em>dukkha</em> left untranslated — to keep its full meaning and sidestep the "life is misery" reading you\'ve correctly questioned.</div>' +
-          '<div class="mcd-csrcs"><span class="mcd-chip">SN 56.11</span><span class="mcd-chip">DN 33</span></div>',
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11" target="_blank" rel="noopener">SN 56.11</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn33" target="_blank" rel="noopener">DN 33</a></div>',
         answer: ''
       },
       {
@@ -131,7 +131,7 @@
           '<div class="mcd-cp">At the top sits <em>nibbāna</em>, described flatly as the supreme happiness: <em>nibbānaṃ paramaṃ sukhaṃ</em> (Dhp 204).</div>' +
           '<div class="mcd-ch3">So the through-line</div>' +
           '<div class="mcd-cp">The Buddha isn\'t anti-happiness — he\'s re-educating you about <em>which</em> happiness holds up. Sense pleasure is like borrowing: it feels good now, but the bill arrives when the pleasant thing ends. The happiness of a clear, peaceful, undefiled mind doesn\'t depend on acquiring or keeping anything, so nothing can take it away. Diagnosing the first honestly, and pointing to the second, is realism — not pessimism.</div>' +
-          '<div class="mcd-csrcs"><span class="mcd-chip">SN 56.11</span><span class="mcd-chip">AN 4.62</span><span class="mcd-chip">MN 66</span><span class="mcd-chip">SN 45.8</span><span class="mcd-chip">Dhp 204</span></div>',
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11" target="_blank" rel="noopener">SN 56.11</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/an4.62" target="_blank" rel="noopener">AN 4.62</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn66" target="_blank" rel="noopener">MN 66</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn45.8" target="_blank" rel="noopener">SN 45.8</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dhp197-208" target="_blank" rel="noopener">Dhp 204</a></div>',
         answer: ''
       }
       ]  // end search_hybrid.scenarios
@@ -139,6 +139,44 @@
     {
       tab: 'survey_corpus',
       scenarios: [{
+        question: 'What places are mentioned in the Buddhist Canon? Give their names and how often they appear.',
+        toolName: 'survey_corpus',
+        toolArgs: '"sāvatthī" + 12 major place names, match_scope="stem"',
+        statuses: ['surveying cities…', 'cross-checking regions…', '13 places · counts complete'],
+        toolDur: 4.1,
+        dur: 40,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp">Yes — and the geography of the Canon is <strong>heavily skewed toward one city</strong>. <em>Sāvatthī</em> appears in 1,311 distinct texts, nearly 3½× more than its nearest rival. The reason is as much structural as biographical.</div>' +
+          '<div class="mcd-ch3">Major cities (segments / distinct texts)</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span>City</span><span>Segs</span><span>Texts</span><span>What it is</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">Sāvatthī ★</span><span>2,014</span><span>1,311</span><span>Capital of Kosala — home of Jetavana grove</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali">Jetavana</span><span>687</span><span>600</span><span>Anāthapiṇḍika\'s monastery at Sāvatthī</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali">Rājagaha</span><span>604</span><span>228</span><span>Capital of Magadha; Veḷuvana monastery</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali">Vesālī</span><span>347</span><span>98</span><span>Licchavi capital; central to the last journey</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali">Bārāṇasī</span><span>184</span><span>96</span><span>Near Isipatana — the Deer Park; first sermon</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali">Kapilavatthu</span><span>125</span><span>63</span><span>The Sakyan capital — the Buddha\'s hometown</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali">Kusinārā</span><span>67</span><span>26</span><span>Site of the parinibbāna — almost entirely in DN 16</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali">Isipatana</span><span>62</span><span>42</span><span>Deer Park near Bārāṇasī; the first discourse</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">Why Sāvatthī dominates so completely</div>' +
+          '<div class="mcd-cp">Most suttas in the Saṁyutta and Aṅguttara Nikāyas open with a stock setting line — <em>“At one time the Blessed One was dwelling near Sāvatthī, in Jeta\'s Grove, Anāthapiṇḍika\'s monastery.”</em> This <em>nidāna</em> formula is baked into thousands of suttas as their structural template — so Sāvatthī\'s count reflects its role as the default setting, not only the suttas actually set there.</div>' +
+          '<div class="mcd-ch3">Kingdoms and regions</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span>Region</span><span>Segs</span><span>Texts</span><span>Note</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali">Kosala</span><span>≈ 500</span><span>≈ 170</span><span>Northern kingdom; King Pasenadi (includes homonym <em>kosalla</em>)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali">Magadha</span><span>452</span><span>98</span><span>Eastern kingdom; Kings Bimbisāra and Ajātasattu</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali">Himavā (Himalayas)</span><span>188</span><span>122</span><span>Mostly in similes and verse — not a narrative setting</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.8fr 0.7fr 2fr"><span class="mcd-tpali">Uruvelā</span><span>≈ 27</span><span>24</span><span>Where the Buddha attained awakening — stem 134 is mostly Uruvela-Kassapa</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">The canon\'s own list — the six great cities (DN 16)</div>' +
+          '<div class="mcd-cp">In DN 16, Ānanda protests the Buddha should not die in “a little town” like Kusinārā, and recites the six prestigious cities: <em>Campā, Rājagaha, Sāvatthī, Sāketa, Kosambī, Bārāṇasī.</em> Kusinārā is conspicuously absent from this prestige list — making the choice of it as the death site all the more pointed.</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">Counts are lexical — segments where the name appears. A place mentioned once in a pivotal sutta (Uruvelā in MN 26, the awakening) ranks far below cities repeated in thousands of opening formulas.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn16" target="_blank" rel="noopener">DN 16</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn26" target="_blank" rel="noopener">MN 26</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn3.1" target="_blank" rel="noopener">SN 3.1</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11" target="_blank" rel="noopener">SN 56.11</a></div>',
+        answer: ''
+      },
+      {
         question: 'How often does "dukkha" appear across the three Piṭakas combined?',
         toolName: 'survey_corpus',
         toolArgs: '"dukkha", match_scope="stem"',
@@ -160,7 +198,7 @@
           '<div class="mcd-cp"><strong>617 undercounts</strong> — it\'s a literal string match, missing common inflections like <em>dukkhaṁ</em> and <em>dukkhassa</em>. It captures basically the nominative forms only.</div>' +
           '<div class="mcd-cp"><strong>7,836 overcounts</strong> — the stem sweeps in compounds: <em>dukkhanirodha</em> (cessation of suffering), <em>dukkhasamudaya</em> (origin), <em>dukkhasacca</em> (the truth of suffering). Those are arguably distinct technical terms, not bare "dukkha."</div>' +
           '<div class="mcd-cp" style="margin-bottom:6px">The honest count — all inflections but excluding compounds — sits between the two. The tool doesn\'t isolate it directly. Either way, <em>dukkha</em> touches roughly half the entire canon by stem.</div>' +
-          '<div class="mcd-csrcs"><span class="mcd-chip">DN 22</span><span class="mcd-chip">SN 56.11</span><span class="mcd-chip">DN 33</span></div>',
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn22" target="_blank" rel="noopener">DN 22</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11" target="_blank" rel="noopener">SN 56.11</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn33" target="_blank" rel="noopener">DN 33</a></div>',
         answer: ''
       },
       {
@@ -187,83 +225,592 @@
           '<div class="mcd-ch3">The honest bottom line</div>' +
           '<div class="mcd-cp">Bare word: <strong>dead heat</strong>, slight real edge to paññā once sati\'s participle is discounted. Most interesting finding: <strong>the answer depends on which collection you ask.</strong> In the Abhidhamma, paññā clearly leads (531 vs 181) — wisdom is a discrete <em>cetasika</em> dissected exhaustively. In the Suttas, bare sati leads (1,207 vs 903), partly due to the participle artifact.</div>' +
           '<div class="mcd-cp" style="margin-bottom:6px">A definitive ranking would require de-contaminating both stem lists form by form — the tool returns every surface form for exactly this purpose — but it cannot collapse to a single headline number.</div>' +
-          '<div class="mcd-csrcs"><span class="mcd-chip">MN 38</span><span class="mcd-chip">SN 12.23</span><span class="mcd-chip">DN 22</span></div>',
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn38" target="_blank" rel="noopener">MN 38</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn12.23" target="_blank" rel="noopener">SN 12.23</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn22" target="_blank" rel="noopener">DN 22</a></div>',
         answer: ''
       }]
     },
     {
       tab: 'get_word_definition',
       scenarios: [{
-        question: 'What does the word jhāna mean? Show the dictionary definition.',
+        question: 'What does the word "nibbāna" mean? Show the dictionary definition.',
         toolName: 'get_word_definition',
-        toolArgs: '"jhāna"',
-        statuses: ['looking up…', 'PTS + Payutto found'],
+        toolArgs: '"nibbāna"',
+        statuses: ['looking up nibbāna…', 'PTS Dictionary · Payutto found'],
+        toolDur: 2.3,
+        dur: 32,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp"><strong>Nibbāna</strong> (Sanskrit: <em>nirvāṇa</em>) — literally "extinguishing / going out," as of a fire or lamp. Not annihilation. Not a metaphysical place.</div>' +
+          '<div class="mcd-ch3">Etymology</div>' +
+          '<div class="mcd-cp">The form is <em>nir + √vā</em> ("to blow out") — but the Pāli tradition also reads it as <em>nis + vana</em>, "going out of <em>vana</em>" (craving). The governing image: a fire going <strong>out for lack of fuel</strong>, not blown out (blowing would feed it).</div>' +
+          '<div class="mcd-ch3">The four dictionary senses (PTS, in order)</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.5fr 1fr 3fr"><span>#</span><span>Sense</span><span>Meaning</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.5fr 1fr 3fr"><span>1</span><span class="mcd-tpali">Literal</span><span>The going out of a lamp or fire — the everyday meaning.</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.5fr 1fr 3fr"><span>2</span><span class="mcd-tpali">Health</span><span>Bodily well-being; the passing of feverishness or restlessness.</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.5fr 1fr 3fr"><span style="color:var(--d-acc)">3</span><span class="mcd-tpali" style="color:var(--d-acc)!important">Buddhist ★</span><span>Dying out of the threefold fire — <em>rāga</em> (passion), <em>dosa</em> (ill-will), <em>moha</em> (delusion).</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.5fr 1fr 3fr"><span>4</span><span class="mcd-tpali">Spiritual</span><span>Security, emancipation, peace — the highest happiness.</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">The core point</div>' +
+          '<div class="mcd-cp">Nibbāna is treated as an <em>ethical/experiential state</em> — reachable in this very life through the Noble Eightfold Path, not a metaphysical "place," and not annihilation. The canon defines it directly:</div>' +
+          '<div class="mcd-cverse">"The wearing away of lust, of hatred, of delusion —<br>this is called nibbāna."<br><span style="color:var(--d-dim);font-size:11px">— SN 38.1 (Nibbānapañha)</span></div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">This is why the Dhammapada calls it the supreme happiness: <em>nibbānaṃ paramaṃ sukhaṃ</em> (Dhp 203).</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn38.1" target="_blank" rel="noopener">SN 38.1</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dhp197-208" target="_blank" rel="noopener">Dhp 203</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn35.95" target="_blank" rel="noopener">SN 35.95</a></div>',
+        answer: ''
+      },
+      {
+        question: 'What does the word "kamma" mean? Show the dictionary definition.',
+        toolName: 'get_word_definition',
+        toolArgs: '"kamma"',
+        statuses: ['looking up kamma…', 'PTS Dictionary · Payutto found'],
+        toolDur: 2.3,
+        dur: 34,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp"><strong>Kamma</strong> (Sanskrit <em>karman</em> — source of English "karma") literally means "deed, action, work." From <em>karoti</em> ("to do / to make") — at root, kamma is simply <em>what you do</em>.</div>' +
+          '<div class="mcd-ch3">Two layers of meaning (PTS Dictionary)</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1fr 3.5fr"><span>Sense</span><span>What it means</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1fr 3.5fr"><span class="mcd-tpali">Plain</span><span>Deed, action, work — also "occupation" and formal monastic proceedings (<em>saṅghakamma</em>).</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1fr 3.5fr"><span class="mcd-tpali">Doctrinal</span><span>Intentional deed (good or bad) → repeated deed forming character → deed as accumulated moral consequence.</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">Three channels — the doors of kamma</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.2fr 1fr 2.5fr"><span>Door</span><span>Pāli</span><span>What it covers</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1fr 2.5fr"><span class="mcd-tpali">Body</span><span><em>kāya</em></span><span>Physical acts — how you move and act</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1fr 2.5fr"><span class="mcd-tpali">Speech</span><span><em>vacī</em></span><span>Verbal acts — what you say</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1fr 2.5fr"><span class="mcd-tpali">Mind</span><span><em>mano</em></span><span>Mental acts — thoughts and intentions</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">The decisive clarification — kamma = intention</div>' +
+          '<div class="mcd-cp">The Canon\'s own definition goes further than any dictionary: kamma is not just any action, but <strong>intentional</strong> action (<em>cetanā</em>):</div>' +
+          '<div class="mcd-cverse">"It is intention, monks, that I call kamma. Having intended, one acts through body, speech, and mind."<br><span style="color:var(--d-dim);font-size:11px">— AN 6.63 (Nibbedhika Sutta)</span></div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">An unintended act carries no kamma-weight. The moral quality of an act depends on the <em>state of mind</em> behind it — not the outcome alone. This is why intention is also the heart of the saṅkhāra-khandha (the volitional aggregate).</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/an6.63" target="_blank" rel="noopener">AN 6.63</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn135" target="_blank" rel="noopener">MN 135</a></div>',
+        answer: ''
+      },
+      {
+        question: 'What does the word "saṅkhāra" mean? Show the dictionary definition.',
+        toolName: 'get_word_definition',
+        toolArgs: '"saṅkhāra"',
+        statuses: ['looking up saṅkhāra…', 'PTS Dictionary found · 4 senses'],
         toolDur: 2.5,
-        dur: 13,
-        type: 'def',
-        def: {
-          word: 'jhāna',
-          gram: 'nt.',
-          text: 'Meditation, contemplation — the four meditative absorptions. A state of alert mental stillness, not trance; characterised as enhanced vitality rather than mental suppression. The four jhānas are the direct basis for liberating insight.',
-          sources: ['PTS Dictionary', 'Payutto']
-        },
-        answer: 'jhāna = the four meditative absorptions — states of deep, unified attention. The PTS dictionary emphasises: not trance, but "enhanced vitality." The path to Nibbāna runs through all four.'
+        dur: 40,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp">The PTS dictionary calls <em>saṅkhāra</em> <strong>"one of the most difficult terms in Buddhist metaphysics"</strong> — no single English word can translate it. Context determines which meaning applies.</div>' +
+          '<div class="mcd-ch3">Etymology — the root gives the key</div>' +
+          '<div class="mcd-cp"><em>saṁ</em> ("together") + root <em>kṛ</em> ("to make / to do") — literally "putting-together." Two sides at once: <em>passive</em> — that which has been put together (anything conditioned); <em>active</em> — the force doing the putting-together (will, volition). The one thread: <strong>things made up by pre-existing causes.</strong></div>' +
+          '<div class="mcd-ch3">Four main senses</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.5fr 1.4fr 3fr"><span>#</span><span>Context</span><span>Meaning</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.5fr 1.4fr 3fr"><span>1</span><span class="mcd-tpali">All conditioned things</span><span><em>sabbe saṅkhārā</em> — everything assembled by causes. Nibbāna alone is <em>asaṅkhata</em> (unconditioned).</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.5fr 1.4fr 3fr"><span>2</span><span class="mcd-tpali">4th aggregate</span><span>Volitional/mental formations — bundle of mental factors with <em>cetanā</em> at the core. Sujato translates: "choices."</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.5fr 1.4fr 3fr"><span>3</span><span class="mcd-tpali">Dependent origination</span><span>Kamma-driven fabrications fuelled by ignorance — 2nd link: <em>avijjā-paccayā saṅkhārā</em>.</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.5fr 1.4fr 3fr"><span>4</span><span class="mcd-tpali">Three specific types</span><span><em>kāya-saṅkhāra</em> = breath · <em>vacī-saṅkhāra</em> = applied thought · <em>citta-saṅkhāra</em> = feeling + perception.</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">The most famous use — sense 1</div>' +
+          '<div class="mcd-cverse">"<em>Aniccā vata saṅkhārā</em> —<br>Conditioned things are impermanent;<br>it is their nature to arise and pass away."<br><span style="color:var(--d-dim);font-size:11px">— DN 16 (at the moment of parinibbāna)</span></div>' +
+          '<div class="mcd-ch3">Canonical definition of sense 2</div>' +
+          '<div class="mcd-cverse">"Why are they called volitional formations?<br>Because they construct the conditioned — that is why."<br><span style="color:var(--d-dim);font-size:11px">— SN 22.79 (Khajjanīya Sutta)</span></div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">Common translations: <em>formations, volitional formations, mental formations, choices (Sujato), fabrications, constructions, kamma-formations.</em> None is fully adequate — context determines which fits.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn22.79" target="_blank" rel="noopener">SN 22.79</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn16" target="_blank" rel="noopener">DN 16</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn12.2" target="_blank" rel="noopener">SN 12.2</a></div>',
+        answer: ''
       }]
     },
     {
       tab: 'compare_translations',
       scenarios: [{
-        question: 'Compare Pāli and English in SN 56.11 — the First Discourse.',
+        question: 'Compare translations of Dhammapada verse 1 (Dhp 1) — show Pāli and English side by side.',
         toolName: 'compare_translations',
-        toolArgs: '"sn56.11:5.1"',
-        statuses: ['fetching editions…', '2 editions aligned'],
-        toolDur: 2.8,
-        dur: 14,
-        type: 'pairs',
-        pairs: [
-          { label: 'Pāli (canonical)', text: 'Idaṃ kho pana, bhikkhave, dukkhaṃ ariyasaccaṃ: jātipi dukkhā, jarāpi dukkhā, maraṇampi dukkhaṃ…' },
-          { label: 'Sujato (EN)',      text: 'Now this is the noble truth of suffering: rebirth is suffering, old age is suffering, death is suffering…' }
-        ],
-        answer: 'SN 56.11:5.1 — the First Noble Truth as a list. Sujato renders dukkha as "suffering" and preserves the enumerated structure closely. No additional editions are indexed for this segment.'
+        toolArgs: '"dhp1:1"',
+        statuses: ['fetching editions…', 'Pāli + Sujato aligned'],
+        toolDur: 2.4,
+        dur: 36,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp"><strong>Dhp 1</strong> — opening verse of the Dhammapada (<em>Yamakavagga</em>, "Pairs"). The database holds one verified English edition: Bhikkhu Sujato. His key choice is unusual: <em>mano</em> → "intention" rather than "mind" — tying the verse directly to the law of kamma.</div>' +
+          '<div class="mcd-ch3">Pāli alongside Sujato (verified)</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:2fr 3fr"><span>Pāli</span><span>Sujato (EN)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">Manopubbaṅgamā dhammā,</span><span>Intention shapes experiences;</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">manoseṭṭhā manomayā;</span><span>intention is first, they\'re made by intention.</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">Manasā ce paduṭṭhena,</span><span>If with corrupt intent</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">bhāsati vā karoti vā;</span><span>you speak or act,</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">Tato naṁ dukkhamanveti,</span><span>suffering follows you,</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">cakkaṁva vahato padaṁ.</span><span>like a wheel, the ox\'s foot.</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">How major translators diverge</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.6fr 0.9fr 1fr 2.2fr"><span>Translator</span><span><em>mano</em></span><span><em>dhammā</em></span><span>Flavor</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.6fr 0.9fr 1fr 2.2fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">Sujato (CC0) ★</span><span>intention</span><span>experiences</span><span>Reads <em>mano</em> through <em>cetanā</em> — kamma in two lines</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.6fr 0.9fr 1fr 2.2fr"><span class="mcd-tpali">Buddharakkhita (BPS)</span><span>mind</span><span>mental states</span><span>Literal, traditional</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.6fr 0.9fr 1fr 2.2fr"><span class="mcd-tpali">Ṭhānissaro Bhikkhu</span><span>heart</span><span>phenomena</span><span>"Heart" captures <em>mano</em> as seat of feeling and will</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.6fr 0.9fr 1fr 2.2fr"><span class="mcd-tpali">Müller (1881)</span><span>thought(s)</span><span>"all that we are"</span><span>Famous loose paraphrase — readable but not precise</span></div>' +
+          '</div>' +
+          '<div class="mcd-cp"><em>cakkaṁva vahato padaṁ</em> — "as the wheel [follows] the foot of the ox drawing the cart." Most translators spell out the cart so the image of suffering <em>trailing</em> the deed is unmistakable. Sujato compresses it hard.</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">Sujato\'s "intention" choice is deliberate: <em>kamma = cetanā</em> (AN 6.63), so this verse is literally the law of kamma — intention → deed → result.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dhp1-20" target="_blank" rel="noopener">Dhp 1–20</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/an6.63" target="_blank" rel="noopener">AN 6.63</a></div>',
+        answer: ''
+      },
+      {
+        question: 'I keep seeing different English translations of the Satipaṭṭhāna Sutta opening\nsome say "direct path," others say "one-way path." Can you show me the Pāli\noriginal alongside an English translation?',
+        toolName: 'compare_translations',
+        toolArgs: '"mn10:2.1"',
+        statuses: ['fetching MN 10…', 'Pāli + Sujato aligned'],
+        toolDur: 2.6,
+        dur: 38,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp">Three camps exist — "direct path," "one-way path," and Sujato\'s "path to convergence." Here is the verified opening, then what each choice means.</div>' +
+          '<div class="mcd-ch3">The Pāli opening — clause by clause (verified, mn10:2.1)</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:2fr 3fr"><span>Pāli</span><span>Sujato (EN)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">Ekāyano ayaṁ … maggo … cattāro satipaṭṭhānā</span><span>the four kinds of mindfulness meditation are the <strong>path to convergence</strong></span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">sattānaṁ visuddhiyā</span><span>to purify sentient beings</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">sokaparidevānaṁ samatikkamāya</span><span>to get past sorrow and crying</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">dukkhadomanassānaṁ atthaṅgamāya</span><span>to make an end of pain and sadness</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">ñāyassa adhigamāya</span><span>to discover the system</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2fr 3fr"><span class="mcd-tpali">nibbānassa sacchikiriyāya</span><span>to realize extinguishment (nibbāna)</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">Four renderings of <em>ekāyano maggo</em></div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.8fr 1.5fr 2.5fr"><span>Rendering</span><span>Associated with</span><span>Reading behind it</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.8fr 1.5fr 2.5fr"><span class="mcd-tpali">"the only path"</span><span>Nyanaponika Thera</span><span>eka = one and only; no other way works</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.8fr 1.5fr 2.5fr"><span class="mcd-tpali">"the direct path"</span><span>Bhikkhu Bodhi; Anālayo</span><span>goes straight to the one goal</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.8fr 1.5fr 2.5fr"><span class="mcd-tpali">"the one-way path"</span><span>various</span><span>runs in one direction, one destination</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.8fr 1.5fr 2.5fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">"path to convergence" ★</span><span>Sujato</span><span>everything in it converges on nibbāna</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">The decisive evidence — MN 12</div>' +
+          '<div class="mcd-cp">The same word <em>ekāyanena maggena</em> appears in MN 12 for paths leading to a pit of coals, a sewer, a lotus pond, and a stilt house. Since the destinations include terrible ones, <em>ekāyana</em> cannot mean "the one right way." It means <strong>a path going to one specific destination</strong>.</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">"Direct," "one-way," and "convergence" all describe the same thing: a path running toward one goal (nibbāna). The older "the only way" reads in an exclusivity the Pāli doesn\'t carry.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn10" target="_blank" rel="noopener">MN 10</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn22" target="_blank" rel="noopener">DN 22</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn12" target="_blank" rel="noopener">MN 12</a></div>',
+        answer: ''
+      },
+      {
+        question: 'Compare translations of the Buddha\'s last words Pāli and France, Thai, Japanese side by side.',
+        toolName: 'compare_translations',
+        toolArgs: '"dn16:6.7.3", languages=["pali","en","fr","th","ja"]',
+        statuses: ['fetching DN 16…', 'Pāli + Sujato + 3 languages'],
+        toolDur: 3.1,
+        dur: 36,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp">The Buddha\'s final words come at the moment of parinibbāna in DN 16:6.7. The verified database holds Pāli + Sujato\'s English. The three additional languages are faithful translations from the Pāli.</div>' +
+          '<div class="mcd-cverse">"<em>Vayadhammā saṅkhārā, appamādena sampādetha.</em>"<br><span style="color:var(--d-dim);font-size:11px">— DN 16:6.7.3 — "These were the Realized One\'s last words."</span></div>' +
+          '<div class="mcd-ch3">Five languages side by side</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.8fr 4fr"><span>Language</span><span>Translation</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.8fr 4fr"><span class="mcd-tpali">Pāli</span><span style="font-style:italic">Vayadhammā saṅkhārā, appamādena sampādetha.</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.8fr 4fr"><span class="mcd-tpali">English</span><span>"Conditions fall apart. Persist with diligence." <span style="color:var(--d-dim);font-size:11px">(Sujato, verified)</span></span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.8fr 4fr"><span class="mcd-tpali">French</span><span>« Les formations conditionnées sont sujettes à la disparition ; accomplissez votre but avec diligence. »</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.8fr 4fr"><span class="mcd-tpali">Thai</span><span>สังขารทั้งหลายมีความเสื่อมสลายไปเป็นธรรมดา เธอทั้งหลายจงยังกิจให้ถึงพร้อมด้วยความไม่ประมาทเถิด</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.8fr 4fr"><span class="mcd-tpali">Japanese</span><span>諸行は滅びゆくものである。不放逸をもって、なすべきことを成し遂げなさい。</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">Where translators diverge most — <em>sampādetha</em></div>' +
+          '<div class="mcd-cp"><em>Sampādetha</em> ("bring to completion") is the richest word. Sujato\'s "persist" is lean. T.W. Rhys Davids\' 1910 rendering — <em>"Work out your salvation with diligence"</em> — supplied "salvation" as the unstated object. Thai มหาจุฬาฯ: <em>จงยังกิจให้ถึงพร้อม</em> ("bring your task to completion"), leaving the object unspecified as the Pāli does.</div>' +
+          '<div class="mcd-ch3">The Japanese cultural echo</div>' +
+          '<div class="mcd-cp"><em>Saṅkhārā</em> → 諸行 (<em>shogyō</em>) is the same word in <em>諸行無常</em> (<em>shogyō mujō</em>) — the opening line of the Heike Monogatari, perhaps the single most famous Buddhist phrase in Japan. The Buddha\'s dying line is that same truth turned into a final instruction: <em>because</em> conditions fall apart — <em>therefore</em> act with diligence.</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">The same Pāli verse also appears at SN 6.15 in Brahmā Sahampati\'s eulogy at the moment of parinibbāna.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn16" target="_blank" rel="noopener">DN 16</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn6.15" target="_blank" rel="noopener">SN 6.15</a></div>',
+        answer: ''
       }]
     },
     {
       tab: 'get_sutta',
       scenarios: [{
-        question: 'Show me the structure of the Ānāpānassati Sutta (MN 118).',
+        question: 'Show me the full breath meditation instructions — the Ānāpānasati Sutta.',
         toolName: 'get_sutta',
-        toolArgs: '"mn118", mode="outline"',
-        statuses: ['fetching outline…', '44 sections loaded'],
+        toolArgs: '"mn118"',
+        statuses: ['fetching MN 118…', '16 steps mapped'],
         toolDur: 2.6,
-        dur: 13,
-        type: 'outline',
-        outline: [
-          { range: '§1–4',   title: 'First tetrad — mindfulness of body',     sub: '4 steps' },
-          { range: '§5–8',   title: 'Second tetrad — mindfulness of feelings', sub: '4 steps' },
-          { range: '§9–12',  title: 'Third tetrad — mindfulness of mind',      sub: '4 steps' },
-          { range: '§13–16', title: 'Fourth tetrad — mindfulness of phenomena',sub: '4 steps' }
-        ],
-        meta: '44 sections · 154 segments total',
-        answer: 'MN 118 has 44 sections and 154 segments. It maps ānāpānasati onto the four satipaṭṭhānas via four tetrads — a structural key unifying the entire meditation path.'
+        dur: 42,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp"><strong>MN 118</strong> is the only sutta where all <strong>16 steps</strong> of breath meditation appear together. The Satipaṭṭhāna discourses (MN 10 / DN 22) cover only the first four under "body contemplation." The 16 steps map onto the four foundations in four groups of four — <em>tetrads</em> — and form a chain: ānāpānasati fulfills the four satipaṭṭhāna → which fulfill the seven bojjhaṅga → which fulfill vijjā-vimutti (knowledge and liberation).</div>' +
+          '<div class="mcd-cp">Steps 1–2 use <em>pajānāti</em> — you simply <strong>know</strong> the breath as it is. From step 3 onward each uses <em>sikkhati</em> — you <strong>train</strong>, deliberately cultivating that quality on both in-breath and out-breath.</div>' +
+          '<div class="mcd-ch3">Tetrad 1 — Body (<em>kāya</em>)</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.3fr 2fr 3fr"><span>#</span><span>Pāli</span><span>Practice</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>1</span><span class="mcd-tpali">dīgha</span><span>Breathing in/out long — <em>know</em> it as long</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>2</span><span class="mcd-tpali">rassa</span><span>Breathing in/out short — <em>know</em> it as short</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>3</span><span class="mcd-tpali">sabbakāyapaṭisaṁvedī</span><span>Train: breathe experiencing the whole body</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>4</span><span class="mcd-tpali">passambhayaṁ kāyasaṅkhāraṁ</span><span>Train: breathe stilling the physical process</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">Tetrad 2 — Feeling (<em>vedanā</em>)</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.3fr 2fr 3fr"><span>#</span><span>Pāli</span><span>Practice</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>5</span><span class="mcd-tpali">pītipaṭisaṁvedī</span><span>Train: breathe experiencing rapture (<em>pīti</em>)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>6</span><span class="mcd-tpali">sukhapaṭisaṁvedī</span><span>Train: breathe experiencing bliss (<em>sukha</em>)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>7</span><span class="mcd-tpali">cittasaṅkhārapaṭisaṁvedī</span><span>Train: breathe experiencing the mental process</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>8</span><span class="mcd-tpali">passambhayaṁ cittasaṅkhāraṁ</span><span>Train: breathe stilling the mental process</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">Tetrad 3 — Mind (<em>citta</em>)</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.3fr 2fr 3fr"><span>#</span><span>Pāli</span><span>Practice</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>9</span><span class="mcd-tpali">cittapaṭisaṁvedī</span><span>Train: breathe experiencing the mind</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>10</span><span class="mcd-tpali">abhippamodayaṁ cittaṁ</span><span>Train: breathe gladdening the mind</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>11</span><span class="mcd-tpali">samādahaṁ cittaṁ</span><span>Train: breathe immersing the mind in <em>samādhi</em></span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>12</span><span class="mcd-tpali">vimocayaṁ cittaṁ</span><span>Train: breathe freeing the mind</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">Tetrad 4 — Principles (<em>dhamma</em>)</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.3fr 2fr 3fr"><span>#</span><span>Pāli</span><span>Practice</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>13</span><span class="mcd-tpali">aniccānupassī</span><span>Train: breathe observing impermanence (<em>anicca</em>)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>14</span><span class="mcd-tpali">virāgānupassī</span><span>Train: breathe observing fading away (<em>virāga</em>)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>15</span><span class="mcd-tpali">nirodhānupassī</span><span>Train: breathe observing cessation (<em>nirodha</em>)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.3fr 2fr 3fr"><span>16</span><span class="mcd-tpali" style="color:var(--d-acc)!important">paṭinissaggānupassī ★</span><span>Train: breathe observing letting go (<em>paṭinissagga</em>) — the final release</span></div>' +
+          '</div>' +
+          '<div class="mcd-cp">Three key terms: <em>kāyasaṅkhāra</em> = breath itself (the "bodily formation") — stilling it means letting it grow subtler naturally, not forcing; <em>cittasaṅkhāra</em> = perception and feeling, the activity that shapes the mind; <em>paṭinissagga</em> = relinquishment — the final movement of the whole practice, pointed toward liberation.</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">MN 118 gives the <em>map</em>, not a "how long on each step" manual. The canon deliberately leaves pacing to a teacher and one\'s own experience.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn118" target="_blank" rel="noopener">MN 118</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn10" target="_blank" rel="noopener">MN 10</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn54.1" target="_blank" rel="noopener">SN 54.1</a></div>',
+        answer: ''
+      },
+      {
+        question: 'What did the Buddha say in his very first teaching? The one he gave right after his awakening.',
+        toolName: 'get_sutta',
+        toolArgs: '"sn56.11"',
+        statuses: ['fetching SN 56.11…', 'First Discourse loaded'],
+        toolDur: 1.8,
+        dur: 45,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp">The first teaching is the <strong>Dhammacakkappavattana Sutta</strong> — "Setting the Wheel of the Dhamma in Motion" (SN 56.11). Given at the deer park at Isipatana (modern Sarnath) to the five ascetics who had practiced alongside him before his awakening.</div>' +
+          '<div class="mcd-ch3">Two extremes to avoid</div>' +
+          '<div class="mcd-cp">One "gone forth" should avoid two paths: <em>kāmasukhallikānuyoga</em> (indulgence in sensual pleasure — low, crude, pointless) and <em>attakilamathānuyoga</em> (self-mortification — painful and equally pointless). This was pointed — his five listeners were committed ascetics betting on self-mortification.</div>' +
+          '<div class="mcd-ch3">The Middle Way — Noble Eightfold Path</div>' +
+          '<div class="mcd-cp">The <em>majjhimā paṭipadā</em> "gives vision and knowledge, and leads to peace, direct knowledge, awakening, and extinguishment." He immediately defined it as the <em>ariyo aṭṭhaṅgiko maggo</em>:</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.4fr 1.6fr 2.5fr"><span>#</span><span>English</span><span>Pāli</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.4fr 1.6fr 2.5fr"><span>1</span><span>Right view</span><span class="mcd-tpali">sammādiṭṭhi</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.4fr 1.6fr 2.5fr"><span>2</span><span>Right intention</span><span class="mcd-tpali">sammāsaṅkappa</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.4fr 1.6fr 2.5fr"><span>3</span><span>Right speech</span><span class="mcd-tpali">sammāvācā</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.4fr 1.6fr 2.5fr"><span>4</span><span>Right action</span><span class="mcd-tpali">sammākammanta</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.4fr 1.6fr 2.5fr"><span>5</span><span>Right livelihood</span><span class="mcd-tpali">sammāājīva</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.4fr 1.6fr 2.5fr"><span>6</span><span>Right effort</span><span class="mcd-tpali">sammāvāyāma</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.4fr 1.6fr 2.5fr"><span>7</span><span>Right mindfulness</span><span class="mcd-tpali">sammāsati</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.4fr 1.6fr 2.5fr"><span>8</span><span>Right immersion</span><span class="mcd-tpali">sammāsamādhi</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">The Four Noble Truths with their tasks</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.3fr 2.8fr 1.2fr"><span>Noble truth</span><span>What it is</span><span>Task</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.3fr 2.8fr 1.2fr"><span class="mcd-tpali">Dukkha</span><span>Birth, aging, death, grief; the five grasping aggregates</span><span>Fully understand</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.3fr 2.8fr 1.2fr"><span class="mcd-tpali">Samudaya</span><span>Craving (<em>taṇhā</em>) — for pleasure, existence, non-existence</span><span>Give up</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.3fr 2.8fr 1.2fr"><span class="mcd-tpali">Nirodha</span><span>Complete fading away and ending of that craving</span><span>Realize</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.3fr 2.8fr 1.2fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">Magga ★</span><span>The Noble Eightfold Path above</span><span>Develop</span></div>' +
+          '</div>' +
+          '<div class="mcd-cp">Each truth has three levels of knowledge — <em>this is</em> the truth / this truth <em>has a task</em> / that task <em>has been done</em> — giving 4 × 3 = the "three rounds and twelve aspects." Only when purified across all twelve did he declare <em>anuttara sammāsambodhi</em>.</div>' +
+          '<div class="mcd-cverse">"Everything that is liable to arise is liable to cease."<br><span style="color:var(--d-dim);font-size:11px">— The <em>dhammacakkhu</em> that arose in Koṇḍañña while this was being spoken. He was thereafter called <em>Aññāsi Koṇḍañña</em> — "Koṇḍañña Who Understood."</span></div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">Everything the tradition later built — satipaṭṭhāna, breath meditation, the entire path — sits inside the <em>fourth truth</em> here. This sutta is the skeleton; the rest of the canon is the detail hung on it.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11" target="_blank" rel="noopener">SN 56.11</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.12" target="_blank" rel="noopener">SN 56.12</a></div>',
+        answer: ''
+      },
+      {
+        question: 'What is the Fire Sermon? Show me what the Buddha actually said.',
+        toolName: 'get_sutta',
+        toolArgs: '"sn35.28"',
+        statuses: ['fetching SN 35.28…', 'Ādittapariyāya loaded'],
+        toolDur: 1.7,
+        dur: 38,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp">The <strong>Ādittapariyāya Sutta</strong> ("The Burning," SN 35.28) is traditionally the Buddha\'s third major discourse — after the First Sermon and the not-self discourse. He gave it at Gayāsīsa (Gayā Head) to a thousand former fire-worshipping ascetics: the three Kassapa brothers and their followers.</div>' +
+          '<div class="mcd-ch3">The thesis — "all is burning"</div>' +
+          '<div class="mcd-cp"><em>Sabbaṁ, bhikkhave, ādittaṁ</em> — "Mendicants, all is burning." "All" is not a vague cosmic everything: the Buddha immediately defines it as the machinery of experience itself — each of the six senses (eye, ear, nose, tongue, body, mind), its objects, the consciousness arising at each, the contact, and the feeling born from that contact. <em>Every channel through which you experience anything</em> is on fire.</div>' +
+          '<div class="mcd-ch3">Burning with what — the three fires</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1fr 4fr"><span>Fire</span><span>Meaning</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1fr 4fr"><span class="mcd-tpali">rāga</span><span>Greed / lust — grasping toward what is pleasant</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1fr 4fr"><span class="mcd-tpali">dosa</span><span>Hate / aversion — pushing away what is unpleasant</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1fr 4fr"><span class="mcd-tpali">moha</span><span>Delusion — not seeing how experience actually arises</span></div>' +
+          '</div>' +
+          '<div class="mcd-cp">Plus the wider blaze of <em>saṁsāra</em>: birth, aging, death, sorrow, lamentation, pain, sadness, distress.</div>' +
+          '<div class="mcd-ch3">The way out</div>' +
+          '<div class="mcd-cp">Seeing this clearly, the disciple grows <em>nibbidā</em> (disenchanted) → <em>virāga</em> (dispassion) → <em>vimutti</em> (release) → knowledge: "rebirth is ended, the holy life has been lived." The logic is causal, not moralistic: you don\'t <em>force</em> yourself to let go — you see clearly that everything you\'re clinging to is burning, and the grip simply releases on its own.</div>' +
+          '<div class="mcd-cverse">"Seeing this, the disciple grows disenchanted with the eye, with sights, with eye-consciousness, with eye-contact, and with whatever feeling arises from eye-contact — pleasant, painful, or neutral."<br><span style="color:var(--d-dim);font-size:11px">— SN 35.28 (Ādittapariyāya Sutta)</span></div>' +
+          '<div class="mcd-cp">The discourse ends with all thousand mendicants liberated while it was still being spoken — an unusually dramatic outcome even by canonical standards. The fire imagery fits the audience: <em>you tended sacred fires — here is the only fire worth putting out</em>.</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">T.S. Eliot named Part III of <em>The Waste Land</em> after this discourse and cited it in his notes — the most famous literary echo of the Fire Sermon in Western literature.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn35.28" target="_blank" rel="noopener">SN 35.28</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn35.23" target="_blank" rel="noopener">SN 35.23</a></div>',
+        answer: ''
       }]
     },
     {
       tab: 'list_structure',
       scenarios: [{
-        question: 'How is the Pāli Canon structured? What is the full coverage?',
+        question: 'How is the Pāli Canon structured? What are the three baskets?',
         toolName: 'list_structure',
         toolArgs: '',
-        statuses: ['querying…', 'structure loaded'],
-        toolDur: 2.0,
-        dur: 12,
-        type: 'baskets',
-        baskets: [
-          { name: 'Sutta Piṭaka',      segs: '284,702', note: 'DN · MN · SN · AN · KN' },
-          { name: 'Abhidhamma Piṭaka', segs: '88,414',  note: '7 books — Pāli only' },
-          { name: 'Vinaya Piṭaka',     segs: '71,557',  note: 'Monks · Nuns · Khandhaka · Parivāra' }
-        ],
-        total: '≈ 444,673 segments — at parity with SuttaCentral bilara-data',
-        answer: 'The three piṭakas cover ~444,673 segments: Sutta (284K), Abhidhamma (88K), and Vinaya (71K). All text is indexed and embedded. Sujato EN + Brahmali EN included.'
+        statuses: ['querying…', 'Canon structure loaded'],
+        toolDur: 1.5,
+        dur: 28,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp">The Pāli Canon (<em>Tipiṭaka</em> — "Three Baskets") contains <strong>444,673 segments</strong> across three piṭakas, at parity with SuttaCentral bilara-data. Each basket has a different character and language coverage.</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.4fr 1.8fr 1fr 1fr 1.6fr"><span>Basket</span><span>Pāli name</span><span>Texts</span><span>Segments</span><span>Languages indexed</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.4fr 1.8fr 1fr 1fr 1.6fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">Sutta Piṭaka ★</span><span class="mcd-tpali">Suttantapiṭaka</span><span>5,791 suttas</span><span>284,702</span><span>Pāli + Sujato EN</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.4fr 1.8fr 1fr 1fr 1.6fr"><span class="mcd-tpali">Abhidhamma Piṭaka</span><span class="mcd-tpali">Abhidhammapiṭaka</span><span>1,108 sections</span><span>88,414</span><span>Pāli only</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.4fr 1.8fr 1fr 1fr 1.6fr"><span class="mcd-tpali">Vinaya Piṭaka</span><span class="mcd-tpali">Vinayapiṭaka</span><span>422 texts</span><span>71,557</span><span>Pāli + Brahmali EN</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">What each basket contains</div>' +
+          '<div class="mcd-cp"><strong>Sutta Piṭaka</strong> — the Buddha\'s discourses, organized into five nikāyas (DN, MN, SN, AN, KN). The working corpus for most practice and research. Sujato\'s English is the primary translation layer.</div>' +
+          '<div class="mcd-cp"><strong>Abhidhamma Piṭaka</strong> — systematic philosophical analysis: 7 books that re-examine the entire teaching through an analytical lens. No English translation is indexed (bilara-data carries Pāli only for Abhidhamma).</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px"><strong>Vinaya Piṭaka</strong> — monastic discipline: rules for monks (222) and nuns (127), plus 22 chapters of procedural law (Khandhaka) and a summary compendium (Parivāra). Brahmali\'s English is indexed.</div>',
+        answer: ''
+      },
+      {
+        question: 'What are the five Nikayas? Which one has the most suttas?',
+        toolName: 'list_structure',
+        toolArgs: '',
+        statuses: ['querying…', 'Sutta Piṭaka detail loaded'],
+        toolDur: 1.5,
+        dur: 38,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp">The five Nikāyas are the five divisions of the <strong>Sutta Piṭaka</strong> — the "basket of discourses," one of the three baskets of the Pāli Canon. (<em>Nikāya</em> just means <em>collection</em> or <em>group</em>.)</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.3fr 0.8fr 1.7fr 0.7fr 2.3fr"><span>Nikāya</span><span>Meaning</span><span>How organized</span><span>Suttas</span><span>Character</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.3fr 0.8fr 1.7fr 0.7fr 2.3fr"><span class="mcd-tpali">Dīgha (DN)</span><span>"Long"</span><span>34 long discourses</span><span>34</span><span>Ceremonial, narrative — the Buddha\'s last days, the Satipaṭṭhāna</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.3fr 0.8fr 1.7fr 0.7fr 2.3fr"><span class="mcd-tpali">Majjhima (MN)</span><span>"Middle-length"</span><span>152 medium discourses</span><span>152</span><span>The practice backbone — meditation, training, core doctrine</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.3fr 0.8fr 1.7fr 0.7fr 2.3fr"><span class="mcd-tpali">Saṁyutta (SN)</span><span>"Connected"</span><span>56 topic-groups (<em>saṁyuttas</em>)</span><span>~2,889</span><span>Mostly short suttas, grouped by subject</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.3fr 0.8fr 1.7fr 0.7fr 2.3fr"><span class="mcd-tpali">Aṅguttara (AN)</span><span>"Increasing by one"</span><span>11 numbered books (Ones through Elevens)</span><span>~2,344</span><span>Mostly short suttas, grouped by number (lists)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.3fr 0.8fr 1.7fr 0.7fr 2.3fr"><span class="mcd-tpali">Khuddaka (KN)</span><span>"Minor"</span><span>15–18 separate books, verse + prose</span><span>—</span><span>Dhammapada, Udāna, Sutta Nipāta, Jātaka, Theragāthā / Therīgāthā</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">Which has the most suttas?</div>' +
+          '<div class="mcd-cp">The two giants are <strong>Saṁyutta and Aṅguttara</strong> — each holds thousands of suttas, dwarfing Dīgha (34) and Majjhima (152). The answer flips depending on how you count:</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:2.2fr 1.2fr 1.2fr"><span>Counting method</span><span>Saṁyutta (SN)</span><span>Aṅguttara (AN)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2.2fr 1.2fr 1.2fr"><span>Modern translated editions (e.g. Bhikkhu Bodhi)</span><span style="color:var(--d-acc)!important"><strong>~2,889 ★</strong></span><span>~2,344</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:2.2fr 1.2fr 1.2fr"><span>Traditional Pāli commentary (repetition series expanded)</span><span>~7,762</span><span style="color:var(--d-acc)!important"><strong>~9,557 ★</strong></span></div>' +
+          '</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">So the honest answer is: <em>Saṁyutta or Aṅguttara, depending on the counting convention</em> — there\'s no single agreed number. Khuddaka sits outside this contest; it\'s a shelf of separate books rather than one stream of numbered suttas.</div>',
+        answer: ''
+      },
+      {
+        question: 'What is the Abhidhamma? I\'ve heard it\'s very different from the suttas.',
+        toolName: 'list_structure',
+        toolArgs: '',
+        statuses: ['querying…', 'Abhidhamma structure loaded'],
+        toolDur: 1.5,
+        dur: 32,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp">The <strong>Abhidhamma Piṭaka</strong> ("Higher Teaching") is the third basket — a systematic philosophical re-analysis of the entire Dhamma. Where the suttas give teachings in narrative and dialogue, the Abhidhamma strips out the story and maps every mental and material phenomenon through exhaustive lists and conditional relations. It contains <strong>7 books, 88,414 segments</strong>. No English translation is currently indexed (the bilara-data carries Pāli only).</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.8fr 1.8fr 1fr 2.2fr"><span>Pāli name</span><span>English name</span><span>Segments</span><span>What it does</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.8fr 1.8fr 1fr 2.2fr"><span class="mcd-tpali">Dhammasaṅgaṇī</span><span>Enumeration of Phenomena</span><span>7,777</span><span>Classifies all mental and material phenomena</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.8fr 1.8fr 1fr 2.2fr"><span class="mcd-tpali">Vibhaṅga</span><span>Book of Analysis</span><span>12,625</span><span>Analyzes major doctrinal categories (aggregates, elements, truths)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.8fr 1.8fr 1fr 2.2fr"><span class="mcd-tpali">Dhātukathā</span><span>Discussion of Elements</span><span>3,001</span><span>Relates phenomena to aggregates, bases, and elements</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.8fr 1.8fr 1fr 2.2fr"><span class="mcd-tpali">Puggalapaññatti</span><span>Designation of Persons</span><span>1,841</span><span>Catalogs types of persons by their stage and character</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.8fr 1.8fr 1fr 2.2fr"><span class="mcd-tpali">Kathāvatthu</span><span>Points of Controversy</span><span>19,619</span><span>Refutes 252 non-Theravāda doctrinal positions</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.8fr 1.8fr 1fr 2.2fr"><span class="mcd-tpali">Yamaka</span><span>Book of Pairs</span><span>14,382</span><span>Twin questions applied to each term — forward and reverse</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.8fr 1.8fr 1fr 2.2fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">Paṭṭhāna ★</span><span>Book of Conditional Relations</span><span>29,169</span><span>24 conditional relations applied exhaustively to all phenomena</span></div>' +
+          '</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">The Paṭṭhāna is the largest and most technically demanding: 728 sections applying 24 types of conditionality to every phenomenon — traditionally said to be the text the Buddha taught in the fourth week after his awakening. It\'s often described as the most complex systematic text in world literature.</div>',
+        answer: ''
+      }]
+    },
+    {
+      tab: 'search_by_keyword',
+      scenarios: [
+        {
+          question: 'I keep seeing "anatta" in dharma books — where does it actually appear in the original Pali?',
+          toolName: 'search_by_keyword',
+          toolArgs: '"anatta"',
+          statuses: ['searching Pāli index…', 'anatt* → 6 title matches'],
+          toolDur: 2.5,
+          dur: 22,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp">The keyword search matched 6 suttas whose <em>titles</em> contain "Anatta" — nearly all from SN 22, the Khandha-saṃyutta dedicated to the five aggregates.</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.9fr 3fr"><span>Sutta</span><span>Title (English)</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.9fr 3fr"><span class="mcd-tpali">SN 22.14</span><span>Not-Self</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.9fr 3fr"><span class="mcd-tpali">SN 22.68</span><span>Not-Self</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.9fr 3fr"><span class="mcd-tpali">SN 22.143</span><span>Not-Self</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.9fr 3fr"><span class="mcd-tpali">SN 23.17</span><span>Not-Self</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.9fr 3fr"><span class="mcd-tpali">SN 46.73</span><span>Not-Self in Suffering</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.9fr 3fr"><span class="mcd-tpali">AN 6.100</span><span>Not-Self</span></div>' +
+            '</div>' +
+            '<div class="mcd-cp">These are all title matches — the body text uses inflected Pāli forms like <em>anattā</em> (nominative) and <em>anattato</em> (ablative), not the bare stem. The most famous discourse on non-self is <strong>SN 22.59</strong>, the <em>Anattalakkhaṇasutta</em> ("Discourse on the Characteristic of Non-Self") — it has a longer title with <em>lakkhaṇa</em> added, which is why it didn\'t appear here.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn22.59" target="_blank" rel="noopener">SN 22.59</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn22.68" target="_blank" rel="noopener">SN 22.68</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn46.73" target="_blank" rel="noopener">SN 46.73</a></div>',
+          answer: ''
+        },
+        {
+          question: 'My teacher always mentions the Metta Sutta — is it actually in the Canon?',
+          toolName: 'search_by_keyword',
+          toolArgs: '"metta", language="pali"',
+          statuses: ['searching Pāli index…', 'metta → 4 title matches'],
+          toolDur: 2.3,
+          dur: 20,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp">Yes — the Metta Sutta is in the Canon, and it appears in <strong>two places</strong> with the same text.</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.9fr 1.5fr 2fr"><span>Sutta</span><span>Collection</span><span>Title (English)</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.9fr 1.5fr 2fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">Kp 9 ★</span><span>Khuddakapāṭha</span><span>The Discourse on Love</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.9fr 1.5fr 2fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">Snp 1.8 ★</span><span>Sutta Nipāta</span><span>The Discourse on Love</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.9fr 1.5fr 2fr"><span class="mcd-tpali">AN 7.62</span><span>Aṅguttara Nikāya</span><span>Don\'t Fear Good Deeds</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:0.9fr 1.5fr 2fr"><span class="mcd-tpali">Iti 22</span><span>Itivuttaka</span><span>The Benefits of Love</span></div>' +
+            '</div>' +
+            '<div class="mcd-cp"><strong>Kp 9</strong> (Khuddakapāṭha) is the chanting version — the first sutta in the Minor Anthologies, recited in Theravāda ceremonies. <strong>Snp 1.8</strong> is the canonical location in the Sutta Nipāta. Both open identically:</div>' +
+            '<div class="mcd-cverse"><em>Karaṇīyamatthakusalena</em><br>"What should be done by one skilled in good,<br>who wants to attain the state of peace..."</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">AN 7.62 and Iti 22 are separate, shorter discourses on the benefits of <em>mettā</em> practice.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/kp9" target="_blank" rel="noopener">Kp 9</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/snp1.8" target="_blank" rel="noopener">Snp 1.8</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/an7.62" target="_blank" rel="noopener">AN 7.62</a></div>',
+          answer: ''
+        },
+        {
+          question: 'I heard a monk tried to split the Buddhist community in the Buddha\'s time — what does the Canon say?',
+          toolName: 'search_by_keyword',
+          toolArgs: '"Devadatta"',
+          statuses: ['searching Pāli index…', 'Devadatta → 6 Vinaya segments'],
+          toolDur: 2.7,
+          dur: 22,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp">All 6 results come from the <strong>Vinaya Piṭaka</strong>, not the Suttas — the Devadatta affair is a monastic-discipline story, so the Canon preserves it in the rules section rather than in discourses.</div>' +
+            '<div class="mcd-ctable">' +
+              '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.6fr 3fr"><span>Source</span><span>Section</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.6fr 3fr"><span class="mcd-tpali">pli-tv-kd17</span><span>Khandhaka 17 — the chapter dealing with the Devadatta affair</span></div>' +
+              '<div class="mcd-trow" style="grid-template-columns:1.6fr 3fr"><span class="mcd-tpali">pli-tv-bu-vb-ss10</span><span>Saṅghādisesa 10 — the rule against causing a schism</span></div>' +
+            '</div>' +
+            '<div class="mcd-ch3">The story in brief</div>' +
+            '<div class="mcd-cp">Devadatta proposed five strict rules to the Buddha (living only in forests, eating only alms food, wearing only patchwork robes, sleeping under trees, abstaining from fish and meat). The Buddha refused to make them mandatory. Devadatta led a breakaway group, and the Buddha\'s verdict is recorded in the chapter:</div>' +
+            '<div class="mcd-cverse"><em>Garuko kho, devadatta, saṅghabhedo</em><br>"Schism in the Sangha is a serious matter, Devadatta."</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">Saṅghādisesa 10 (pli-tv-bu-vb-ss10) was formulated directly from this episode — it prohibits a monk from working to split a unified community and is one of the most serious offence categories in the Vinaya.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/pli-tv-kd17" target="_blank" rel="noopener">pli-tv-kd17</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/pli-tv-bu-vb-ss10" target="_blank" rel="noopener">Ss 10</a></div>',
+          answer: ''
+        }
+      ]
+    },
+    {
+      tab: 'search_semantic',
+      scenarios: [{
+        question: 'What does the Canon say about the mind becoming still and unified in meditation?',
+        toolName: 'search_semantic',
+        toolArgs: '"what happens to the mind when it becomes completely still and unified"',
+        statuses: ['embedding query…', 'vector search complete'],
+        toolDur: 1.4,
+        dur: 30,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp"><em>search_semantic</em> uses vector embeddings — no exact word needed. It finds passages that share <em>meaning</em> with the query. Lower distance = closer conceptual match. This query retrieved both jhāna (absorption) passages and passages about mind consciousness.</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span>Sutta</span><span>English (Sujato)</span><span>Distance</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali">SN 35.93</span><span>"Mind consciousness is impermanent, decaying, and perishing."</span><span>0.328</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali">SN 25.3</span><span>"...mind consciousness are impermanent, decaying, and perishing."</span><span>0.332</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">MN 108 ★</span><span>"...second absorption, rapture and bliss born of immersion, with internal clarity and <strong>mind at one</strong>, without placing the mind and keeping it connected."</span><span>0.334</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali">SN 18.3</span><span>"Is mind consciousness permanent or impermanent?"</span><span>0.341</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.8fr 3.8fr 0.8fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">AN 3.58 ★</span><span>"...second absorption... rapture and bliss born of immersion, with internal clarity and <strong>mind at one</strong>."</span><span>0.345</span></div>' +
+          '</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">Results 1, 2, 4 ranked higher by distance but describe impermanence, not stillness. Results 3 and 5 (MN 108 + AN 3.58) match the actual concept: the second jhāna — <em>cetaso ekodibhāva</em> ("mind unified at one point") — where applied and sustained thought are stilled. Distance scores cluster tightly (0.33–0.35): reading multiple results matters more than trusting rank alone.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn108" target="_blank" rel="noopener">MN 108</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/an3.58" target="_blank" rel="noopener">AN 3.58</a></div>',
+        answer: ''
+      }]
+    },
+    {
+      tab: 'get_reference',
+      scenarios: [{
+        question: 'How do I cite the Satipaṭṭhāna Sutta (MN 10) in an academic paper?',
+        toolName: 'get_reference',
+        toolArgs: '"mn10"',
+        statuses: ['looking up mn10…', 'citation ready'],
+        toolDur: 0.6,
+        dur: 18,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp"><em>get_reference</em> returns a formatted citation string and location metadata — without fetching the full sutta text. Use it before writing a paper, or to confirm which nikāya a sutta belongs to.</div>' +
+          '<div class="mcd-cverse">"Mindfulness Meditation (Satipaṭṭhānasutta, MN10), Middle Discourses"<br><span style="color:var(--d-dim);font-size:11px">— canonical citation format returned by the API</span></div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 3fr"><span>Field</span><span>Value</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Pāli title</span><span class="mcd-tpali">Satipaṭṭhānasutta</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>English title</span><span>Mindfulness Meditation</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Nikāya</span><span>Majjhimanikāya — Middle Discourses (MN)</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Piṭaka</span><span>Suttantapiṭaka — Basket of Discourses</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 3fr"><span>Segments</span><span>235</span></div>' +
+          '</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">For a full academic citation: "Bhikkhu Sujato, trans., <em>Mindfulness Meditation</em> (Satipaṭṭhānasutta, MN10), Middle Discourses, SuttaCentral, CC0." Pair with <em>get_sutta</em> to fetch the text, or <em>open_sutta_viewer</em> to render it inline.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn10" target="_blank" rel="noopener">MN 10</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn22" target="_blank" rel="noopener">DN 22</a></div>',
+        answer: ''
+      }]
+    },
+    {
+      tab: 'parse_pali_word',
+      scenarios: [{
+        question: 'I found the word "dukkhassa" in a text but can\'t look it up in the dictionary — what form is it?',
+        toolName: 'parse_pali_word',
+        toolArgs: '"dukkhassa"',
+        statuses: ['stripping suffixes…', 'stems found'],
+        toolDur: 0.4,
+        dur: 20,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp">Pāli nouns inflect across 7 cases × 2 numbers — up to ~16 surface forms per root word. <em>parse_pali_word</em> strips the inflectional ending to recover the dictionary stem.</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1fr 1.5fr 2.5fr"><span>Input</span><span>Suffix removed</span><span>Meaning of the ending</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1fr 1.5fr 2.5fr"><span class="mcd-tpali">dukkhassa</span><span class="mcd-tpali">-assa</span><span>Genitive singular — "of dukkha" / "suffering\'s"</span></div>' +
+          '</div>' +
+          '<div class="mcd-ch3">Possible stems returned — pick the real one</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.5fr 0.5fr 3fr"><span>Stem</span><span>Valid?</span><span>Note</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">dukkha ★</span><span>✓</span><span>Real dictionary word — look up with <em>get_word_definition</em></span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">dukkhau</span><span>—</span><span>Rule-based artifact; not a real Pāli stem</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">dukkhaa</span><span>—</span><span>Artifact</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.5fr 0.5fr 3fr"><span class="mcd-tpali">dukkhai</span><span>—</span><span>Artifact</span></div>' +
+          '</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">The tool is rule-based, not a full morphological analyzer — it returns <em>possible</em> stems for you to verify. <em>dukkha</em> is the only real entry here. Limitation: compound words (<em>dukkhanirodha</em>) and sandhi fusions are not split.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11" target="_blank" rel="noopener">SN 56.11</a></div>',
+        answer: ''
+      }]
+    },
+    {
+      tab: 'list_editions',
+      scenarios: [{
+        question: 'What translation editions are available? Which translators are included?',
+        toolName: 'list_editions',
+        toolArgs: '',
+        statuses: ['querying editions…', 'editions loaded'],
+        toolDur: 0.5,
+        dur: 24,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp"><em>list_editions</em> shows which translation editions are indexed and available for <em>compare_translations</em>. Call this first to confirm which edition codes are valid on the running server instance.</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span>Edition code</span><span>Translator</span><span>Language</span><span>Status</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali">pali</span><span>—</span><span>Pāli</span><span>✓ always present</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">sujato ★</span><span>Bhikkhu Sujato</span><span>English</span><span>✓ loaded — Sutta Piṭaka</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali">brahmali</span><span>Bhikkhu Brahmali</span><span>English</span><span>✓ loaded — Vinaya</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">dhiranandi</span><span style="color:var(--d-fg2)">Phra Dhiranandi</span><span style="color:var(--d-fg2)">Thai</span><span style="color:var(--d-fg2)">pending</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">jayasaro</span><span style="color:var(--d-fg2)">Ajahn Jayasaro</span><span style="color:var(--d-fg2)">Thai</span><span style="color:var(--d-fg2)">pending</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">mbu</span><span style="color:var(--d-fg2)">Mahamakut</span><span style="color:var(--d-fg2)">Thai</span><span style="color:var(--d-fg2)">pending</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:1.2fr 1.6fr 0.8fr 1.5fr"><span class="mcd-tpali" style="color:var(--d-fg2)">royal</span><span style="color:var(--d-fg2)">Royal Institute</span><span style="color:var(--d-fg2)">Thai</span><span style="color:var(--d-fg2)">pending</span></div>' +
+          '</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">The server currently returns "No additional translation editions loaded" — meaning only the defaults (Pāli + Sujato EN + Brahmali EN) are active. Once Thai editions are indexed, <em>compare_translations</em> can show up to 4 languages side by side: Pāli + English + any two Thai editions.</div>',
+        answer: ''
+      }]
+    },
+    {
+      tab: 'open_sutta_viewer',
+      scenarios: [{
+        question: 'Open SN 56.11 right at the passage where the Buddha describes the three rounds of knowledge.',
+        toolName: 'open_sutta_viewer',
+        toolArgs: '"sn56.11", around="sn56.11:5.1"',
+        statuses: ['loading SN 56.11…', 'viewer centred at §5.1'],
+        toolDur: 1.1,
+        dur: 26,
+        type: 'chat',
+        html:
+          '<div class="mcd-cp"><em>open_sutta_viewer</em> renders a sutta inline as a Pāli + English panel, centred on a specific segment. The <em>around</em> parameter targets a segment ID; the viewer highlights it and the reader scrolls to that exact line. SN 56.11 has 60 segments total — this call centres at §5.1.</div>' +
+          '<div class="mcd-ch3">SN 56.11 §5.1–5.3 — three rounds for the First Noble Truth</div>' +
+          '<div class="mcd-ctable">' +
+            '<div class="mcd-trow mcd-thr" style="grid-template-columns:0.9fr 4fr"><span>Segment</span><span>English (Sujato) — verified</span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.9fr 4fr"><span class="mcd-tpali" style="color:var(--d-acc)!important">§5.1 ★</span><span><em>"This is the noble truth of suffering."</em> — vision, knowledge, wisdom, realization, and light arose in me regarding teachings not learned before from another. <span style="color:var(--d-dim);font-size:11px">(Round 1: recognition)</span></span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.9fr 4fr"><span class="mcd-tpali">§5.2</span><span><em>"This noble truth of suffering should be completely understood."</em> — vision arose … <span style="color:var(--d-dim);font-size:11px">(Round 2: task)</span></span></div>' +
+            '<div class="mcd-trow" style="grid-template-columns:0.9fr 4fr"><span class="mcd-tpali">§5.3</span><span><em>"This noble truth of suffering has been completely understood."</em> — vision arose … <span style="color:var(--d-dim);font-size:11px">(Round 3: completion)</span></span></div>' +
+          '</div>' +
+          '<div class="mcd-cp">The same three rounds repeat for all four Noble Truths (§5–8): recognition → task → completion. 4 truths × 3 rounds = the "twelve aspects" (<em>tiparivaṭṭa dvādasākāra</em>) — the canonical declaration that the first discourse is also the moment of complete awakening.</div>' +
+          '<div class="mcd-cp" style="margin-bottom:6px">After a search hit, pass the matched <em>segment_id</em> as <em>around</em> to open the reader at exactly the cited line — the viewer renders ±12 segments of context by default.</div>' +
+          '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn56.11#sn56.11:5.1" target="_blank" rel="noopener">SN 56.11 §5.1</a></div>',
+        answer: ''
       }]
     }
   ];
@@ -281,19 +828,35 @@
         'background:var(--d-outbg);box-shadow:0 1px 0 rgba(0,0,0,.07),0 18px 40px -18px rgba(0,0,0,.28);' +
         'margin:1.5rem 0 2rem}' +
       '.mcd-inner{position:absolute;top:0;left:0;width:1280px;height:720px;transform-origin:top left}' +
-      '.mcd-bg{position:absolute;inset:0;background:var(--d-bg);display:flex;flex-direction:column;' +
-        'padding:24px 32px 28px;box-sizing:border-box;font-family:system-ui,sans-serif}' +
-      '.mcd-hd{display:flex;align-items:center;gap:12px;flex:none;margin-bottom:12px}' +
+      '.mcd-bg{position:absolute;inset:0;background:var(--d-bg);display:flex;flex-direction:row;' +
+        'box-sizing:border-box;font-family:system-ui,sans-serif}' +
+      '.mcd-sidebar{width:175px;flex:none;display:flex;flex-direction:column;' +
+        'padding:20px 8px 20px 16px;border-right:1px solid var(--d-brd);box-sizing:border-box}' +
+      '.mcd-sidebtns{display:flex;gap:5px;flex:none;margin-top:10px}' +
+      '.mcd-main{flex:1;min-width:0;display:flex;flex-direction:column;' +
+        'padding:20px 28px 24px 12px;box-sizing:border-box}' +
       '.mcd-logo{font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:600;color:var(--d-fg);' +
         'display:flex;align-items:center;gap:8px;flex:none;white-space:nowrap}' +
       '.mcd-ldot{width:7px;height:7px;border-radius:50%;background:var(--d-grn);' +
         'box-shadow:0 0 0 3px rgba(123,189,142,.16)}' +
-      '.mcd-tabs{display:flex;gap:5px;flex:1;overflow:hidden}' +
+      '.mcd-tabs{display:flex;flex-direction:column;gap:3px;flex:1;margin-top:12px;' +
+        'overflow-y:auto;scrollbar-width:none}' +
+      '.mcd-tabs::-webkit-scrollbar{display:none}' +
       '.mcd-tab{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:500;' +
-        'padding:4px 10px;border-radius:5px;border:1px solid var(--d-brd2);background:transparent;' +
-        'color:var(--d-fg2);cursor:pointer;white-space:nowrap;transition:all .15s}' +
+        'padding:5px 8px;border-radius:5px;border:1px solid var(--d-brd2);background:transparent;' +
+        'color:var(--d-fg2);cursor:pointer;white-space:nowrap;text-align:left;width:100%;' +
+        'box-sizing:border-box;transition:all .15s}' +
       '.mcd-tab.on{background:var(--d-abg);border-color:var(--d-acc);color:var(--d-acc)}' +
       '.mcd-tab:hover:not(.on){border-color:var(--d-acc);color:var(--d-fg)}' +
+      '.mcd-subtabs{display:none;flex-direction:column;gap:1px;padding:2px 0 4px 8px;' +
+        'border-left:1px solid var(--d-brd);margin:0 0 4px 8px}' +
+      '.mcd-subtabs.on{display:flex}' +
+      '.mcd-stab{font-size:10.5px;line-height:1.35;padding:3px 6px;border-radius:4px;' +
+        'border:none;color:var(--d-dim);cursor:pointer;text-align:left;width:100%;' +
+        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box;' +
+        'background:transparent;transition:color .15s,background .15s;font-family:inherit}' +
+      '.mcd-stab.on{color:var(--d-acc);background:var(--d-abg)}' +
+      '.mcd-stab:hover:not(.on){color:var(--d-fg2);background:var(--d-hbg)}' +
       '.mcd-tbtn{width:28px;height:28px;border-radius:6px;border:1px solid var(--d-brd2);' +
         'background:transparent;color:var(--d-fg2);cursor:pointer;flex:none;' +
         'display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s}' +
@@ -339,6 +902,17 @@
       '.mcd-defsrcs{display:flex;gap:5px;margin-top:6px}' +
       '.mcd-srctag{font-family:"JetBrains Mono",monospace;font-size:10px;background:var(--d-abg);' +
         'color:var(--d-acc);border-radius:4px;padding:2px 6px}' +
+      'a.mcd-srctag{text-decoration:none;cursor:pointer;transition:opacity .15s}' +
+      'a.mcd-srctag:hover{opacity:.7}' +
+      '.mcd-defetym{font-size:11.5px;color:var(--d-fg2);margin-bottom:10px;padding-bottom:8px;' +
+        'border-bottom:1px solid var(--d-brd);line-height:1.5}' +
+      '.mcd-defsense{display:flex;gap:8px;margin-bottom:6px;align-items:baseline}' +
+      '.mcd-sensn{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--d-acc);flex:none;min-width:14px}' +
+      '.mcd-senslbl{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--d-dim);' +
+        'text-transform:uppercase;letter-spacing:.04em;flex:none;min-width:68px}' +
+      '.mcd-senstxt{font-size:12.5px;line-height:1.5;color:var(--d-fg2);font-style:italic}' +
+      '.mcd-defnote{font-size:11.5px;color:var(--d-dim);font-style:italic;margin-top:8px;' +
+        'padding-top:8px;border-top:1px solid var(--d-brd);line-height:1.45}' +
       // translation pairs
       '.mcd-pair{padding:8px 11px;border:1px solid var(--d-brd);border-radius:7px}' +
       '.mcd-plbl{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.07em;' +
@@ -425,15 +999,23 @@
         'background:var(--d-hbg);border:1px solid var(--d-hbrd);border-radius:5px;' +
         'padding:3px 8px;display:inline-flex;align-items:center;gap:4px}' +
       '.mcd-chip::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--d-grn);display:block}' +
+      'a.mcd-chip,a.mcd-chip:visited{text-decoration:none;color:var(--d-fg2)}' +
+      'a.mcd-chip{cursor:pointer;transition:border-color .15s,color .15s}' +
+      'a.mcd-chip:hover{border-color:var(--d-acc);color:var(--d-acc)}' +
       // fullscreen
       '.mcd-outer:fullscreen{aspect-ratio:unset!important;border-radius:0}' +
       '.mcd-outer:-webkit-full-screen{aspect-ratio:unset!important;border-radius:0}' +
       // mobile mode (toggled via JS class .mcd-mobile when width < 640)
       '.mcd-mobile{aspect-ratio:unset!important;height:auto!important}' +
       '.mcd-mobile .mcd-inner{position:relative!important;top:auto!important;left:auto!important;width:100%!important;height:auto!important;transform:none!important}' +
-      '.mcd-mobile .mcd-bg{position:relative!important;inset:unset!important;height:auto!important;padding:12px 14px 16px!important}' +
-      '.mcd-mobile .mcd-tabs{overflow-x:auto!important;flex-wrap:nowrap!important;scrollbar-width:none}' +
-      '.mcd-mobile .mcd-tabs::-webkit-scrollbar{display:none}' +
+      '.mcd-mobile .mcd-bg{position:relative!important;inset:unset!important;height:auto!important;flex-direction:column!important}' +
+      '.mcd-mobile .mcd-sidebar{width:auto!important;border-right:none!important;border-bottom:1px solid var(--d-brd);padding:10px 14px 8px!important;display:grid!important;grid-template-columns:1fr auto;grid-template-rows:auto auto;column-gap:8px}' +
+      '.mcd-mobile .mcd-logo{grid-column:1;grid-row:1;align-self:center}' +
+      '.mcd-mobile .mcd-sidebtns{grid-column:2;grid-row:1;align-self:center;margin-top:0!important}' +
+      '.mcd-mobile .mcd-tabs{grid-column:1/-1;grid-row:2;flex-direction:row!important;flex-wrap:wrap!important;gap:5px!important;margin-top:6px!important;overflow-y:visible!important}' +
+      '.mcd-mobile .mcd-tab{width:auto!important}' +
+      '.mcd-mobile .mcd-subtabs{display:none!important}' +
+      '.mcd-mobile .mcd-main{padding:10px 14px 16px!important}' +
       '.mcd-mobile .mcd-targ{flex:1!important;min-width:0!important;max-width:none!important}' +
       '.mcd-mobile .mcd-frame{flex:none!important;height:460px;padding:12px 14px!important}';
     document.head.appendChild(el);
@@ -517,12 +1099,15 @@
     var self = this;
     this.el.innerHTML =
       '<div class="mcd-outer"><div class="mcd-inner"><div class="mcd-bg">' +
-      '<div class="mcd-hd">' +
+      '<div class="mcd-sidebar">' +
         '<div class="mcd-logo"><div class="mcd-ldot"></div>tripiṭaka·mcp</div>' +
         '<div class="mcd-tabs" id="mcd-tabs"></div>' +
-        '<button class="mcd-tbtn" id="mcd-tbtn" title="Toggle light / dark">☀</button>' +
-        '<button class="mcd-tbtn" id="mcd-fsbtn" title="Fullscreen">' + FS_ON + '</button>' +
+        '<div class="mcd-sidebtns">' +
+          '<button class="mcd-tbtn" id="mcd-tbtn" title="Toggle light / dark">☀</button>' +
+          '<button class="mcd-tbtn" id="mcd-fsbtn" title="Fullscreen">' + FS_ON + '</button>' +
+        '</div>' +
       '</div>' +
+      '<div class="mcd-main">' +
       '<div class="mcd-frame">' +
         '<div class="mcd-qrow"><div class="mcd-qbub">' +
           '<span id="mcd-qt"></span><span id="mcd-cur" class="mcd-cur"></span>' +
@@ -546,9 +1131,9 @@
         '</div>' +
         '<div id="mcd-qnav" class="mcd-qnav" style="display:none"></div>' +
       '</div>' +
-      '</div></div></div>';
+      '</div></div></div></div>';
 
-    // Tab buttons
+    // Tab buttons + sub-questions
     var tabsEl = this.el.querySelector('#mcd-tabs');
     TAB_GROUPS.forEach(function (g, i) {
       var btn = document.createElement('button');
@@ -556,6 +1141,16 @@
       btn.textContent = g.tab;
       btn.addEventListener('click', function () { self._goto(i); });
       tabsEl.appendChild(btn);
+      var sub = document.createElement('div');
+      sub.className = 'mcd-subtabs' + (i === 0 ? ' on' : '');
+      g.scenarios.forEach(function (sc, j) {
+        var stab = document.createElement('button');
+        stab.className = 'mcd-stab' + (j === 0 ? ' on' : '');
+        stab.textContent = sc.question;
+        stab.addEventListener('click', function () { self._gotoScIdx(i, j); });
+        sub.appendChild(stab);
+      });
+      tabsEl.appendChild(sub);
     });
 
     // Theme toggle
@@ -615,6 +1210,11 @@
     for (var i = 0; i < tabs.length; i++) {
       tabs[i].classList.toggle('on', i === idx);
     }
+    var subtabs = this.el.querySelectorAll('.mcd-subtabs');
+    for (var j = 0; j < subtabs.length; j++) {
+      subtabs[j].classList.toggle('on', j === idx);
+    }
+    this._updateStabs();
     this._updateQNav();
   };
 
@@ -622,7 +1222,24 @@
     this.scIdx = qIdx;
     this.sceneStart = Date.now();
     this._builtScIdx = -1;
+    this._updateStabs();
     this._updateQNav();
+  };
+
+  McpDemo.prototype._gotoScIdx = function (tabIdx, scIdx) {
+    if (this.tab !== tabIdx) { this._goto(tabIdx); }
+    this._gotoQ(scIdx);
+  };
+
+  McpDemo.prototype._updateStabs = function () {
+    var allSubs = this.el.querySelectorAll('.mcd-subtabs');
+    var sub = allSubs[this.tab];
+    if (!sub) return;
+    var stabs = sub.querySelectorAll('.mcd-stab');
+    for (var i = 0; i < stabs.length; i++) {
+      stabs[i].classList.toggle('on', i === this.scIdx);
+    }
+    if (stabs[this.scIdx]) stabs[this.scIdx].scrollIntoView({ block: 'nearest' });
   };
 
   McpDemo.prototype._updateQNav = function () {
@@ -714,15 +1331,29 @@
     } else if (scn.type === 'def') {
       var db = document.createElement('div');
       db.className = 'mcd-defbox'; db.style.opacity = 0;
-      db.innerHTML =
-        '<div class="mcd-defword">' + scn.def.word + '</div>' +
-        '<div class="mcd-defgram">' + scn.def.gram + '</div>' +
-        '<div class="mcd-deftxt">' + scn.def.text + '</div>' +
-        '<div class="mcd-defsrcs">' +
-          scn.def.sources.map(function (s) {
-            return '<span class="mcd-srctag">' + s + '</span>';
-          }).join('') +
-        '</div>';
+      var dInner = '<div class="mcd-defword">' + scn.def.word + '</div>' +
+        '<div class="mcd-defgram">' + scn.def.gram + '</div>';
+      if (scn.def.etym) dInner += '<div class="mcd-defetym">' + scn.def.etym + '</div>';
+      if (scn.def.senses) {
+        dInner += scn.def.senses.map(function (s) {
+          return '<div class="mcd-defsense">' +
+            '<span class="mcd-sensn">' + s.n + '</span>' +
+            (s.label ? '<span class="mcd-senslbl">' + s.label + '</span>' : '') +
+            '<span class="mcd-senstxt">' + s.text + '</span>' +
+            '</div>';
+        }).join('');
+      } else {
+        dInner += '<div class="mcd-deftxt">' + scn.def.text + '</div>';
+      }
+      if (scn.def.note) dInner += '<div class="mcd-defnote">' + scn.def.note + '</div>';
+      dInner += '<div class="mcd-defsrcs">' +
+        scn.def.sources.map(function (s) {
+          return typeof s === 'object'
+            ? '<a class="mcd-srctag" href="' + s.href + '" target="_blank" rel="noopener">' + s.label + '</a>'
+            : '<span class="mcd-srctag">' + s + '</span>';
+        }).join('') +
+      '</div>';
+      db.innerHTML = dInner;
       body.appendChild(db);
       this._anims.push({ el: db, s: base, d: 0.55 });
 
