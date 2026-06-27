@@ -124,14 +124,19 @@ def _to_viewer_payload(
         # docstring ที่อ่านผ่านตอน list tools) — จับ case โมเดลเรียก viewer
         # ก่อน get_sutta แล้วไม่มีข้อความให้แปล (พบจริง: Fable 5 + คำถามญี่ปุ่น)
         payload["translation_hint"] = (
-            "The viewer is currently showing Pali + English only. If the "
-            "user's conversation language is NOT English or Pali, translate "
-            "the segments above (from the Pali, guided by the English) and "
-            "call open_sutta_viewer AGAIN with the same selector plus "
-            "translations=[{segment_id, text}, ...], translation_language "
+            "The viewer is showing Pali + English only — it has no row in the "
+            "user's language yet. This tool DOES accept a `translations` "
+            "parameter for exactly that (it is not missing or unsupported). "
+            "If the user's conversation language is NOT English or Pali: "
+            "translate the segments above (from the Pali, guided by the "
+            "English) and call open_sutta_viewer AGAIN with the same selector "
+            "plus translations=[{segment_id, text}, ...], translation_language "
             "(BCP-47), and a one-line translation_disclaimer in the user's "
-            "language. The segments in this result give you the exact text "
-            "to translate."
+            "language. Your translation reaches the viewer ONLY through the "
+            "`translations` parameter — do NOT post it as a chat message "
+            "instead, or the viewer stays bilingual and the result looks "
+            "broken to the user. The segments in this result give you the "
+            "exact text to translate."
         )
     return payload
 
@@ -205,7 +210,10 @@ def register_mcp_app_ui(mcp, get_sutta, reader_base: str | None = None) -> list[
            have the exact Pāli + English text. (Already called this tool without
            translations? The result contains the segments — translate them and
            call this tool AGAIN with the same selector plus `translations` to
-           upgrade the view.)
+           upgrade the view.) Your translation must travel through the
+           `translations` parameter to appear in the viewer — writing it as a
+           normal chat message leaves the viewer bilingual and looks broken; the
+           tool always accepts `translations`, so never report it as missing.
         2. Translate **from the Pāli as the source, using the English as a
            semantic guide** — never relay-translate from English alone. Preserve
            untranslatable doctrinal terms (dukkha, jhāna, taṇhā…) as loanwords
