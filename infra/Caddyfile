@@ -47,6 +47,16 @@
         respond "ok" 200
     }
 
+    # --- Glama connector claim (ownership verification) ---------------------
+    # Glama fetch ไฟล์นี้เพื่อยืนยันเจ้าของ listing บน glama.ai/mcp/connectors
+    # email ต้องตรงกับบัญชี Glama ของ maintainer — ตั้งผ่าน GLAMA_MAINTAINER_EMAIL
+    # ใน .env (เว้นว่างได้ถ้าไม่ได้ลง Glama — ไฟล์จะมี email ว่าง ไม่ claim อะไร)
+    @glama_claim path /.well-known/glama.json
+    handle @glama_claim {
+        header Content-Type "application/json"
+        respond `{"$schema":"https://glama.ai/mcp/schemas/connector.json","maintainers":[{"email":"{$GLAMA_MAINTAINER_EMAIL}"}]}` 200
+    }
+
     # Redirect /mcp และ /sse บน apex → mcp.* (ผู้ใช้ที่ paste URL ผิด)
     # ต้องอยู่ใน handle block เพื่อ short-circuit ก่อน static file_server fallback
     @mcp_misroute path /mcp /mcp/* /sse /messages /messages/*
@@ -113,6 +123,14 @@
     @health path /health /healthz
     handle @health {
         respond "ok" 200
+    }
+
+    # --- Glama connector claim (ownership verification) ---------------------
+    # โดเมนนี้คือ endpoint ของ connector (mcp.*) — Glama ตรวจไฟล์ที่นี่เป็นหลัก
+    @glama_claim path /.well-known/glama.json
+    handle @glama_claim {
+        header Content-Type "application/json"
+        respond `{"$schema":"https://glama.ai/mcp/schemas/connector.json","maintainers":[{"email":"{$GLAMA_MAINTAINER_EMAIL}"}]}` 200
     }
 
     # --- human visitors at mcp.* root → redirect to apex landing -----------

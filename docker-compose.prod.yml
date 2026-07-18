@@ -230,6 +230,9 @@ services:
       # Leave unset/empty to skip — Caddy falls back to localhost.invalid
       # placeholder so the apex site block is effectively a no-op.
       TRIPITAKA_APEX_DOMAIN: ${TRIPITAKA_APEX_DOMAIN:-}
+      # Optional: email ของบัญชี glama.ai สำหรับ claim connector listing
+      # (serve ที่ /.well-known/glama.json) — เว้นว่างได้ถ้าไม่ได้ลง Glama
+      GLAMA_MAINTAINER_EMAIL: ${GLAMA_MAINTAINER_EMAIL:-}
     volumes:
       - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./topics:/var/www/topics:ro
