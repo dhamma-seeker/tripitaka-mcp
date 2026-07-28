@@ -27,6 +27,7 @@ from fastmcp import FastMCP
 from db.backend import get_backend
 from db.normalize import fold_pali
 from db.schema import create_tables
+from sutta_definitions import find_definitions
 
 load_dotenv()
 
@@ -2667,6 +2668,107 @@ def get_word_definition(word: str, language: Literal["en", "thai", "th", "all"] 
             "notice": PROJECT_NOTICE,
         }
         
+    except Exception as e:
+        return {"error": f"Error: {str(e)}"}
+    finally:
+        cur.close()
+        backend.release(conn)
+
+
+@mcp.tool(
+    annotations={
+        "title": "Define From Suttas",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
+def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) -> dict[str, Any]:
+    """Find how the **suttas and Vinaya define a Pāli term in their own words**.
+
+    The canon defines its own terms with fixed formulas — "Katamañca …
+    dukkhaṁ?" (what is X?) … "ayaṁ vuccati … dukkhaṁ" (this is called X),
+    "X adhivacana" (X is a designation for …), or the Vinaya "X nāma". This
+    tool locates those definitional passages and returns them **cited**, so
+    the assistant can present the doctrinal essence straight from the source.
+
+    🧭 **This tool vs `get_word_definition`:**
+    - **`define_from_suttas`** → the *doctrinal* definition, how the term is
+      defined **inside the canon**. Use for "how do the suttas define X",
+      "what is the canonical definition of X", "define X from the suttas".
+      Returns a few precise segments, not a lexicon essay.
+    - **`get_word_definition`** → the *lexical* definition from dictionaries
+      (Payutto / PTS / DPPN). Use for etymology and word meaning.
+    They complement each other — offer both when the user wants the full
+    picture (dictionary sense + how the Buddha defined it).
+
+    📖 **How to present the result:**
+    Results are ranked; the top one is usually the canonical definition.
+    **Quote the Pāli (and English where present) verbatim** and render each
+    `cross_reference.tripitaka_mcp_reader.segment_url` as clickable markdown
+    so the user can verify. Do NOT paraphrase into your own definition — the
+    point is the canon's own words. Each result is tagged `kind`
+    (direct / simile) and `detail` (descriptive / enumerative); a
+    *descriptive* definition characterises the term, an *enumerative* one
+    lists its types — prefer the descriptive when explaining the essence.
+
+    Args:
+        term: Pāli term in its base/dictionary form (e.g. "dukkha",
+              "viññāṇa", "samādhi"). Diacritics optional — folded internally.
+        limit: Max definitional passages to return (1–15, default 5).
+        include_similes: Include indirect definitions by simile/metaphor
+                         (seyyathāpi …, "is a designation for …"). Default True.
+
+    Returns:
+        `definitions[]` ranked most-definitional first — each with the cited
+        `segment_id`, `pali`, `english`, `markers`, `kind`, `detail`, and a
+        `cross_reference`. Only Sutta + Vinaya are searched (not dictionaries).
+    """
+    limit = min(max(1, limit), 15)
+    backend = get_backend()
+    conn = backend.connect()
+    try:
+        cur = backend.cursor(conn)
+        results = find_definitions(
+            cur, backend.name, term, limit=limit, include_similes=include_similes
+        )
+        if not results:
+            return {
+                "term": term,
+                "definitions": [],
+                "note": (
+                    f"No sutta-internal definition formula found for '{term}'. "
+                    "Try the base/stem form (parse_pali_word can help), or fall "
+                    "back to get_word_definition for the dictionary meaning."
+                ),
+            }
+        definitions = []
+        for r in results:
+            item = {
+                "sutta_id": r["sutta_id"],
+                "segment_id": r["segment_id"],
+                "pali": r["text_pali"],
+                "english": r["text_english"],
+                "kind": r["kind"],
+                "detail": r["detail"],
+                "markers": r["markers"],
+                "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
+            }
+            if r.get("duplicates"):
+                item["also_appears_elsewhere"] = r["duplicates"]
+            definitions.append(item)
+        return {
+            "term": term,
+            "definitions": definitions,
+            "note": (
+                "Canonical definitional passages from the suttas/Vinaya, ranked. "
+                "Present the top one(s) as the essence, quote verbatim, and cite "
+                "via cross_reference. This is the doctrinal definition; the "
+                "dictionary sense is a separate tool (get_word_definition)."
+            ),
+            "notice": PROJECT_NOTICE,
+        }
     except Exception as e:
         return {"error": f"Error: {str(e)}"}
     finally:
