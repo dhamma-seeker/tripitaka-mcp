@@ -1,0 +1,282 @@
+"""
+Tripitaka MCP — Sutta-based definition detection (issue #4).
+
+Reusable detection layer: หา "ท่อนนิยาม" ในพระไตรปิฎกสำหรับศัพท์บาลีหนึ่งคำ โดย
+อาศัย *สูตรนิยาม* ที่คัมภีร์ใช้นิยามศัพท์ของตัวเอง (Pavel K's pattern set, issue #4).
+
+ต่างจาก get_word_definition (พจนานุกรม/lexical) — ตัวนี้คืน "นิยามเชิงธรรมจากในสูตร"
+เช่น `dukkha`:
+  opener  →  "Katamañca, bhikkhave, dukkhaṁ ariyasaccaṁ?"
+  closer  →  "Idaṁ vuccati, bhikkhave, dukkhaṁ ariyasaccaṁ."
+
+**Design (2-stage, ตรงกับที่ Pavel ทำใน Dhamma Gift):**
+  1. หา anchor segment: term (รูปผัน) + definitional marker อยู่ใน segment เดียวกัน
+  2. Python: classify (direct/simile · descriptive/enumerative) + score + dedup + rank
+
+**Verifiability:** ทุกผลลัพธ์ผูกกับ segment_id จริง — layer นี้ไม่ "สรุป" เอง (นั่นเป็น
+หน้าที่ AI client). คืน passage ที่ cite ได้ + คะแนน ให้ client เลือกนำเสนอ essence.
+
+**Reusable:** ไม่พึ่ง MCP — รับ DB-API cursor + backend name เข้ามาตรงๆ จึง expose
+เป็นได้ทั้ง MCP tool และ data-export (สำหรับ consumer ที่ไม่มี AI เช่น Dhamma Gift).
+
+ดู Dual-Backend Discipline ใน CLAUDE.md.
+"""
+
+from __future__ import annotations
+
+import re
+from typing import Any
+
+from db.normalize import fold_pali
+
+# ---------------------------------------------------------------------------
+# Definitional markers (folded — ตรงกับ FTS5 `remove_diacritics 2` + fold_pali)
+# ที่มา: pattern set ของ Pavel (issue #4). ใช้เป็น FTS prefix + Python regex.
+# ---------------------------------------------------------------------------
+
+# คำถามเปิดนิยาม — "X คืออะไร/อย่างไร"
+_INTERROGATIVE = ("katam", "katham")           # katamañca/katamo/…, kathaṁ
+# คำชี้ขาด — "เรียกว่า X / X เป็นชื่อเรียกของ / กล่าวคือ"
+_PREDICATE = ("vucc", "adhivacan", "yadidam")   # vuccati/vuccanti, adhivacana, yadidaṁ
+# วินัย padabhājaniya — "<term> nāma" (ต้องติดกับ term → เช็ค adjacency ใน Python)
+_NAMA = "nama"
+# อุปมา/นิยามทางอ้อม (ชั้นรอง)
+_SIMILE = ("seyyathapi", "upam", "opam", "opamm", "evameva")
+
+# FTS prefix tokens สำหรับ stage-1 recall (marker ตัวใดตัวหนึ่งอยู่ใน segment)
+_MARKER_PREFIXES = tuple(
+    f"{m}*" for m in (*_INTERROGATIVE, *_PREDICATE, _NAMA, *_SIMILE)
+)
+
+# ตัวเลขหมู่ (folded) — สัญญาณว่านิยามเป็นแบบ "แจกแจงประเภท" (enumerative)
+# เช่น "cha viññāṇakāyā" (วิญญาณ 6). Pavel: descriptive ควรมีน้ำหนักเหนือ enumerative.
+_NUMERAL_WORDS = frozenset({
+    "dve", "dvi", "tayo", "tini", "cattaro", "cattari", "panca",
+    "cha", "satta", "attha", "nava", "dasa",
+    "seyyathidam",  # "กล่าวคือ:" — มักตามด้วยลิสต์
+})
+
+# สูตรวิเคราะห์/วิภังค์ (whitelist boost) — จาก pattern set ของ Pavel.
+# สูตรที่ "นิยามศัพท์" เป็นหน้าที่หลัก → ท่อนที่เจอในนี้น่าเชื่อถือกว่า.
+_VIBHANGA_SUTTAS = frozenset({
+    "mn135", "mn136", "mn137", "mn138", "mn139", "mn140", "mn141", "mn142",
+    "sn12.2", "sn45.8", "sn47.40", "sn48.9", "sn48.10", "sn48.36",
+    "sn48.37", "sn48.38", "sn51.20", "dn15", "dn22", "dn33", "dn34",
+    "an3.34", "an3.111", "an3.112", "an6.39", "an10.174", "sn12.60", "sn14.12",
+})
+
+# case endings ของ a-stem (folded) — สร้างรูปผิวจาก stem เพื่อ recall แบบ token
+# (แม่นกว่า prefix `dukkh*` ที่ไปติด compound เช่น dukkhudrayo/dukkhavipāka)
+_A_STEM_ENDINGS = (
+    "a", "o", "am", "ena", "assa", "aya", "amhi", "asmim",
+    "e", "ani", "ehi", "ebhi", "anam", "esu", "ato", "asma",
+)
+# endings ทั่วไปสำหรับ stem ที่ไม่ลงท้าย -a (i/u/พยัญชนะ)
+_GENERIC_ENDINGS = ("", "m", "ssa", "ya", "no", "ni", "na", "smim", "su", "nam")
+
+# ให้ระยะห่าง token ระหว่าง term กับ marker ที่ยังถือว่า "ใกล้พอจะนิยาม"
+_PROXIMITY_TOKENS = 14
+
+
+def _inflected_forms(folded_term: str) -> set[str]:
+    """สร้างรูปผัน (folded) ของศัพท์ เพื่อ match แบบ whole-token (เลี่ยง compound).
+
+    a-stem (`dukkha`) → {dukkha, dukkho, dukkham, dukkhena, dukkhassa, …}
+    อื่นๆ (`viññāṇa`→`vinnana`) → a-stem ด้วย (ลงท้าย a); `sati`→ generic.
+    """
+    forms = {folded_term}
+    if folded_term.endswith("a") and len(folded_term) > 2:
+        stem = folded_term[:-1]
+        forms.update(stem + e for e in _A_STEM_ENDINGS)
+    else:
+        forms.update(folded_term + e for e in _GENERIC_ENDINGS)
+    return {f for f in forms if f}
+
+
+def _fetch_candidates_sqlite(cur, forms: set[str]) -> list[dict[str, Any]]:
+    """SQLite (FTS5): anchor segment = (รูปผันของ term) AND (marker ใดๆ) ใน text_pali."""
+    form_clause = " OR ".join(sorted(forms))
+    marker_clause = " OR ".join(_MARKER_PREFIXES)
+    match = f"text_pali : (({form_clause}) AND ({marker_clause}))"
+    cur.execute(
+        """
+        SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english
+        FROM segment_fts f
+        JOIN segment seg ON seg.id = f.rowid
+        JOIN section sec ON seg.section_id = sec.id
+        WHERE f.segment_fts MATCH ?
+        """,
+        (match,),
+    )
+    cols = ("sutta_id", "segment_id", "text_pali", "text_english")
+    return [dict(zip(cols, r)) for r in cur.fetchall()]
+
+
+def _fetch_candidates_postgres(cur, forms: set[str]) -> list[dict[str, Any]]:
+    """Postgres: anchor segment ผ่าน f_unaccent + word-boundary regex.
+
+    ⚠️ ยังไม่ได้ verify บน server จริง (ไม่มี PG local) — ต้องผ่าน Test Gate ก่อน merge.
+    โครงตาม dual-backend: stage-1 recall เท่านั้น, scoring ทำใน Python เหมือน SQLite.
+    """
+    # รูปผัน → alternation, marker → alternation ; match บน f_unaccent(text_pali)
+    form_alt = "|".join(re.escape(f) for f in sorted(forms))
+    marker_alt = "|".join((*_INTERROGATIVE, *_PREDICATE, _NAMA, *_SIMILE))
+    cur.execute(
+        """
+        SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english
+        FROM segment seg
+        JOIN section sec ON seg.section_id = sec.id
+        WHERE f_unaccent(seg.text_pali) ~* %(term)s
+          AND f_unaccent(seg.text_pali) ~* %(marker)s
+        """,
+        {"term": rf"\y({form_alt})\y", "marker": rf"\y({marker_alt})"},
+    )
+    cols = ("sutta_id", "segment_id", "text_pali", "text_english")
+    return [dict(zip(cols, r)) for r in cur.fetchall()]
+
+
+def _tokens(folded_text: str) -> list[str]:
+    return re.findall(r"[a-z0-9]+", folded_text)
+
+
+def _min_distance(tokens: list[str], forms: set[str], prefixes: tuple[str, ...]) -> int | None:
+    """ระยะ token ที่สั้นที่สุดระหว่าง term (whole word) กับ marker (prefix). None = ไม่พบคู่."""
+    term_idx = [i for i, t in enumerate(tokens) if t in forms]
+    mark_idx = [i for i, t in enumerate(tokens)
+                if any(t.startswith(p) for p in prefixes)]
+    if not term_idx or not mark_idx:
+        return None
+    return min(abs(a - b) for a in term_idx for b in mark_idx)
+
+
+def _classify(folded_text: str, forms: set[str]) -> dict[str, Any] | None:
+    """Classify anchor: หา marker ที่ใกล้ term ที่สุด + kind (descriptive/enumerative).
+
+    คืน None ถ้า term ไม่ปรากฏเป็น "คำเต็ม" (กัน compound-prefix false positive) หรือ
+    ไม่มี marker ใกล้พอ.
+    """
+    tokens = _tokens(folded_text)
+    tokset = set(tokens)
+    if not (tokset & forms):
+        return None  # term ไม่ใช่คำเต็มในท่อนนี้ → ตัดทิ้ง (เช่น dukkhudrayo)
+
+    # marker ที่ใกล้ term ที่สุดในแต่ละกลุ่ม (ภายในระยะ proximity)
+    def near(prefixes):
+        d = _min_distance(tokens, forms, prefixes)
+        return d if d is not None and d <= _PROXIMITY_TOKENS else None
+
+    d_interro = near(_INTERROGATIVE)
+    d_pred = near(_PREDICATE)
+    d_simile = near(_SIMILE)
+    # nāma ต้องติดกับ term (adjacency) → distance == 1
+    d_nama = _min_distance(tokens, forms, (_NAMA,))
+    has_nama = d_nama is not None and d_nama == 1
+
+    markers: list[str] = []
+    if d_interro is not None:
+        markers.append("interrogative")
+    if d_pred is not None:
+        markers.append("predicate")
+    if has_nama:
+        markers.append("nama")
+    if d_simile is not None:
+        markers.append("simile")
+    if not markers:
+        return None
+
+    is_direct = bool({"interrogative", "predicate", "nama"} & set(markers))
+    kind = "direct" if is_direct else "simile"
+
+    # descriptive vs enumerative — enumerative = มีตัวเลขหมู่/seyyathidaṁ ในท่อน
+    enumerative = bool(tokset & _NUMERAL_WORDS)
+    detail = "enumerative" if enumerative else "descriptive"
+
+    # ระยะที่ดีที่สุด (ยิ่งใกล้ยิ่ง anchor แน่น)
+    dists = [d for d in (d_interro, d_pred, d_simile) if d is not None]
+    if has_nama:
+        dists.append(1)
+    return {
+        "markers": markers,
+        "kind": kind,
+        "detail": detail,
+        "min_distance": min(dists) if dists else _PROXIMITY_TOKENS,
+    }
+
+
+def _score(row: dict[str, Any], cls: dict[str, Any]) -> int:
+    """ให้คะแนน anchor. direct > simile ; descriptive > enumerative ; วิภังค์ boost."""
+    score = 0
+    if "predicate" in cls["markers"]:
+        score += 100          # "idaṁ vuccati X" / "X adhivacana" = ชี้ขาดที่สุด
+    if "interrogative" in cls["markers"]:
+        score += 90           # "Katamañca X?" = เปิดนิยาม
+    if "nama" in cls["markers"]:
+        score += 85           # วินัย "<term> nāma"
+    if cls["kind"] == "simile":
+        score += 40           # อุปมา = ชั้นรอง
+    # Pavel: descriptive ต้องไม่จมใต้ enumerative
+    score += 25 if cls["detail"] == "descriptive" else -20
+    # boost ถ้าอยู่ในสูตรวิภังค์
+    base_sutta = re.split(r"[:#]", row["segment_id"], 1)[0]
+    if base_sutta in _VIBHANGA_SUTTAS:
+        score += 30
+    # ยิ่ง marker ใกล้ term ยิ่งดี (สูงสุด +14)
+    score += max(0, _PROXIMITY_TOKENS - cls["min_distance"])
+    return score
+
+
+def find_definitions(
+    cur,
+    backend_name: str,
+    term: str,
+    limit: int = 5,
+    include_similes: bool = True,
+) -> list[dict[str, Any]]:
+    """หา anchor นิยามของ `term` จากในสูตร/วินัย เรียงตามความเป็นนิยามที่แท้จริง.
+
+    Args:
+        cur: DB-API cursor (จาก backend.cursor()).
+        backend_name: "sqlite" | "postgres".
+        term: ศัพท์บาลี (รูป dictionary/stem เช่น "dukkha", "viññāṇa").
+        limit: จำนวนผลลัพธ์สูงสุด.
+        include_similes: รวมนิยามแบบอุปมา (ชั้นรอง) ไหม.
+
+    Returns:
+        list เรียงคะแนนมาก→น้อย, แต่ละตัว:
+          {sutta_id, segment_id, text_pali, text_english,
+           markers[], kind (direct/simile), detail (descriptive/enumerative),
+           score, duplicates (จำนวนท่อนซ้ำที่ยุบรวม)}
+    """
+    folded = fold_pali(term)
+    if not folded:
+        return []
+    forms = _inflected_forms(folded)
+
+    if backend_name == "sqlite":
+        rows = _fetch_candidates_sqlite(cur, forms)
+    else:
+        rows = _fetch_candidates_postgres(cur, forms)
+
+    scored: list[dict[str, Any]] = []
+    for row in rows:
+        cls = _classify(fold_pali(row["text_pali"]), forms)
+        if cls is None:
+            continue
+        if cls["kind"] == "simile" and not include_similes:
+            continue
+        scored.append({**row, **cls, "score": _score(row, cls)})
+
+    # dedup — ยุบท่อนที่ข้อความ (folded) เหมือนกัน (เช่น "cha viññāṇakāyā" ซ้ำหลายสูตร)
+    # Pavel: uniqueness ช่วยกันไม่ให้ descriptive 1 ท่อนจมใต้ enumerative 10 ท่อน
+    best: dict[str, dict[str, Any]] = {}
+    for item in scored:
+        key = fold_pali(item["text_pali"])
+        if key not in best or item["score"] > best[key]["score"]:
+            keep = dict(item)
+            keep["duplicates"] = best.get(key, {}).get("duplicates", 0)
+            best[key] = keep
+        else:
+            best[key]["duplicates"] = best[key].get("duplicates", 0) + 1
+
+    ranked = sorted(best.values(), key=lambda x: x["score"], reverse=True)
+    return ranked[:limit]
