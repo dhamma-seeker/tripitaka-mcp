@@ -34,8 +34,8 @@ from db.normalize import fold_pali
 # ที่มา: pattern set ของ Pavel (issue #4). ใช้เป็น FTS prefix + Python regex.
 # ---------------------------------------------------------------------------
 
-# คำถามเปิดนิยาม — "X คืออะไร/อย่างไร"
-_INTERROGATIVE = ("katam", "katham")           # katamañca/katamo/…, kathaṁ
+# คำถามเปิดนิยาม — "X คืออะไร/อย่างไร", "Kiñca X vadetha?" (จะเรียก X ว่าอะไร)
+_INTERROGATIVE = ("katam", "katham", "vadeth")  # katamañca/katamo/…, kathaṁ, vadetha
 # คำชี้ขาด — "เรียกว่า X / X เป็นชื่อเรียกของ / กล่าวคือ"
 _PREDICATE = ("vucc", "adhivacan", "yadidam")   # vuccati/vuccanti, adhivacana, yadidaṁ
 # วินัย padabhājaniya — "<term> nāma" (ต้องติดกับ term → เช็ค adjacency ใน Python)
@@ -60,7 +60,7 @@ _NUMERAL_WORDS = frozenset({
 # สูตรที่ "นิยามศัพท์" เป็นหน้าที่หลัก → ท่อนที่เจอในนี้น่าเชื่อถือกว่า.
 _VIBHANGA_SUTTAS = frozenset({
     "mn135", "mn136", "mn137", "mn138", "mn139", "mn140", "mn141", "mn142",
-    "sn12.2", "sn45.8", "sn47.40", "sn48.9", "sn48.10", "sn48.36",
+    "sn12.2", "sn22.79", "sn45.8", "sn47.40", "sn48.9", "sn48.10", "sn48.36",
     "sn48.37", "sn48.38", "sn51.20", "dn15", "dn22", "dn33", "dn34",
     "an3.34", "an3.111", "an3.112", "an6.39", "an10.174", "sn12.60", "sn14.12",
 })
@@ -93,6 +93,10 @@ def _inflected_forms(folded_term: str) -> set[str]:
     if folded_term.endswith("a") and len(folded_term) > 2:
         stem = folded_term[:-1]
         forms.update(stem + e for e in _A_STEM_ENDINGS)
+        # quotative 'ti (นิยามแบบ "Vijānātīti … 'viññāṇan'ti vuccati") — apostrophe
+        # แยก token ใน FTS → "'viññāṇan'ti" = "vinnanan"+"ti" → ต้องมี stem+"an";
+        # "viññāṇanti" (fused ไม่มี ') → stem+"anti". (รูป -ā'ti/-o'ti = folded term/stem+"o" อยู่แล้ว)
+        forms.update(stem + e for e in ("an", "anti"))
     else:
         forms.update(folded_term + e for e in _GENERIC_ENDINGS)
     return {f for f in forms if f}
@@ -173,9 +177,12 @@ def _classify(folded_text: str, forms: set[str]) -> dict[str, Any] | None:
     d_interro = near(_INTERROGATIVE)
     d_pred = near(_PREDICATE)
     d_simile = near(_SIMILE)
-    # nāma ต้องติดกับ term (adjacency) → distance == 1
-    d_nama = _min_distance(tokens, forms, (_NAMA,))
-    has_nama = d_nama is not None and d_nama == 1
+    # Vinaya "X nāma" — "nama" ต้องเป็น *คำเต็ม* และตามหลัง term ทันที.
+    # (ห้ามใช้ startswith — ไม่งั้นไปแมตช์ nāmarūpa/nāmapaccayā = name-and-form ผิด)
+    has_nama = any(
+        t == _NAMA and i > 0 and tokens[i - 1] in forms
+        for i, t in enumerate(tokens)
+    )
 
     markers: list[str] = []
     if d_interro is not None:
@@ -226,7 +233,7 @@ def _score(row: dict[str, Any], cls: dict[str, Any]) -> int:
     # boost ถ้าอยู่ในสูตรวิภังค์
     base_sutta = re.split(r"[:#]", row["segment_id"], 1)[0]
     if base_sutta in _VIBHANGA_SUTTAS:
-        score += 30
+        score += 15  # tiebreaker เบา ๆ — ไม่ให้ whitelist กลบ signal marker/detail
     # ยิ่ง marker ใกล้ term ยิ่งดี (สูงสุด +14)
     score += max(0, _PROXIMITY_TOKENS - cls["min_distance"])
     return score
