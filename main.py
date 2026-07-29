@@ -2772,9 +2772,14 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
             "definitions": definitions,
             "note": (
                 "Canonical definitional passages from the suttas/Vinaya, ranked. "
-                "Present the top one(s) as the essence, quote verbatim, and cite "
-                "via cross_reference. This is the doctrinal definition; the "
-                "dictionary sense is a separate tool (get_word_definition)."
+                "IMPORTANT: read each result's `block` — the full surrounding "
+                "passage — not just the anchor line. The actual definition, and "
+                "any enumeration of types (e.g. the three āsavas, the five "
+                "aggregates), usually lies in the block segments around the "
+                "anchor, not the anchor itself. Quote verbatim from the block "
+                "and cite via cross_reference. This is the doctrinal definition; "
+                "for the lexical/dictionary sense, also call get_word_definition "
+                "— this tool covers only the suttas and Vinaya, not dictionaries."
             ),
             "notice": PROJECT_NOTICE,
         }
