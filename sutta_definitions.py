@@ -77,6 +77,11 @@ _GENERIC_ENDINGS = ("", "m", "ssa", "ya", "no", "ni", "na", "smim", "su", "nam")
 # ให้ระยะห่าง token ระหว่าง term กับ marker ที่ยังถือว่า "ใกล้พอจะนิยาม"
 _PROXIMITY_TOKENS = 14
 
+# คอลัมน์ที่ candidate query คืน (id + section_id ใช้ทำ block-windowing)
+_CANDIDATE_COLS = (
+    "sutta_id", "segment_id", "text_pali", "text_english", "seg_id", "section_id",
+)
+
 
 def _inflected_forms(folded_term: str) -> set[str]:
     """สร้างรูปผัน (folded) ของศัพท์ เพื่อ match แบบ whole-token (เลี่ยง compound).
@@ -100,7 +105,8 @@ def _fetch_candidates_sqlite(cur, forms: set[str]) -> list[dict[str, Any]]:
     match = f"text_pali : (({form_clause}) AND ({marker_clause}))"
     cur.execute(
         """
-        SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english
+        SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english,
+               seg.id, seg.section_id
         FROM segment_fts f
         JOIN segment seg ON seg.id = f.rowid
         JOIN section sec ON seg.section_id = sec.id
@@ -108,8 +114,7 @@ def _fetch_candidates_sqlite(cur, forms: set[str]) -> list[dict[str, Any]]:
         """,
         (match,),
     )
-    cols = ("sutta_id", "segment_id", "text_pali", "text_english")
-    return [dict(zip(cols, r)) for r in cur.fetchall()]
+    return [dict(zip(_CANDIDATE_COLS, r)) for r in cur.fetchall()]
 
 
 def _fetch_candidates_postgres(cur, forms: set[str]) -> list[dict[str, Any]]:
@@ -123,7 +128,8 @@ def _fetch_candidates_postgres(cur, forms: set[str]) -> list[dict[str, Any]]:
     marker_alt = "|".join((*_INTERROGATIVE, *_PREDICATE, _NAMA, *_SIMILE))
     cur.execute(
         """
-        SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english
+        SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english,
+               seg.id, seg.section_id
         FROM segment seg
         JOIN section sec ON seg.section_id = sec.id
         WHERE f_unaccent(seg.text_pali) ~* %(term)s
@@ -131,8 +137,7 @@ def _fetch_candidates_postgres(cur, forms: set[str]) -> list[dict[str, Any]]:
         """,
         {"term": rf"\y({form_alt})\y", "marker": rf"\y({marker_alt})"},
     )
-    cols = ("sutta_id", "segment_id", "text_pali", "text_english")
-    return [dict(zip(cols, r)) for r in cur.fetchall()]
+    return [dict(zip(_CANDIDATE_COLS, r)) for r in cur.fetchall()]
 
 
 def _tokens(folded_text: str) -> list[str]:
@@ -214,8 +219,10 @@ def _score(row: dict[str, Any], cls: dict[str, Any]) -> int:
         score += 85           # วินัย "<term> nāma"
     if cls["kind"] == "simile":
         score += 40           # อุปมา = ชั้นรอง
-    # Pavel: descriptive ต้องไม่จมใต้ enumerative
-    score += 25 if cls["detail"] == "descriptive" else -20
+    # Pavel: descriptive ต้องไม่จมใต้ enumerative — แต่สำหรับบางศัพท์ (āsava,
+    # viññāṇa) "การแจกแจงประเภท = ตัวนิยาม" → penalty เบา ๆ พอให้ descriptive
+    # อยู่เหนือ แต่ enumeration ไม่หายไปจากผลลัพธ์.
+    score += 25 if cls["detail"] == "descriptive" else -5
     # boost ถ้าอยู่ในสูตรวิภังค์
     base_sutta = re.split(r"[:#]", row["segment_id"], 1)[0]
     if base_sutta in _VIBHANGA_SUTTAS:
@@ -223,6 +230,56 @@ def _score(row: dict[str, Any], cls: dict[str, Any]) -> int:
     # ยิ่ง marker ใกล้ term ยิ่งดี (สูงสุด +14)
     score += max(0, _PROXIMITY_TOKENS - cls["min_distance"])
     return score
+
+
+def _window_for(markers: list[str]) -> tuple[int, int]:
+    """(before, after) segment รอบ anchor — เอนไปทางที่ "ตัวนิยาม" อยู่.
+
+    closer (predicate "idaṁ vuccati X") → นิยามอยู่ *ก่อน* → ดึงก่อนเยอะ.
+    opener (interrogative "Katama X?") → นิยามอยู่ *หลัง* → ดึงหลังเยอะ.
+    """
+    if "predicate" in markers:
+        return (10, 2)
+    if "nama" in markers:
+        return (1, 8)
+    if "interrogative" in markers:
+        return (2, 10)
+    return (4, 4)
+
+
+def _fetch_block(cur, backend_name: str, section_id: int, anchor_id: int,
+                 before: int, after: int) -> list[dict[str, Any]]:
+    """ดึงท่อนนิยามเต็ม = segment รอบ anchor ใน section เดียวกัน (document order).
+
+    id ต่อเนื่องเป๊ะใน section (ยืนยันบนคลังจริง) → window ด้วย id-range ได้ตรง
+    โดยไม่ต้องโหลดทั้งสูตร.
+    """
+    lo, hi = anchor_id - before, anchor_id + after
+    if backend_name == "sqlite":
+        cur.execute(
+            "SELECT segment_id, text_pali, text_english FROM segment "
+            "WHERE section_id = ? AND id BETWEEN ? AND ? ORDER BY id",
+            (section_id, lo, hi),
+        )
+    else:
+        cur.execute(
+            "SELECT segment_id, text_pali, text_english FROM segment "
+            "WHERE section_id = %s AND id BETWEEN %s AND %s ORDER BY id",
+            (section_id, lo, hi),
+        )
+    return [
+        {"segment_id": r[0], "pali": r[1], "english": r[2]}
+        for r in cur.fetchall()
+    ]
+
+
+def _detail_from_block(block: list[dict[str, Any]]) -> str:
+    """descriptive vs enumerative จาก *ทั้ง block* (แม่นกว่าดูแค่ anchor — การ
+    แจกแจงมักอยู่ใน segment ข้างเคียง เช่น "Katame tayo? kāmāsavo …")."""
+    toks: set[str] = set()
+    for seg in block:
+        toks.update(_tokens(fold_pali(seg["pali"])))
+    return "enumerative" if (toks & _NUMERAL_WORDS) else "descriptive"
 
 
 def find_definitions(
@@ -243,9 +300,10 @@ def find_definitions(
 
     Returns:
         list เรียงคะแนนมาก→น้อย, แต่ละตัว:
-          {sutta_id, segment_id, text_pali, text_english,
+          {sutta_id, segment_id (= anchor), text_pali, text_english,
            markers[], kind (direct/simile), detail (descriptive/enumerative),
-           score, duplicates (จำนวนท่อนซ้ำที่ยุบรวม)}
+           score, duplicates (จำนวนท่อนซ้ำที่ยุบรวม),
+           block[] (ท่อนนิยามเต็มรอบ anchor: {segment_id, pali, english})}
     """
     folded = fold_pali(term)
     if not folded:
@@ -278,5 +336,14 @@ def find_definitions(
         else:
             best[key]["duplicates"] = best[key].get("duplicates", 0) + 1
 
-    ranked = sorted(best.values(), key=lambda x: x["score"], reverse=True)
-    return ranked[:limit]
+    top = sorted(best.values(), key=lambda x: x["score"], reverse=True)[:limit]
+
+    # block-windowing — ดึงท่อนนิยามเต็มรอบ anchor + refine descriptive/enumerative
+    # จาก context ทั้ง block (ทำเฉพาะ top `limit` เพื่อคุมจำนวน query)
+    for item in top:
+        before, after = _window_for(item["markers"])
+        item["block"] = _fetch_block(
+            cur, backend_name, item["section_id"], item["seg_id"], before, after
+        )
+        item["detail"] = _detail_from_block(item["block"])
+    return top

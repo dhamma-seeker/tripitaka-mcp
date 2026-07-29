@@ -2761,6 +2761,7 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
                 "kind": r["kind"],
                 "detail": r["detail"],
                 "markers": r["markers"],
+                "block": r.get("block", []),
                 "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
             }
             if r.get("duplicates"):
