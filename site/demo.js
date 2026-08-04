@@ -318,6 +318,46 @@
       }]
     },
     {
+      tab: 'define_from_suttas',
+      scenarios: [
+        {
+          question: 'How do the suttas themselves define dukkha, not a dictionary?',
+          toolName: 'define_from_suttas',
+          toolArgs: '"dukkha", limit=5',
+          statuses: ['scanning canon for definitional formulas…', 'matching "katamañca…vuccati" patterns…', '2 definitions found'],
+          toolDur: 2.4,
+          dur: 22,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp">Dictionaries gloss <em>dukkha</em> as one word, "suffering" or "pain." The suttas are more precise, they define it directly, in a fixed formula, and the canon actually distinguishes two kinds side by side.</div>' +
+            '<div class="mcd-ch3">1. Bodily pain (kāyika)</div>' +
+            '<div class="mcd-cverse">Katamañca... dukkhaṁ?<br>Yaṁ kho... kāyikaṁ dukkhaṁ kāyikaṁ asātaṁ kāyasamphassajaṁ dukkhaṁ asātaṁ vedayitaṁ,<br>idaṁ vuccati... dukkhaṁ.</div>' +
+            '<div class="mcd-cp">"And what is pain? Whatever bodily pain, bodily discomfort, painful and uncomfortable feeling born of bodily contact, this is called pain." The formula is explicit, this definition is restricted to the body.</div>' +
+            '<div class="mcd-ch3">2. Mental pain (cetasika) — defined right after it</div>' +
+            '<div class="mcd-cp">The same passage immediately turns to <em>domanassa</em> (mental pain, grief) and defines it the same way, as a separate category. A dictionary entry for "dukkha" usually blends the two. The canon keeps them apart, on purpose, because the training that addresses bodily pain is not the same as the training that addresses mental grief.</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">Both definitions come from the same passage in MN 141 (also at DN 22), part of the standard Four Noble Truths analysis.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/mn141" target="_blank" rel="noopener">MN 141</a><a class="mcd-chip" href="https://tripitaka-mcp.com/read/dn22" target="_blank" rel="noopener">DN 22</a></div>',
+          answer: ''
+        },
+        {
+          question: 'Why is consciousness (viññāṇa) called that? Does the canon explain the name?',
+          toolName: 'define_from_suttas',
+          toolArgs: '"viññāṇa", limit=5',
+          statuses: ['scanning canon for definitional formulas…', 'matching quotative "iti vuccati" patterns…', '1 definition found'],
+          toolDur: 2.1,
+          dur: 18,
+          type: 'chat',
+          html:
+            '<div class="mcd-cp">Some canonical definitions are etymological, they explain a word by pointing at what the word itself is doing. SN 22.79 does this for <em>viññāṇa</em>, consciousness.</div>' +
+            '<div class="mcd-cverse">Vijānātīti kho, bhikkhave, tasmā \'viññāṇan\'ti vuccati.</div>' +
+            '<div class="mcd-cp">"It cognizes, bhikkhus, that is why it is called consciousness." The definition is the verb inside the noun, <em>viññāṇa</em> is called that because it <em>vijānāti</em>, it cognizes or discerns. This is a quotative definition, marked by the \'...\'ti vuccati pattern, distinct from the "katamañca...ayaṁ vuccati" formula used for dukkha.</div>' +
+            '<div class="mcd-cp" style="margin-bottom:6px">The passage goes on to give examples, consciousness cognizes sour, bitter, sweet, and so on, grounding the abstract definition in ordinary sense experience.</div>' +
+            '<div class="mcd-csrcs"><a class="mcd-chip" href="https://tripitaka-mcp.com/read/sn22.79" target="_blank" rel="noopener">SN 22.79</a></div>',
+          answer: ''
+        }
+      ]  // end define_from_suttas.scenarios
+    },
+    {
       tab: 'compare_translations',
       scenarios: [{
         question: 'Compare translations of Dhammapada verse 1 (Dhp 1), show Pali and English side by side.',
@@ -1049,6 +1089,93 @@
     }
   ];
 
+  // ── Community contributor credits ───────────────────────────────────────────
+  // Single place to update once a contributor confirms how they'd like to be
+  // credited. Until `name` is filled in, the badge shows generic "Community"
+  // text with no link — nothing to edit anywhere else when it's confirmed.
+  var CONTRIBUTOR_CREDITS = {
+    define_from_suttas: { name: 'Dhamma.Gift', url: 'https://github.com/dhammagift' }
+  };
+
+  // Drop the icon file at site/badge-lotus.png (or .svg) once ready — a small
+  // (~24×24, transparent background) mark works best against the blue badge.
+  // Missing file just fails silently (onerror hides the <img>), no broken icon.
+  var CREDIT_BADGE_ICON = '/badge-lotus.png';
+
+  function creditBadgeHtml(toolName) {
+    var credit = CONTRIBUTOR_CREDITS[toolName];
+    if (!credit) return '';
+    var tag = credit.url ? 'a' : 'span';
+    var attrs = credit.url
+      ? ' href="' + credit.url + '" target="_blank" rel="noopener"'
+      : '';
+    var title = credit.name
+      ? 'Detection patterns contributed by ' + credit.name
+      : 'Detection patterns contributed by a member of the community';
+    // Two arcs only — "COMMUNITY CONTRIBUTED" reads across the top, the
+    // contributor's name across the bottom, icon centred between them. A third
+    // inner arc was tried first and couldn't be balanced: three text bands plus
+    // an icon leaves no room, the middle ones end up touching.
+    // Without a confirmed name the label splits back across both arcs.
+    var topLabel = credit.name ? 'COMMUNITY CONTRIBUTED' : 'COMMUNITY';
+    var botLabel = credit.name ? 'BY ' + credit.name : 'CONTRIBUTED';
+    // Arc radii differ on purpose: text on a path sits on one side of its
+    // baseline, so an identical radius top and bottom renders the bottom band
+    // ~11 units closer to the centre. 72 / 84 lands both visual centres the
+    // same distance out — verified with getBBox, don't "tidy" them to match.
+    return '<' + tag + ' class="mcd-credit-seal"' + attrs + ' title="' + title + '">' +
+      '<svg viewBox="0 0 190 190" width="170" height="170" aria-hidden="true" ' +
+        'style="overflow:visible">' +
+        '<defs>' +
+          '<linearGradient id="mcdSealGrad" x1="0" y1="0" x2="1" y2="1">' +
+            '<stop offset="0%" stop-color="#7dc3ff"/>' +
+            '<stop offset="42%" stop-color="#3b82f6"/>' +
+            '<stop offset="100%" stop-color="#1d4ed8"/>' +
+          '</linearGradient>' +
+          // Polished-silver rim. The alternating bright/dark stops are the
+          // whole effect — metal reads as metal because of specular banding,
+          // not because of the grey itself. Evenly-spaced mid-greys would
+          // flatten it back to a plain outline, so keep the stops uneven.
+          '<linearGradient id="mcdSealRim" x1="0" y1="0" x2="1" y2="1">' +
+            '<stop offset="0%" stop-color="#ffffff"/>' +
+            '<stop offset="13%" stop-color="#dfe4ea"/>' +
+            '<stop offset="26%" stop-color="#8d959f"/>' +
+            '<stop offset="38%" stop-color="#fbfdff"/>' +
+            '<stop offset="52%" stop-color="#b6bec8"/>' +
+            '<stop offset="64%" stop-color="#6e7783"/>' +
+            '<stop offset="78%" stop-color="#eef2f6"/>' +
+            '<stop offset="90%" stop-color="#9aa2ad"/>' +
+            '<stop offset="100%" stop-color="#ffffff"/>' +
+          '</linearGradient>' +
+          '<path id="mcdSealArcTop" d="M 28,95 A 67,67 0 0,1 162,95" fill="none"/>' +
+          '<path id="mcdSealArcBot" d="M 20,95 A 75,75 0 0,0 170,95" fill="none"/>' +
+        '</defs>' +
+        '<circle cx="95" cy="95" r="86" fill="url(#mcdSealGrad)"/>' +
+        // Rim drawn as three concentric strokes: the silver band itself, a
+        // dark hairline inside it to read as a machined edge, and a faint
+        // white one outside to lift it off the page.
+        '<circle cx="95" cy="95" r="88.5" fill="none" ' +
+          'stroke="url(#mcdSealRim)" stroke-width="5"/>' +
+        '<circle cx="95" cy="95" r="85.6" fill="none" ' +
+          'stroke="rgba(0,0,0,.22)" stroke-width="1"/>' +
+        '<circle cx="95" cy="95" r="91.2" fill="none" ' +
+          'stroke="rgba(255,255,255,.5)" stroke-width="1"/>' +
+        '<text font-family="&quot;JetBrains Mono&quot;,monospace" font-size="12" ' +
+          'font-weight="700" fill="#f0f7ff" letter-spacing="1.1">' +
+          '<textPath href="#mcdSealArcTop" startOffset="50%" text-anchor="middle">' +
+          topLabel + '</textPath>' +
+        '</text>' +
+        '<image href="' + CREDIT_BADGE_ICON + '" x="50" y="50" width="90" height="90" ' +
+          'onerror="this.style.display=\'none\'"/>' +
+        '<text font-family="&quot;JetBrains Mono&quot;,monospace" font-size="12" ' +
+          'font-weight="700" fill="#f0f7ff" letter-spacing="1.1">' +
+          '<textPath href="#mcdSealArcBot" startOffset="50%" text-anchor="middle">' +
+          botLabel + '</textPath>' +
+        '</text>' +
+      '</svg>' +
+    '</' + tag + '>';
+  }
+
   // ── CSS (injected once) ─────────────────────────────────────────────────────
   function injectCSS() {
     if (document.getElementById('mcd-css')) return;
@@ -1076,11 +1203,17 @@
       '.mcd-tabs{display:flex;flex-direction:column;gap:3px;flex:1;margin-top:12px;' +
         'overflow-y:auto;scrollbar-width:none}' +
       '.mcd-tabs::-webkit-scrollbar{display:none}' +
-      '.mcd-tab{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:500;' +
-        'padding:5px 8px;border-radius:5px;border:1px solid var(--d-brd2);background:transparent;' +
-        'color:var(--d-fg2);cursor:pointer;white-space:nowrap;text-align:left;width:100%;' +
-        'box-sizing:border-box;transition:all .15s}' +
+      '.mcd-tab{position:relative;display:flex;align-items:center;gap:6px;' +
+        'font-family:"JetBrains Mono",monospace;font-size:11px;' +
+        'font-weight:500;padding:5px 8px;border-radius:5px;border:1px solid var(--d-brd2);' +
+        'background:transparent;color:var(--d-fg2);cursor:pointer;white-space:nowrap;' +
+        'text-align:left;width:100%;box-sizing:border-box;transition:all .15s}' +
       '.mcd-tab.on{background:var(--d-abg);border-color:var(--d-acc);color:var(--d-acc)}' +
+      '.mcd-tab-badge{flex-shrink:0;width:19px;height:19px;' +
+        'border-radius:50%;display:flex;align-items:center;justify-content:center;' +
+        'background:linear-gradient(160deg,#7dc3ff 0%,#3b82f6 42%,#1d4ed8 100%);' +
+        'border:1.5px solid var(--d-bg);box-shadow:0 1px 3px rgba(29,78,216,.45)}' +
+      '.mcd-tab-badge img{width:13px;height:13px;display:block}' +
       '.mcd-tab:hover:not(.on){border-color:var(--d-acc);color:var(--d-fg)}' +
       '.mcd-subtabs{display:none;flex-direction:column;gap:1px;padding:2px 0 4px 8px;' +
         'border-left:1px solid var(--d-brd);margin:0 0 4px 8px}' +
@@ -1192,6 +1325,12 @@
         'background:var(--d-hbg);border-radius:0 4px 4px 0}' +
       '.mcd-csrcs{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;padding-top:10px;' +
         'border-top:1px solid var(--d-brd)}' +
+      '.mcd-credit-seal{display:inline-flex;margin-top:12px;cursor:default;' +
+        'text-decoration:none;filter:drop-shadow(0 2px 5px rgba(29,78,216,.4))}' +
+      '.mcd-credit-seal svg{display:block}' +
+      'a.mcd-credit-seal{cursor:pointer;transition:transform .15s,filter .15s}' +
+      'a.mcd-credit-seal:hover{transform:translateY(-1px);' +
+        'filter:drop-shadow(0 4px 9px rgba(29,78,216,.55))}' +
       // chat table
       '.mcd-ctable{display:flex;flex-direction:column;border:1px solid var(--d-brd);border-radius:6px;' +
         'overflow:hidden;margin:4px 0 10px;font-size:12px}' +
@@ -1385,7 +1524,18 @@
     TAB_GROUPS.forEach(function (g, i) {
       var btn = document.createElement('button');
       btn.className = 'mcd-tab' + (i === 0 ? ' on' : '');
-      btn.textContent = g.tab;
+      if (CONTRIBUTOR_CREDITS[g.tab]) {
+        var credit = CONTRIBUTOR_CREDITS[g.tab];
+        var dot = document.createElement('span');
+        dot.className = 'mcd-tab-badge';
+        dot.title = credit.name
+          ? 'Contributed by ' + credit.name
+          : 'Community contributed';
+        dot.innerHTML = '<img src="' + CREDIT_BADGE_ICON + '" alt="" ' +
+          'onerror="this.style.display=\'none\'">';
+        btn.appendChild(dot);
+      }
+      btn.appendChild(document.createTextNode(g.tab));
       btn.addEventListener('click', function () { self._goto(i); });
       tabsEl.appendChild(btn);
       var sub = document.createElement('div');
@@ -1678,7 +1828,7 @@
       var ce = document.createElement('div');
       ce.className = 'mcd-chatbox';
       ce.style.opacity = 0;
-      ce.innerHTML = scn.html;
+      ce.innerHTML = scn.html + creditBadgeHtml(scn.toolName);
       frame.insertBefore(ce, spacer);
       this._chatEl = ce;
       this._anims.push({ el: ce, s: base, d: 0.5 });
@@ -1773,6 +1923,9 @@
 
   // ── Auto-mount ───────────────────────────────────────────────────────────────
   G.McpDemo = McpDemo;
+  // Exposed so static pages (e.g. use-cases) can render the same seal badge
+  // markup outside the chat widget, without duplicating the SVG.
+  G.mcpCreditBadge = creditBadgeHtml;
 
   function autoMount() {
     document.querySelectorAll('[data-mcp-demo]').forEach(function (el) {

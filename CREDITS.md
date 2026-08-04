@@ -95,6 +95,12 @@ With gratitude to all the teachers who have shared the Dhamma,
 to the friends who tested and gave feedback during development,
 and to every future contributor who helps carry this project forward.
 
+**[Dhamma.Gift](https://github.com/dhammagift)** — for sharing the grep/regex
+patterns that detect the canon's own definitional formulas ("Katamañca ...
+ayaṁ vuccati", adhivacana, Vinaya "nāma"), contributed in
+[GitHub issue #4](https://github.com/dhamma-seeker/tripitaka-mcp/issues/4)
+and built into the `define_from_suttas` tool.
+
 ---
 
 ## 🤝 Become a Contributor

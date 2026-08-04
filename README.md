@@ -270,7 +270,7 @@ cp skills/tipitaka-research.md ~/.claude/skills/
 
 Details in [`skills/README.md`](./skills/README.md).
 
-## 📦 MCP Tools (12 total)
+## 📦 MCP Tools (13 total)
 
 | Tool | Description |
 |---|---|
@@ -285,6 +285,7 @@ Details in [`skills/README.md`](./skills/README.md).
 | `list_structure` | Show the Tipiṭaka structure with segment-count coverage per nikāya. |
 | `list_editions` | List Thai/English translation editions currently loaded. |
 | `get_word_definition` | Pāli dictionary lookup (PTS, DPPN, and the Payutto Thai dictionary). |
+| `define_from_suttas` | Find how the suttas/Vinaya **define a term in their own words** — canonical formulas like "Katamañca X? ... ayaṁ vuccati X", "X adhivacana", Vinaya "X nāma". Complements `get_word_definition` with primary-source definitions rather than dictionary glosses. |
 | `parse_pali_word` | Strip Pāli suffixes to recover the root form when `get_word_definition` misses (`bhikkhūnaṁ` → `bhikkhu`). |
 
 ### ⚠️ Note on `search_semantic`

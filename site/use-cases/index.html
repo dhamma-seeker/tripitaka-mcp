@@ -74,12 +74,20 @@ h1 {
 }
 
 .case {
+    position: relative;
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 1.5rem 1.6rem;
     margin: 0 0 1.4rem;
     background: var(--bg);
 }
+.case-badge-slot {
+    position: absolute;
+    top: -14px;
+    right: -14px;
+    line-height: 0;
+}
+.case-badge-slot svg { width: 76px; height: 76px; }
 .case-head {
     display: flex;
     align-items: baseline;
@@ -497,6 +505,34 @@ references.
 <img class="case-screenshot" src="06-paticcasamuppada-anatta.png" alt="AI client identifying the canonical sutta that bridges dependent origination (paṭiccasamuppāda) and not-self (anattā), with supporting passages and verifiable citations" loading="lazy">
 </article>
 
+<!-- 7. Canonical self-definitions -->
+<article class="case">
+<div class="case-badge-slot" id="case07-badge"></div>
+<div class="case-head">
+<span class="case-num">07</span>
+<span class="case-type">Canonical self-definition</span>
+</div>
+<h2>"How does the canon itself define a difficult Pāli term?"</h2>
+<div class="case-prompt">
+How do the suttas themselves define dukkha, in their own words, not a modern dictionary
+gloss?
+</div>
+<p class="case-desc">
+The canon defines many of its own key terms directly, using fixed formulas like
+"Katamañca ... dukkhaṁ? ... ayaṁ vuccati ... dukkhaṁ" (what is X? ... this is called X),
+"X adhivacana" (a designation for X), the Vinaya's "X nāma", and quotative definitions
+like "Vijānātīti ... 'viññāṇan'ti vuccati". These primary-source definitions are often
+more precise than a dictionary entry, for dukkha, the canon keeps bodily pain and mental
+pain as two separate definitions in the same passage, where a dictionary tends to blend
+them. This detection approach uses patterns shared by
+<a href="https://github.com/dhammagift" target="_blank" rel="noopener">Dhamma.Gift</a>.
+</p>
+<p class="case-tools">
+Tools used: <code>define_from_suttas("dukkha")</code> — one call, returns the canon's own
+definitional formulas, cited and ranked.
+</p>
+</article>
+
 <!-- CTA -->
 <div class="cta-row">
 <div class="cta-text">
@@ -512,7 +548,7 @@ verification. Source data per <a href="https://github.com/dhamma-seeker/tripitak
 Project offered as <em>Dhamma Dāna</em> — free, non-commercial use only.
 </p>
 
-<p class="legal-links"><a href="/privacy/">Privacy</a><span class="sep">·</span><a href="/terms/">Terms</a><span class="sep">·</span><a href="https://github.com/dhamma-seeker/tripitaka-mcp">GitHub</a></p>
+<p class="legal-links"><a href="/privacy/">Privacy</a><span class="sep">·</span><a href="/terms/">Terms</a><span class="sep">·</span><a href="https://github.com/dhamma-seeker/tripitaka-mcp">GitHub</a><span class="sep">·</span><a href="https://github.com/dhamma-seeker/tripitaka-mcp/blob/main/CHANGELOG.md">Changelog</a></p>
 
 </main>
 
@@ -556,5 +592,11 @@ Project offered as <em>Dhamma Dāna</em> — free, non-commercial use only.
 })();
 </script>
 <script src="/demo.js"></script>
+<script>
+  var badgeSlot = document.getElementById('case07-badge');
+  if (badgeSlot && window.mcpCreditBadge) {
+    badgeSlot.innerHTML = window.mcpCreditBadge('define_from_suttas');
+  }
+</script>
 </body>
 </html>
