@@ -54,7 +54,10 @@
   }
   .embed-footer a { color: var(--d-fg2); text-decoration: none; }
   .embed-footer a:hover { color: var(--d-acc); }
-  .mcd-credit-seal svg { width: 34px; height: 34px; }
+  /* Big enough that the seal's arc text stays legible — below ~48px the
+     lettering collapses into noise and it reads as a stray blue dot. */
+  .mcd-credit-seal { line-height: 0; flex: none; }
+  .mcd-credit-seal svg { width: 52px; height: 52px; }
 </style>
 </head>
 <body>
@@ -84,18 +87,17 @@
 
 <div class="embed-footer">
   <a href="https://tripitaka-mcp.com" target="_blank" rel="noopener">Powered by Tripitaka MCP</a>
+  <span id="credit-slot"></span>
 </div>
 
 <script src="/demo.js"></script>
 <script>
-  var slot = document.currentScript;
-  if (window.mcpCreditBadge) {
-    var badge = document.createElement('div');
-    badge.innerHTML = window.mcpCreditBadge('define_from_suttas');
-    if (badge.firstChild) {
-      badge.firstChild.style.marginTop = '0';
-      slot.parentNode.insertBefore(badge, slot);
-    }
+  // Badge goes inside the footer, opposite the "Powered by" line — appending
+  // it after the footer instead would drop it outside the flex row and it
+  // ends up orphaned under the left edge.
+  var slot = document.getElementById('credit-slot');
+  if (slot && window.mcpCreditBadge) {
+    slot.innerHTML = window.mcpCreditBadge('define_from_suttas');
   }
 </script>
 </body>
