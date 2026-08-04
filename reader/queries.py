@@ -13,6 +13,7 @@ from typing import Any
 from markupsafe import Markup, escape
 
 from db.connection import get_connection, release_connection
+from sutta_definitions import find_definitions
 
 
 def _strip_diacritics(text: str) -> str:
@@ -361,6 +362,23 @@ def check_words_have_entries(words: list[str]) -> dict[str, dict[str, Any]]:
         else:
             out[w] = {"has_entry": False, "lemma": None}
     return out
+
+
+def fetch_definitions_embed(term: str, limit: int = 5) -> list[dict[str, Any]]:
+    """หานิยามจากพระสูตร/วินัยของ `term` — สำหรับหน้า /read/embed/define.
+
+    Backs the public iframe-embeddable widget (Postgres-only, same as the
+    rest of this module). Thin wrapper around `find_definitions` from
+    `sutta_definitions.py` — the same function the `define_from_suttas`
+    MCP tool calls (see main.py).
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        return find_definitions(cur, "postgres", term, limit=limit)
+    finally:
+        cur.close()
+        release_connection(conn)
 
 
 def fetch_neighbors(sutta_id: str) -> dict[str, dict[str, Any] | None]:

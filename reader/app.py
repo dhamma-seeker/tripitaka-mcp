@@ -36,6 +36,7 @@ from fastapi.templating import Jinja2Templates
 from reader.featured import FEATURED_SUTTAS
 from reader.queries import (
     check_words_have_entries,
+    fetch_definitions_embed,
     fetch_neighbors,
     fetch_nikaya,
     fetch_segment_pali,
@@ -161,6 +162,31 @@ def api_segment_words(id: str = "") -> JSONResponse:
     return JSONResponse(
         {"segment_id": sid, "words": words_payload},
         headers={"Cache-Control": "public, max-age=86400, immutable"},
+    )
+
+
+@app.get("/read/embed/define", response_class=HTMLResponse)
+def embed_define(
+    request: Request, term: str = "", limit: int = 5, theme: str = "light"
+) -> HTMLResponse:
+    """Public, iframe-embeddable widget for `define_from_suttas`.
+
+    Unauthenticated by design — read-only, same trust boundary as the rest
+    of /read/*. `/read/embed/*` gets a scoped `X-Frame-Options` override in
+    the Caddy config (unlike the rest of this app, which is DENY) so this
+    specific path can be embedded on allowlisted third-party origins.
+    """
+    term = term.strip().lower()[:60]
+    limit = min(max(1, limit), 5)
+    theme = theme if theme in ("light", "dark") else "light"
+
+    definitions = fetch_definitions_embed(term, limit=limit) if term else []
+
+    return templates.TemplateResponse(
+        request=request,
+        name="embed_define.html",
+        context={"term": term, "definitions": definitions, "theme": theme},
+        headers={"Cache-Control": "public, max-age=300"},
     )
 
 

@@ -42,6 +42,24 @@
         -Server
     }
 
+    # /read/embed/* is the only part of this site meant to be framed by a
+    # third party (e.g. dict.dhamma.gift embedding define_from_suttas).
+    # Must be its own top-level `header` directive (not nested inside a
+    # `handle` block) — same-named directives at this level apply in file
+    # order, so this one, coming after the site-wide block above, correctly
+    # overrides it for matching requests. A `header` nested inside `handle`
+    # did NOT reliably override the site-wide one in testing (handle sorts
+    # at a different priority than header in Caddy's default directive
+    # order), so don't reintroduce that pattern here.
+    # CSP frame-ancestors is what modern browsers honor for multi-origin
+    # embed permission (legacy X-Frame-Options only supports one value), so
+    # we drop the site-wide DENY and set frame-ancestors for just this path.
+    @embed path /read/embed/*
+    header @embed {
+        -X-Frame-Options
+        Content-Security-Policy "frame-ancestors https://dict.dhamma.gift https://find.dhamma.gift"
+    }
+
     @health path /health /healthz
     handle @health {
         respond "ok" 200
@@ -67,7 +85,8 @@
     # --- Bilingual reader (Pāli + English web viewer) -----------------------
     # MCP cross_reference URLs ส่ง user มาที่ /read/* เพื่อ verify quote บน
     # โดเมนเดียว (same trust boundary as MCP server). reader serve ทุก path
-    # ภายใต้ /read/ — รวม /read/static/* (CSS) ที่ FastAPI mount ไว้
+    # ภายใต้ /read/ — รวม /read/static/* (CSS) ที่ FastAPI mount ไว้ และ
+    # /read/embed/* (ดู header @embed ด้านบน สำหรับ frame permission override)
     @reader path /read /read/*
     handle @reader {
         reverse_proxy reader:8090 {

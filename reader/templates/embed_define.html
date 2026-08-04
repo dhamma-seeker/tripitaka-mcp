@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ theme }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>{{ term or 'Define from suttas' }} — Tripitaka MCP</title>
+<style>
+  :root[data-theme="light"] {
+    --d-fg: #1c1a17; --d-fg2: #3a352b; --d-brd: #e4ddca;
+    --d-acc: #4b48c9; --d-grn: #2e7d4a; --d-hbg: #f0ede4; --d-hbrd: #ddd7c8;
+    --d-bg2: #ffffff;
+  }
+  :root[data-theme="dark"] {
+    --d-fg: #ece6d8; --d-fg2: #c9c0a6; --d-brd: #2a261d;
+    --d-acc: #a59bf0; --d-grn: #7bbd8e; --d-hbg: #211d15; --d-hbrd: #322c21;
+    --d-bg2: #16140f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 14px 16px 18px;
+    background: var(--d-bg2); color: var(--d-fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  .embed-term {
+    font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--d-fg2); margin: 0 0 10px;
+  }
+  .mcd-cp { font-size: 13px; line-height: 1.65; color: var(--d-fg2); margin: 0 0 10px; letter-spacing: -.01em; }
+  .mcd-cp em { font-style: italic; color: var(--d-fg); }
+  .mcd-ch3 { font-size: 13.5px; font-weight: 600; color: var(--d-fg); margin: 16px 0 5px; line-height: 1.38; }
+  .mcd-ch3:first-child { margin-top: 2px; }
+  .mcd-cverse {
+    border-left: 2px solid var(--d-acc); padding: 7px 12px; margin: 4px 0 10px;
+    font-size: 12.5px; font-style: italic; color: var(--d-fg2); line-height: 1.7;
+    background: var(--d-hbg); border-radius: 0 4px 4px 0;
+  }
+  .mcd-csrcs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--d-brd); }
+  .mcd-chip {
+    font-family: "JetBrains Mono", monospace; font-size: 11px; color: var(--d-fg2);
+    background: var(--d-hbg); border: 1px solid var(--d-hbrd); border-radius: 5px;
+    padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;
+    text-decoration: none; cursor: pointer; transition: border-color .15s, color .15s;
+  }
+  .mcd-chip::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--d-grn); display: block; }
+  .mcd-chip:hover { border-color: var(--d-acc); color: var(--d-acc); }
+  .embed-def + .embed-def { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--d-brd); }
+  .embed-empty { font-size: 13px; color: var(--d-fg2); line-height: 1.6; }
+  .embed-empty a { color: var(--d-acc); }
+  .embed-footer {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--d-brd);
+    font-size: 11px; color: var(--d-fg2);
+  }
+  .embed-footer a { color: var(--d-fg2); text-decoration: none; }
+  .embed-footer a:hover { color: var(--d-acc); }
+  .mcd-credit-seal svg { width: 34px; height: 34px; }
+</style>
+</head>
+<body>
+{% if term %}<p class="embed-term">{{ term }}</p>{% endif %}
+
+{% if definitions %}
+  {% for d in definitions %}
+  <div class="embed-def">
+    <div class="mcd-cverse">{{ d.text_pali }}</div>
+    {% if d.text_english %}<div class="mcd-cp">{{ d.text_english }}</div>{% endif %}
+    <div class="mcd-csrcs">
+      <a class="mcd-chip" href="/read/{{ d.sutta_id }}#{{ d.segment_id }}" target="_blank" rel="noopener">{{ d.sutta_id }}</a>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <p class="embed-empty">
+    {% if term %}
+      No canonical self-definition found for "{{ term }}" in the suttas/Vinaya.
+      Try <a href="https://tripitaka-mcp.com" target="_blank" rel="noopener">Tripitaka MCP</a>'s
+      full dictionary tools instead.
+    {% else %}
+      No term given. Load this page with <code>?term=dukkha</code> to see a definition.
+    {% endif %}
+  </p>
+{% endif %}
+
+<div class="embed-footer">
+  <a href="https://tripitaka-mcp.com" target="_blank" rel="noopener">Powered by Tripitaka MCP</a>
+</div>
+
+<script src="/demo.js"></script>
+<script>
+  var slot = document.currentScript;
+  if (window.mcpCreditBadge) {
+    var badge = document.createElement('div');
+    badge.innerHTML = window.mcpCreditBadge('define_from_suttas');
+    if (badge.firstChild) {
+      badge.firstChild.style.marginTop = '0';
+      slot.parentNode.insertBefore(badge, slot);
+    }
+  }
+</script>
+</body>
+</html>
