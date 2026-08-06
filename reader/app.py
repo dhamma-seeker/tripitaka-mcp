@@ -43,6 +43,7 @@ from reader.queries import (
     fetch_structure,
     fetch_sutta,
     lookup_word,
+    parse_sources,
     search_text,
     tokenize_pali,
 )
@@ -207,6 +208,7 @@ def embed_define(
     limit: int = 5,
     theme: str = "light",
     link_base: str = "",
+    sources: str = "",
 ) -> HTMLResponse:
     """Public, iframe-embeddable widget for `define_from_suttas`.
 
@@ -219,8 +221,13 @@ def embed_define(
     limit = min(max(1, limit), 5)
     theme = theme if theme in ("light", "dark") else "light"
     link_base = link_base.strip()[:300]
+    source_set = parse_sources(sources[:200])
 
-    definitions = fetch_definitions_embed(term, limit=limit) if term else []
+    definitions = (
+        fetch_definitions_embed(term, limit=limit, sources=source_set)
+        if term
+        else []
+    )
     # Resolve links here rather than in the template — keeps the scheme check
     # in one place instead of relying on every future template edit to repeat it.
     for d in definitions:

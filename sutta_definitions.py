@@ -289,12 +289,34 @@ def _detail_from_block(block: list[dict[str, Any]]) -> str:
     return "enumerative" if (toks & _NUMERAL_WORDS) else "descriptive"
 
 
+def book_prefix(sutta_id: str) -> str:
+    """`mn141` → `mn`, `mil7.2.2` → `mil`, `pli-tv-bu-vb-ss11` → `pli-tv-bu-vb-ss`.
+
+    The leading non-digit run of a sutta_id is its book, one-to-one with
+    `book.code` across the whole corpus (verified against the DB).
+    """
+    head = re.split(r"\d", sutta_id, maxsplit=1)[0].rstrip("-.")
+    return head or sutta_id
+
+
+def _in_sources(sutta_id: str, sources: set[str]) -> bool:
+    """Exact book match, or a family prefix followed by a hyphen.
+
+    The hyphen matters: a bare `startswith` would let `mn` swallow `mnd`
+    (Majjhima vs Mahāniddesa — different texts, different authority). The
+    family form exists for `pli-tv`, which covers every Vinaya book.
+    """
+    book = book_prefix(sutta_id)
+    return book in sources or any(book.startswith(s + "-") for s in sources)
+
+
 def find_definitions(
     cur,
     backend_name: str,
     term: str,
     limit: int = 5,
     include_similes: bool = True,
+    sources: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     """หา anchor นิยามของ `term` จากในสูตร/วินัย เรียงตามความเป็นนิยามที่แท้จริง.
 
@@ -304,6 +326,8 @@ def find_definitions(
         term: ศัพท์บาลี (รูป dictionary/stem เช่น "dukkha", "viññāṇa").
         limit: จำนวนผลลัพธ์สูงสุด.
         include_similes: รวมนิยามแบบอุปมา (ชั้นรอง) ไหม.
+        sources: จำกัดเล่มที่ค้น เช่น {"dn","mn","sn","an"} — None = ทุกเล่ม.
+            ใช้ book code (ดู `book_prefix`); `pli-tv` = วินัยทั้งหมด.
 
     Returns:
         list เรียงคะแนนมาก→น้อย, แต่ละตัว:
@@ -321,6 +345,14 @@ def find_definitions(
         rows = _fetch_candidates_sqlite(cur, forms)
     else:
         rows = _fetch_candidates_postgres(cur, forms)
+
+    # Filtered in Python, deliberately, not in the SQL. The candidate queries
+    # carry no LIMIT — every match already comes back and is scored here — so
+    # narrowing at this point costs nothing, and both backend queries stay
+    # byte-for-byte as they were. Applied before scoring so `limit` counts
+    # results the caller actually asked for.
+    if sources:
+        rows = [r for r in rows if _in_sources(r["sutta_id"], sources)]
 
     scored: list[dict[str, Any]] = []
     for row in rows:

@@ -394,7 +394,55 @@ def _merge_same_passage(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return kept
 
 
-def fetch_definitions_embed(term: str, limit: int = 5) -> list[dict[str, Any]]:
+# Named scopes for the embed's `sources` param. Spelled out rather than
+# derived from the pitaka table because the useful cut doesn't follow it:
+# Milindapañha, Nettippakaraṇa, Peṭakopadesa, the Niddesas and
+# Paṭisambhidāmagga all sit inside the Khuddaka Nikāya in SuttaCentral's
+# structure, so "the Sutta Piṭaka" still pulls in the later strata.
+_EARLY_KN = ("dhp", "ud", "iti", "snp")
+_LATE_KN = ("mil", "ne", "pe", "mnd", "cnd", "ps")
+_ALL_KN = (
+    *_EARLY_KN, *_LATE_KN, "kp", "vv", "pv", "thag", "thig",
+    "tha-ap", "thi-ap", "bv", "cp", "ja",
+)
+_ABHIDHAMMA = ("ds", "vb", "dt", "pp", "kv", "ya", "patthana")
+
+SOURCE_PRESETS: dict[str, tuple[str, ...]] = {
+    # Four nikāyas plus the early Khuddaka books — the stratum most people
+    # mean by "what the suttas say".
+    "ebt": ("dn", "mn", "sn", "an", *_EARLY_KN),
+    "sutta": ("dn", "mn", "sn", "an", *_ALL_KN),
+    "vinaya": ("pli-tv",),
+    "abhidhamma": _ABHIDHAMMA,
+}
+
+# Every book code the corpus can yield. Used to drop names that match nothing
+# before they reach the filter — see parse_sources.
+KNOWN_BOOKS = frozenset(
+    (*SOURCE_PRESETS["sutta"], *_ABHIDHAMMA, "pli-tv")
+)
+
+
+def parse_sources(raw: str) -> set[str] | None:
+    """`"ebt"` or `"an,dn,mn,sn"` → a set of book codes. Nothing usable → None.
+
+    Names that match no book are dropped rather than passed through. Otherwise
+    `sources=suttas` — one plural away from the `sutta` preset — would filter
+    against a book that doesn't exist and render an empty page, which reads as
+    the widget being broken rather than the scope being misspelled. A typo
+    widens instead: worst case you see more than you asked for.
+    """
+    out: set[str] = set()
+    for part in (raw or "").lower().replace(" ", "").split(","):
+        if not part:
+            continue
+        out.update(b for b in SOURCE_PRESETS.get(part, (part,)) if b in KNOWN_BOOKS)
+    return out or None
+
+
+def fetch_definitions_embed(
+    term: str, limit: int = 5, sources: set[str] | None = None
+) -> list[dict[str, Any]]:
     """หานิยามจากพระสูตร/วินัยของ `term` — สำหรับหน้า /read/embed/define.
 
     Backs the public iframe-embeddable widget (Postgres-only, same as the
@@ -408,7 +456,9 @@ def fetch_definitions_embed(term: str, limit: int = 5) -> list[dict[str, Any]]:
     conn = get_connection()
     try:
         cur = conn.cursor()
-        raw = find_definitions(cur, "postgres", term, limit=limit * 3)
+        raw = find_definitions(
+            cur, "postgres", term, limit=limit * 3, sources=sources
+        )
         return _merge_same_passage(raw)[:limit]
     finally:
         cur.close()
