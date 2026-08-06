@@ -169,8 +169,15 @@ def _citation_url(link_base: str, sutta_id: str, segment_id: str) -> str:
     """Build the citation link for one result.
 
     `link_base` lets an embedding site send readers to its own reader instead
-    of ours — e.g. `https://dhamma.gift/?q={sutta_id}#{segment_id}`. Falls back
-    to our own reader when absent or rejected.
+    of ours. Three placeholders, because sites anchor segments differently:
+
+        {sutta_id}     mn141        the sutta alone
+        {segment_id}   mn141:16.3   full canonical id — our reader, SuttaCentral
+        {segment_num}  16.3         id minus the sutta prefix — dhamma.gift
+                                    anchors on this, e.g.
+                                    https://dhamma.gift/read/?q={sutta_id}#{segment_num}
+
+    Falls back to our own reader when absent or rejected.
 
     SECURITY: this value comes straight off the query string and lands in an
     `href`, so the scheme check is load-bearing — without it
@@ -183,8 +190,13 @@ def _citation_url(link_base: str, sutta_id: str, segment_id: str) -> str:
     lowered = link_base.lower()
     if not (lowered.startswith("http://") or lowered.startswith("https://")):
         return f"/read/{sutta_id}#{segment_id}"
-    return link_base.replace("{sutta_id}", sutta_id).replace(
-        "{segment_id}", segment_id
+    # Split on the first colon only — ids run `mn141:16.3` but also
+    # `pli-tv-kd1:79.4.131`, and the tail can itself contain dots.
+    segment_num = segment_id.split(":", 1)[1] if ":" in segment_id else segment_id
+    return (
+        link_base.replace("{sutta_id}", sutta_id)
+        .replace("{segment_num}", segment_num)
+        .replace("{segment_id}", segment_id)
     )
 
 
