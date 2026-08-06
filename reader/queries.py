@@ -364,6 +364,36 @@ def check_words_have_entries(words: list[str]) -> dict[str, dict[str, Any]]:
     return out
 
 
+def _merge_same_passage(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Drop results that are really another result's passage seen twice.
+
+    A definition has two ends — the "Katamañca X?" opener and the "ayaṁ
+    vuccati X" closer — and both match, so the same passage comes back as two
+    rows. For taṇhā that's sn12.2:7.1 and sn12.2:7.4, three segments apart,
+    one definition.
+
+    Test: if a later result's anchor already sits inside an earlier result's
+    block, it is that block seen from its other end — drop it. Nothing is lost,
+    the surviving block still contains the dropped anchor. Results arrive
+    ranked, so the one kept is always the better-scoring of the pair.
+
+    Deliberately not pushed down into `find_definitions` — that is shared with
+    the MCP tool, where clients read the whole block anyway and a change would
+    carry far more blast radius than a presentation fix needs.
+    """
+    kept: list[dict[str, Any]] = []
+    for r in results:
+        anchor = r["segment_id"]
+        if any(
+            k["sutta_id"] == r["sutta_id"]
+            and anchor in {s["segment_id"] for s in (k.get("block") or [])}
+            for k in kept
+        ):
+            continue
+        kept.append(r)
+    return kept
+
+
 def fetch_definitions_embed(term: str, limit: int = 5) -> list[dict[str, Any]]:
     """หานิยามจากพระสูตร/วินัยของ `term` — สำหรับหน้า /read/embed/define.
 
@@ -371,11 +401,15 @@ def fetch_definitions_embed(term: str, limit: int = 5) -> list[dict[str, Any]]:
     rest of this module). Thin wrapper around `find_definitions` from
     `sutta_definitions.py` — the same function the `define_from_suttas`
     MCP tool calls (see main.py).
+
+    Over-fetches before merging so a page that loses rows to the merge still
+    fills up to `limit`.
     """
     conn = get_connection()
     try:
         cur = conn.cursor()
-        return find_definitions(cur, "postgres", term, limit=limit)
+        raw = find_definitions(cur, "postgres", term, limit=limit * 3)
+        return _merge_same_passage(raw)[:limit]
     finally:
         cur.close()
         release_connection(conn)

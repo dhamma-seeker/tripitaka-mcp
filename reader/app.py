@@ -227,11 +227,30 @@ def embed_define(
         d["citation_url"] = _citation_url(
             link_base, d["sutta_id"], d["segment_id"]
         )
+        # The anchor line is the match; the passage around it is where the
+        # definition actually lives. Drop the anchor from the expandable body
+        # so it isn't shown twice.
+        d["passage"] = [
+            s for s in (d.get("block") or []) if s["segment_id"] != d["segment_id"]
+        ]
+
+    # Split so a reader knows what they're getting before they read it: a
+    # direct definition and a simile are different kinds of answer.
+    groups = [
+        (label, [d for d in definitions if d["kind"] == kind])
+        for label, kind in (("Definitions", "direct"), ("Similes", "simile"))
+    ]
+    groups = [g for g in groups if g[1]]
 
     return templates.TemplateResponse(
         request=request,
         name="embed_define.html",
-        context={"term": term, "definitions": definitions, "theme": theme},
+        context={
+            "term": term,
+            "definitions": definitions,
+            "groups": groups,
+            "theme": theme,
+        },
         headers={"Cache-Control": "public, max-age=300"},
     )
 
