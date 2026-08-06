@@ -69,7 +69,7 @@
     <div class="mcd-cverse">{{ d.text_pali }}</div>
     {% if d.text_english %}<div class="mcd-cp">{{ d.text_english }}</div>{% endif %}
     <div class="mcd-csrcs">
-      <a class="mcd-chip" href="/read/{{ d.sutta_id }}#{{ d.segment_id }}" target="_blank" rel="noopener">{{ d.sutta_id }}</a>
+      <a class="mcd-chip" href="{{ d.citation_url }}" target="_blank" rel="noopener">{{ d.sutta_id }}</a>
     </div>
   </div>
   {% endfor %}

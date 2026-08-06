@@ -165,9 +165,36 @@ def api_segment_words(id: str = "") -> JSONResponse:
     )
 
 
+def _citation_url(link_base: str, sutta_id: str, segment_id: str) -> str:
+    """Build the citation link for one result.
+
+    `link_base` lets an embedding site send readers to its own reader instead
+    of ours — e.g. `https://dhamma.gift/?q={sutta_id}#{segment_id}`. Falls back
+    to our own reader when absent or rejected.
+
+    SECURITY: this value comes straight off the query string and lands in an
+    `href`, so the scheme check is load-bearing — without it
+    `?link_base=javascript:...` is reflected XSS on our own origin. Only
+    http/https, and only those two, no scheme-relative `//host` either (it
+    inherits the current scheme and reads as a path otherwise).
+    """
+    if not link_base:
+        return f"/read/{sutta_id}#{segment_id}"
+    lowered = link_base.lower()
+    if not (lowered.startswith("http://") or lowered.startswith("https://")):
+        return f"/read/{sutta_id}#{segment_id}"
+    return link_base.replace("{sutta_id}", sutta_id).replace(
+        "{segment_id}", segment_id
+    )
+
+
 @app.get("/read/embed/define", response_class=HTMLResponse)
 def embed_define(
-    request: Request, term: str = "", limit: int = 5, theme: str = "light"
+    request: Request,
+    term: str = "",
+    limit: int = 5,
+    theme: str = "light",
+    link_base: str = "",
 ) -> HTMLResponse:
     """Public, iframe-embeddable widget for `define_from_suttas`.
 
@@ -179,8 +206,15 @@ def embed_define(
     term = term.strip().lower()[:60]
     limit = min(max(1, limit), 5)
     theme = theme if theme in ("light", "dark") else "light"
+    link_base = link_base.strip()[:300]
 
     definitions = fetch_definitions_embed(term, limit=limit) if term else []
+    # Resolve links here rather than in the template — keeps the scheme check
+    # in one place instead of relying on every future template edit to repeat it.
+    for d in definitions:
+        d["citation_url"] = _citation_url(
+            link_base, d["sutta_id"], d["segment_id"]
+        )
 
     return templates.TemplateResponse(
         request=request,
