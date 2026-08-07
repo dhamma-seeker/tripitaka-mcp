@@ -54,10 +54,21 @@
     # CSP frame-ancestors is what modern browsers honor for multi-origin
     # embed permission (legacy X-Frame-Options only supports one value), so
     # we drop the site-wide DENY and set frame-ancestors for just this path.
+    #
+    # The allowlist covers the whole Dhamma.Gift family plus their Chrome
+    # extension, because the widget is reached three different ways:
+    #   dict.dhamma.gift                                  embedded directly
+    #   dhamma.gift → dict.dhamma.gift → here             popup dictionary mode
+    #   chrome-extension://… → here                       their lookup extension
+    # frame-ancestors is checked against EVERY ancestor in the chain, not just
+    # the immediate parent, so the middle case needs the apex listed too — it
+    # failed while only the dict subdomain was allowed.
+    # Both apex and wildcard are listed on purpose: `*.dhamma.gift` does not
+    # match bare `dhamma.gift`.
     @embed path /read/embed/*
     header @embed {
         -X-Frame-Options
-        Content-Security-Policy "frame-ancestors https://dict.dhamma.gift https://find.dhamma.gift"
+        Content-Security-Policy "frame-ancestors https://dhamma.gift https://*.dhamma.gift chrome-extension://dnnogjdcmhbiobpnkhdbfnfjnjlikabd"
     }
 
     @health path /health /healthz

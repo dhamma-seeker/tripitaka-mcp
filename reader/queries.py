@@ -13,6 +13,7 @@ from typing import Any
 from markupsafe import Markup, escape
 
 from db.connection import get_connection, release_connection
+from db.normalize import fold_pali
 from sutta_definitions import find_definitions
 
 
@@ -364,18 +365,48 @@ def check_words_have_entries(words: list[str]) -> dict[str, dict[str, Any]]:
     return out
 
 
+def _sentence_key(text: str) -> str:
+    """Fold a segment down to the sentence under the punctuation.
+
+    MN 43 carries the same line twice, three segments apart, differing only in
+    how the quotation is punctuated:
+
+        mn43:4.3  “‘Vijānāti vijānātī’ti kho, āvuso, tasmā viññāṇanti vuccati.
+        mn43:4.6   ‘Vijānāti vijānātī’ti kho, āvuso, tasmā viññāṇanti vuccatī”ti.
+
+    Dropping the punctuation leaves a trailing bare `ti`, the particle that
+    closes the quotation, so that goes too. Vowel length is already handled by
+    fold_pali (`vuccatī` → `vuccati`).
+    """
+    words = re.sub(r"[^a-z0-9]+", " ", fold_pali(text or "")).split()
+    if words and words[-1] == "ti":
+        words.pop()
+    return " ".join(words)
+
+
 def _merge_same_passage(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Drop results that are really another result's passage seen twice.
+    """Drop results that are really an earlier result seen a second time.
 
-    A definition has two ends — the "Katamañca X?" opener and the "ayaṁ
-    vuccati X" closer — and both match, so the same passage comes back as two
-    rows. For taṇhā that's sn12.2:7.1 and sn12.2:7.4, three segments apart,
-    one definition.
+    Two different shapes of duplicate, so two tests — and they catch different
+    things, which is why both are needed:
 
-    Test: if a later result's anchor already sits inside an earlier result's
-    block, it is that block seen from its other end — drop it. Nothing is lost,
-    the surviving block still contains the dropped anchor. Results arrive
-    ranked, so the one kept is always the better-scoring of the pair.
+    1. Same passage from its other end. A definition has two, the "Katamañca X?"
+       opener and the "ayaṁ vuccati X" closer, and both match. Different text,
+       overlapping passage: sn12.2:7.1 and sn12.2:7.4. Caught by the anchor
+       sitting inside an earlier result's block.
+
+    2. The same sentence repeated nearby. Same text, and the two blocks happen
+       not to contain each other: mn43:4.3 and mn43:4.6. Caught by the sentence
+       key.
+
+    Note what is deliberately NOT used: a symmetric block-overlap test. It looks
+    like the tidier rule and it is wrong — dn15:7.5 sits inside dn15:8.5's
+    block, but those are two different links of dependent origination (craving
+    conditions grasping; feeling conditions craving). Overlapping passages are
+    normal in a sutta that works through a sequence. Text is what separates a
+    repeat from a neighbour.
+
+    Results arrive ranked, so the survivor of a pair is the better-scoring one.
 
     Deliberately not pushed down into `find_definitions` — that is shared with
     the MCP tool, where clients read the whole block anyway and a change would
@@ -384,9 +415,13 @@ def _merge_same_passage(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     kept: list[dict[str, Any]] = []
     for r in results:
         anchor = r["segment_id"]
+        key = _sentence_key(r["text_pali"])
         if any(
             k["sutta_id"] == r["sutta_id"]
-            and anchor in {s["segment_id"] for s in (k.get("block") or [])}
+            and (
+                anchor in {s["segment_id"] for s in (k.get("block") or [])}
+                or (key and key == _sentence_key(k["text_pali"]))
+            )
             for k in kept
         ):
             continue
