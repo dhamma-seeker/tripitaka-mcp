@@ -171,6 +171,24 @@ def api_segment_words(id: str = "") -> JSONResponse:
     )
 
 
+def _int_param(raw: str, default: int, lo: int, hi: int) -> int:
+    """Read a numeric query param without ever refusing the request.
+
+    Declaring these as `int` hands FastAPI's validator a veto, and it answers
+    junk with a 422 and a JSON body. Fine for an API; wrong here, because this
+    page renders inside someone else's iframe and that body shows up as a wall
+    of error text where the widget should be. `?limit=` — empty, which any
+    templated URL can produce from an unset variable — was enough to trigger
+    it. Same reasoning as parse_sources: bad input should widen or fall back,
+    never break the panel.
+    """
+    try:
+        value = int(str(raw).strip())
+    except (TypeError, ValueError):
+        return default
+    return max(lo, min(value, hi))
+
+
 def _citation_url(link_base: str, sutta_id: str, segment_id: str) -> str:
     """Build the citation link for one result.
 
@@ -210,10 +228,11 @@ def _citation_url(link_base: str, sutta_id: str, segment_id: str) -> str:
 def embed_define(
     request: Request,
     term: str = "",
-    limit: int = 5,
+    limit: str = "5",
     theme: str = "light",
     link_base: str = "",
     sources: str = "",
+    per_sutta: str = "0",
 ) -> HTMLResponse:
     """Public, iframe-embeddable widget for `define_from_suttas`.
 
@@ -223,13 +242,18 @@ def embed_define(
     specific path can be embedded on allowlisted third-party origins.
     """
     term = term.strip().lower()[:60]
-    limit = min(max(1, limit), 5)
+    n_limit = _int_param(limit, default=5, lo=1, hi=5)
     theme = theme if theme in ("light", "dark") else "light"
     link_base = link_base.strip()[:300]
     source_set = parse_sources(sources[:200])
+    # 0 (the default) means no cap, so leaving the param off keeps the
+    # behaviour every existing embed already has.
+    per_sutta_cap = _int_param(per_sutta, default=0, lo=0, hi=n_limit) or None
 
     definitions = (
-        fetch_definitions_embed(term, limit=limit, sources=source_set)
+        fetch_definitions_embed(
+            term, limit=n_limit, sources=source_set, per_sutta=per_sutta_cap
+        )
         if term
         else []
     )

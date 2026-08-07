@@ -496,8 +496,40 @@ def parse_sources(raw: str) -> set[str] | None:
     return out or None
 
 
+def _cap_per_sutta(
+    results: list[dict[str, Any]], cap: int | None
+) -> list[dict[str, Any]]:
+    """Stop one discourse taking every slot, when the caller asks for that.
+
+    A term is often defined several times in the same place, and by rank alone
+    those crowd everything else out: `citta` fills all five slots from two
+    texts, and SN 12.61 — the third text to define it — sits at rank 8 with
+    nowhere to go. Capping at 2 lets it in.
+
+    It is a genuine trade, not a fix, which is why it's opt-in. The cap drops
+    MN 138's third definition even though it outranks what replaces it. Whether
+    that's an improvement depends on the question being asked: "where is this
+    defined most fully" wants the run kept, "where is this defined at all"
+    wants the spread. The caller knows which; we don't.
+    """
+    if not cap or cap < 1:
+        return results
+    taken: dict[str, int] = {}
+    out: list[dict[str, Any]] = []
+    for r in results:
+        sid = r["sutta_id"]
+        if taken.get(sid, 0) >= cap:
+            continue
+        taken[sid] = taken.get(sid, 0) + 1
+        out.append(r)
+    return out
+
+
 def fetch_definitions_embed(
-    term: str, limit: int = 5, sources: set[str] | None = None
+    term: str,
+    limit: int = 5,
+    sources: set[str] | None = None,
+    per_sutta: int | None = None,
 ) -> list[dict[str, Any]]:
     """หานิยามจากพระสูตร/วินัยของ `term` — สำหรับหน้า /read/embed/define.
 
@@ -506,16 +538,17 @@ def fetch_definitions_embed(
     `sutta_definitions.py` — the same function the `define_from_suttas`
     MCP tool calls (see main.py).
 
-    Over-fetches before merging so a page that loses rows to the merge still
-    fills up to `limit`.
+    Over-fetches before merging and capping so a page that loses rows to
+    either still fills up to `limit`. The multiplier is larger when a cap is
+    in play, since that's the case where rows get discarded in bulk and the
+    replacements come from further down the ranking.
     """
     conn = get_connection()
     try:
         cur = conn.cursor()
-        raw = find_definitions(
-            cur, "postgres", term, limit=limit * 3, sources=sources
-        )
-        return _merge_same_passage(raw)[:limit]
+        over = limit * (8 if per_sutta else 3)
+        raw = find_definitions(cur, "postgres", term, limit=over, sources=sources)
+        return _cap_per_sutta(_merge_same_passage(raw), per_sutta)[:limit]
     finally:
         cur.close()
         release_connection(conn)
