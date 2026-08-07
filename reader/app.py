@@ -44,6 +44,7 @@ from reader.queries import (
     fetch_sutta,
     lookup_word,
     parse_sources,
+    render_markup,
     search_text,
     tokenize_pali,
 )
@@ -55,6 +56,10 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # format by decoding it. New users absorb the system through repeated
 # exposure rather than needing to read a docs page first.
 templates.env.filters["decode_sid"] = decode_sutta_id
+# Segment text carries bilara-data's inline `<b>`; render it rather than
+# printing the tag. See render_markup — it escapes first, so this is not
+# the same as marking the field safe.
+templates.env.filters["markup"] = render_markup
 
 # Validate identifiers tightly — DB only has lowercase alphanumerics, dots,
 # and hyphens (e.g. mn128, pli-tv-bu-vb-pj1, mil3.1.1). Reject anything else

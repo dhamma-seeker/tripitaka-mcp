@@ -91,8 +91,8 @@
     {% if groups|length > 1 %}<p class="embed-group-head">{{ label }} · {{ term }}</p>{% endif %}
     {% for d in items %}
     <div class="embed-def">
-      <div class="mcd-cverse">{{ d.text_pali }}</div>
-      {% if d.text_english %}<div class="mcd-cp">{{ d.text_english }}</div>{% endif %}
+      <div class="mcd-cverse">{{ d.text_pali | markup }}</div>
+      {% if d.text_english %}<div class="mcd-cp">{{ d.text_english | markup }}</div>{% endif %}
       {% if d.passage %}
       <details class="embed-more">
         <summary>Full passage</summary>
@@ -102,8 +102,8 @@
              renders a wrong name as empty rather than raising, so a typo here
              shows up as blank rows, not an error. #}
           {% for s in d.passage %}
-          {% if s.pali %}<div class="mcd-cverse">{{ s.pali }}</div>{% endif %}
-          {% if s.english %}<div class="mcd-cp">{{ s.english }}</div>{% endif %}
+          {% if s.pali %}<div class="mcd-cverse">{{ s.pali | markup }}</div>{% endif %}
+          {% if s.english %}<div class="mcd-cp">{{ s.english | markup }}</div>{% endif %}
           {% endfor %}
         </div>
       </details>

@@ -17,6 +17,27 @@ from db.normalize import fold_pali
 from sutta_definitions import find_definitions
 
 
+# bilara-data marks emphasis inline: the lemma under discussion in the
+# Niddesas, verse lines elsewhere. Around 9,000 segments carry it, spread
+# across dn/mn/sn/an/snp/dhp and the commentarial books alike, and `<b>` is
+# the ONLY tag in the whole corpus (checked). Escaping it wholesale printed
+# "&lt;b&gt;Gedho&lt;/b&gt; vuccati taṇhā" at the reader.
+_BOLD_ESCAPED_RE = re.compile(r"&lt;(/?)b&gt;")
+
+
+def render_markup(text: str | None) -> Markup | None:
+    """Escape everything, then hand back only `<b>`.
+
+    Allowlist rather than `|safe`: the escape runs first and unconditionally,
+    so anything that isn't literally `<b>` or `</b>` stays inert no matter what
+    the corpus grows to hold later. Marking segment text safe outright would
+    make every future data import a potential injection.
+    """
+    if not text:
+        return None
+    return Markup(_BOLD_ESCAPED_RE.sub(r"<\1b>", str(escape(text))))
+
+
 def _strip_diacritics(text: str) -> str:
     """NFD-decompose then drop combining marks. Matches Postgres `f_unaccent`
     semantics closely enough for the highlighter (both lowercase + strip)."""

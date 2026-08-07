@@ -100,8 +100,8 @@
     {% for seg in sutta.segments %}
     <div class="segment" id="{{ seg.segment_id }}">
       <a class="seg-anchor" href="#{{ seg.segment_id }}" title="{{ seg.segment_id }}">{{ seg.segment_id.split(':')[1] if ':' in seg.segment_id else '' }}</a>
-      {% if seg.text_pali %}<p class="text-pali" lang="pi">{{ seg.text_pali }}</p>{% endif %}
-      {% if seg.text_english %}<p class="text-english" lang="en">{{ seg.text_english }}</p>{% endif %}
+      {% if seg.text_pali %}<p class="text-pali" lang="pi">{{ seg.text_pali | markup }}</p>{% endif %}
+      {% if seg.text_english %}<p class="text-english" lang="en">{{ seg.text_english | markup }}</p>{% endif %}
     </div>
     {% endfor %}
   </section>
