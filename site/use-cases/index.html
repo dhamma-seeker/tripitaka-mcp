@@ -596,6 +596,7 @@ Project offered as <em>Dhamma Dāna</em> — free, non-commercial use only.
   var badgeSlot = document.getElementById('case07-badge');
   if (badgeSlot && window.mcpCreditBadge) {
     badgeSlot.innerHTML = window.mcpCreditBadge('define_from_suttas');
+    if (window.mcpBindCreditCards) window.mcpBindCreditCards(badgeSlot);
   }
 </script>
 </body>

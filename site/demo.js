@@ -1093,8 +1093,22 @@
   // Single place to update once a contributor confirms how they'd like to be
   // credited. Until `name` is filled in, the badge shows generic "Community"
   // text with no link — nothing to edit anywhere else when it's confirmed.
+  // `what` / `date` / `source` / `site` feed the hover card. Every line on it
+  // should be checkable — the card exists to show who gave what and where to
+  // verify it, not to gamify. No counts or levels: there is one contributor
+  // and one contribution, and inventing a tally would be inventing data.
   var CONTRIBUTOR_CREDITS = {
-    define_from_suttas: { name: 'Dhamma.Gift', url: 'https://github.com/dhammagift' }
+    define_from_suttas: {
+      name: 'Dhamma.Gift',
+      url: 'https://github.com/dhammagift',
+      what: 'Contributed the patterns that detect the canon’s own definitional formulas.',
+      date: '28 July 2026',
+      source: {
+        label: 'GitHub issue #4',
+        url: 'https://github.com/dhamma-seeker/tripitaka-mcp/issues/4'
+      },
+      site: { label: 'dhamma.gift', url: 'https://dhamma.gift' }
+    }
   };
 
   // Drop the icon file at site/badge-lotus.png (or .svg) once ready — a small
@@ -1173,7 +1187,102 @@
           botLabel + '</textPath>' +
         '</text>' +
       '</svg>' +
+      creditCardHtml(credit) +
     '</' + tag + '>';
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // The card that opens off the badge. Rendered inline as a sibling of the SVG
+  // rather than appended to <body>, because this markup also runs inside the
+  // embed iframe on a third-party page — there is no shared body to attach to,
+  // and a fixed-position element inside an iframe is positioned against the
+  // iframe's own viewport, which is what makes this work at all.
+  function creditCardHtml(credit) {
+    if (!credit || !credit.name) return '';
+    var rows = '';
+    if (credit.date) {
+      rows += '<div class="mcd-cc-row"><span class="mcd-cc-k">Contributed</span>' +
+        '<span>' + esc(credit.date) + '</span></div>';
+    }
+    if (credit.source && credit.source.url) {
+      rows += '<div class="mcd-cc-row"><span class="mcd-cc-k">Source</span>' +
+        '<span>' + esc(credit.source.label || credit.source.url) + '</span></div>';
+    }
+    if (credit.site && credit.site.url) {
+      rows += '<div class="mcd-cc-row"><span class="mcd-cc-k">Project</span>' +
+        '<span>' + esc(credit.site.label || credit.site.url) + '</span></div>';
+    }
+    var body = '<span class="mcd-cc-title">Community contributed</span>' +
+      '<span class="mcd-cc-name">' + esc(credit.name) + '</span>' +
+      (credit.what ? '<span class="mcd-cc-what">' + esc(credit.what) + '</span>' : '');
+    return '<span class="mcd-cc" role="tooltip" aria-hidden="true">' +
+      body + (rows ? '<span class="mcd-cc-sep"></span>' + rows : '') +
+      '</span>';
+  }
+
+  // Space needed before a card is worth opening. Under this the badge keeps
+  // its plain `title` — an embed sized down to a strip should degrade to a
+  // tooltip rather than render a card with its corners cut off by the frame.
+  var CC_MIN_W = 300, CC_MIN_H = 260;
+
+  function positionCard(seal) {
+    var card = seal.querySelector('.mcd-cc');
+    if (!card) return false;
+    // Measure against the viewport the badge actually lives in — inside the
+    // embed that is the iframe's box, not the host page's.
+    if (window.innerWidth < CC_MIN_W || window.innerHeight < CC_MIN_H) return false;
+    // Measure as flex, not block: the card's children are spans, and laying
+    // them out inline for the measuring pass leaves that display value set
+    // inline afterwards, overriding the stylesheet and running the title,
+    // name and description together on one line.
+    card.style.visibility = 'hidden';
+    card.style.display = 'flex';
+    var b = seal.getBoundingClientRect(), c = card.getBoundingClientRect();
+    var gap = 10, pad = 8;
+    // Open upward off the badge by default, flip below only if the top would
+    // clip. Same left/right.
+    var top = b.top - c.height - gap;
+    if (top < pad) top = Math.min(b.bottom + gap, window.innerHeight - c.height - pad);
+    var left = b.left + b.width / 2 - c.width / 2;
+    left = Math.max(pad, Math.min(left, window.innerWidth - c.width - pad));
+    card.style.top = Math.max(pad, top) + 'px';
+    card.style.left = left + 'px';
+    card.style.visibility = '';
+    return true;
+  }
+
+  function bindCreditCards(root) {
+    (root || document).querySelectorAll('.mcd-credit-seal').forEach(function (seal) {
+      if (seal.getAttribute('data-cc-bound')) return;
+      seal.setAttribute('data-cc-bound', '1');
+      var card = seal.querySelector('.mcd-cc');
+      if (!card) return;
+      var open = function () {
+        if (!positionCard(seal)) return;   // too little room — `title` stands in
+        seal.classList.add('mcd-cc-on');
+        card.setAttribute('aria-hidden', 'false');
+      };
+      var close = function () {
+        seal.classList.remove('mcd-cc-on');
+        card.style.display = '';
+        card.setAttribute('aria-hidden', 'true');
+      };
+      seal.addEventListener('mouseenter', open);
+      seal.addEventListener('mouseleave', close);
+      seal.addEventListener('focus', open);
+      seal.addEventListener('blur', close);
+      // Touch has no hover: first tap opens the card, second follows the link.
+      seal.addEventListener('click', function (e) {
+        if (!window.matchMedia('(hover: none)').matches) return;
+        if (!seal.classList.contains('mcd-cc-on')) { e.preventDefault(); open(); }
+      });
+      window.addEventListener('scroll', close, true);
+    });
   }
 
   // ── CSS (injected once) ─────────────────────────────────────────────────────
@@ -1325,12 +1434,45 @@
         'background:var(--d-hbg);border-radius:0 4px 4px 0}' +
       '.mcd-csrcs{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;padding-top:10px;' +
         'border-top:1px solid var(--d-brd)}' +
+      // filter and transform live on the <svg>, never on .mcd-credit-seal
+      // itself. Either property on an element makes it the containing block
+      // for `position:fixed` descendants, and the credit card is one — put the
+      // drop-shadow back on the wrapper and the card anchors to the badge
+      // instead of the viewport, landing hundreds of pixels off screen.
       '.mcd-credit-seal{display:inline-flex;margin-top:12px;cursor:default;' +
-        'text-decoration:none;filter:drop-shadow(0 2px 5px rgba(29,78,216,.4))}' +
-      '.mcd-credit-seal svg{display:block}' +
-      'a.mcd-credit-seal{cursor:pointer;transition:transform .15s,filter .15s}' +
-      'a.mcd-credit-seal:hover{transform:translateY(-1px);' +
+        'text-decoration:none}' +
+      '.mcd-credit-seal svg{display:block;' +
+        'filter:drop-shadow(0 2px 5px rgba(29,78,216,.4))}' +
+      'a.mcd-credit-seal{cursor:pointer}' +
+      'a.mcd-credit-seal svg{transition:transform .15s,filter .15s}' +
+      'a.mcd-credit-seal:hover svg{transform:translateY(-1px);' +
         'filter:drop-shadow(0 4px 9px rgba(29,78,216,.55))}' +
+      // Credit card. `position:fixed` on purpose — inside the embed iframe that
+      // anchors to the iframe's own viewport, so the card stays put while the
+      // panel scrolls and can be clamped to the frame instead of spilling past
+      // an edge it isn't allowed to cross. Positioned in JS; hidden until then
+      // so it can be measured without flashing.
+      // Every --d-* here carries a fallback, unlike the rest of this sheet.
+      // _applyTheme sets those tokens on the widget's own root, and the badge
+      // is also rendered outside it (the use-cases page, the embed footer),
+      // where they resolve to nothing — a card with no background is a card
+      // you read the page through. Fallbacks are the light-theme values.
+      '.mcd-cc{position:fixed;z-index:60;display:none;width:250px;' +
+        'flex-direction:column;gap:2px;padding:12px 13px;border-radius:9px;' +
+        'background:var(--d-bg2,#ffffff);border:1px solid var(--d-brd2,#d5cdb9);' +
+        'box-shadow:0 8px 26px rgba(0,0,0,.22);text-align:left;' +
+        'font-size:11.5px;line-height:1.55;color:var(--d-fg2,#3a352b);cursor:default;' +
+        'filter:none;pointer-events:none}' +
+      '.mcd-cc-on .mcd-cc{display:flex}' +
+      '.mcd-cc-title{font-size:9.5px;font-weight:700;letter-spacing:.09em;' +
+        'text-transform:uppercase;color:var(--d-dim,#a59c89)}' +
+      '.mcd-cc-name{font-size:14px;font-weight:600;color:var(--d-fg,#1c1a17);margin-bottom:3px}' +
+      '.mcd-cc-what{color:var(--d-fg2,#3a352b)}' +
+      '.mcd-cc-sep{height:1px;background:var(--d-brd,#e4ddca);margin:9px 0 7px}' +
+      '.mcd-cc-row{display:flex;justify-content:space-between;gap:10px;' +
+        'font-size:11px;padding:1px 0}' +
+      '.mcd-cc-k{color:var(--d-dim,#a59c89);flex:none}' +
+      '.mcd-cc-row span:last-child{color:var(--d-fg2,#3a352b);text-align:right}' +
       // chat table
       '.mcd-ctable{display:flex;flex-direction:column;border:1px solid var(--d-brd);border-radius:6px;' +
         'overflow:hidden;margin:4px 0 10px;font-size:12px}' +
@@ -1829,6 +1971,7 @@
       ce.className = 'mcd-chatbox';
       ce.style.opacity = 0;
       ce.innerHTML = scn.html + creditBadgeHtml(scn.toolName);
+      bindCreditCards(ce);
       frame.insertBefore(ce, spacer);
       this._chatEl = ce;
       this._anims.push({ el: ce, s: base, d: 0.5 });
@@ -1923,9 +2066,13 @@
 
   // ── Auto-mount ───────────────────────────────────────────────────────────────
   G.McpDemo = McpDemo;
-  // Exposed so static pages (e.g. use-cases) can render the same seal badge
-  // markup outside the chat widget, without duplicating the SVG.
+  // Exposed so static pages (e.g. use-cases) and the embed widget can render
+  // the same seal badge markup outside the chat widget, without duplicating
+  // the SVG. Call mcpBindCreditCards on the container afterwards to activate
+  // the hover card — without it the badge still works, it just falls back to
+  // its `title`.
   G.mcpCreditBadge = creditBadgeHtml;
+  G.mcpBindCreditCards = bindCreditCards;
 
   function autoMount() {
     document.querySelectorAll('[data-mcp-demo]').forEach(function (el) {

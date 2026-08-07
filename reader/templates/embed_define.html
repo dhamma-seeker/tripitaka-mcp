@@ -9,12 +9,12 @@
   :root[data-theme="light"] {
     --d-fg: #1c1a17; --d-fg2: #3a352b; --d-brd: #e4ddca;
     --d-acc: #4b48c9; --d-grn: #2e7d4a; --d-hbg: #f0ede4; --d-hbrd: #ddd7c8;
-    --d-bg2: #ffffff;
+    --d-bg2: #ffffff; --d-dim: #a59c89; --d-brd2: #d5cdb9;
   }
   :root[data-theme="dark"] {
     --d-fg: #ece6d8; --d-fg2: #c9c0a6; --d-brd: #2a261d;
     --d-acc: #a59bf0; --d-grn: #7bbd8e; --d-hbg: #211d15; --d-hbrd: #322c21;
-    --d-bg2: #16140f;
+    --d-bg2: #16140f; --d-dim: #8a8267; --d-brd2: #332d22;
   }
   * { box-sizing: border-box; }
   body {
@@ -80,6 +80,30 @@
      lettering collapses into noise and it reads as a stray blue dot. */
   .mcd-credit-seal { line-height: 0; flex: none; }
   .mcd-credit-seal svg { width: 52px; height: 52px; }
+  /* Credit card. Copied from demo.js rather than inherited: its injectCSS only
+     runs when a chat widget mounts, and this page never mounts one. Keep in
+     step with the .mcd-cc block there if either changes.
+     position:fixed anchors to this iframe's viewport, which is what lets the
+     card be clamped inside the frame instead of spilling past an edge it
+     cannot cross. */
+  .mcd-cc {
+    position: fixed; z-index: 60; display: none; width: 250px;
+    flex-direction: column; gap: 2px; padding: 12px 13px; border-radius: 9px;
+    background: var(--d-bg2); border: 1px solid var(--d-brd2);
+    box-shadow: 0 8px 26px rgba(0,0,0,.22); text-align: left;
+    font-size: 11.5px; line-height: 1.55; color: var(--d-fg2);
+    cursor: default; pointer-events: none;
+  }
+  .mcd-cc-on .mcd-cc { display: flex; }
+  .mcd-cc-title { font-size: 9.5px; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--d-dim); }
+  .mcd-cc-name { font-size: 14px; font-weight: 600; color: var(--d-fg); margin-bottom: 3px; }
+  .mcd-cc-what { color: var(--d-fg2); }
+  .mcd-cc-sep { height: 1px; background: var(--d-brd); margin: 9px 0 7px; }
+  .mcd-cc-row { display: flex; justify-content: space-between; gap: 10px;
+    font-size: 11px; padding: 1px 0; }
+  .mcd-cc-k { color: var(--d-dim); flex: none; }
+  .mcd-cc-row span:last-child { color: var(--d-fg2); text-align: right; }
 </style>
 </head>
 <body>
@@ -140,6 +164,10 @@
   var slot = document.getElementById('credit-slot');
   if (slot && window.mcpCreditBadge) {
     slot.innerHTML = window.mcpCreditBadge('define_from_suttas');
+    // The card measures the iframe's own viewport and skips itself when the
+    // host has sized the frame too small, so the badge quietly falls back to
+    // its title rather than opening a card with its corners cut off.
+    if (window.mcpBindCreditCards) window.mcpBindCreditCards(slot);
   }
 </script>
 </body>
