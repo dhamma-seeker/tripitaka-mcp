@@ -44,12 +44,25 @@
   }
   .mcd-chip::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--d-grn); display: block; }
   .mcd-chip:hover { border-color: var(--d-acc); color: var(--d-acc); }
-  .embed-def + .embed-def { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--d-brd); }
+  /* Definitions within one sutta are siblings under a shared citation, so the
+     rule between them is lighter than the one between suttas. */
+  .embed-def + .embed-def { margin-top: 13px; padding-top: 12px; border-top: 1px dashed var(--d-brd); }
   .embed-group-head {
     font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
     color: var(--d-fg2); opacity: .75; margin: 0 0 10px;
   }
   .embed-group + .embed-group { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--d-brd); }
+  .embed-sutta + .embed-sutta { margin-top: 18px; padding-top: 15px; border-top: 1px solid var(--d-brd); }
+  .embed-sutta-head { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+  .embed-count { font-size: 10.5px; color: var(--d-fg2); opacity: .7; }
+  /* Sits on the same line as the Full passage toggle, quieter than it: the
+     anchor is there when wanted, not competing for attention. */
+  .embed-seg {
+    float: right; font-family: "JetBrains Mono", monospace; font-size: 10.5px;
+    color: var(--d-fg2); opacity: .55; text-decoration: none; padding: 3px 0;
+    transition: opacity .15s, color .15s;
+  }
+  .embed-seg:hover { opacity: 1; color: var(--d-acc); }
   /* <details> rather than a JS toggle — the host page may sandbox the frame
      without allow-scripts, and this keeps working when it does. */
   .embed-more { margin: 0 0 4px; }
@@ -110,31 +123,46 @@
 {% if term %}<p class="embed-term">{{ term }}</p>{% endif %}
 
 {% if definitions %}
-  {% for label, items in groups %}
+  {% for label, suttas in groups %}
   <div class="embed-group">
     {% if groups|length > 1 %}<p class="embed-group-head">{{ label }} · {{ term }}</p>{% endif %}
-    {% for d in items %}
-    <div class="embed-def">
-      <div class="mcd-cverse">{{ d.text_pali | markup }}</div>
-      {% if d.text_english %}<div class="mcd-cp">{{ d.text_english | markup }}</div>{% endif %}
-      {% if d.passage %}
-      <details class="embed-more">
-        <summary>Full passage</summary>
-        <div class="embed-passage">
-          {# block segments carry `pali`/`english`, not the `text_*` names the
-             anchor uses — see _fetch_block in sutta_definitions.py. Jinja
-             renders a wrong name as empty rather than raising, so a typo here
-             shows up as blank rows, not an error. #}
-          {% for s in d.passage %}
-          {% if s.pali %}<div class="mcd-cverse">{{ s.pali | markup }}</div>{% endif %}
-          {% if s.english %}<div class="mcd-cp">{{ s.english | markup }}</div>{% endif %}
-          {% endfor %}
-        </div>
-      </details>
-      {% endif %}
-      <div class="mcd-csrcs">
-        <a class="mcd-chip" href="{{ d.citation_url }}" target="_blank" rel="noopener">{{ d.sutta_id }}</a>
+    {% for sutta_id, items in suttas %}
+    <div class="embed-sutta">
+      {# Citation moved up here, one per text rather than one per row: the whole
+         group shares it, and repeating it under each definition was what made
+         four hits in one discourse read as four separate findings. #}
+      <div class="embed-sutta-head">
+        <a class="mcd-chip" href="{{ items[0].citation_url }}" target="_blank" rel="noopener">{{ sutta_id }}</a>
+        {% if items|length > 1 %}<span class="embed-count">{{ items|length }} definitions</span>{% endif %}
       </div>
+      {% for d in items %}
+      <div class="embed-def">
+        <div class="mcd-cverse">{{ d.text_pali | markup }}</div>
+        {% if d.text_english %}<div class="mcd-cp">{{ d.text_english | markup }}</div>{% endif %}
+        {% if items|length > 1 %}
+        {# Grouping put one citation on the sutta head, which loses the
+           per-definition anchor: reading the third definition and clicking
+           through would land on the first. Only shown where a group holds
+           more than one, since otherwise the head chip already points here. #}
+        <a class="embed-seg" href="{{ d.citation_url }}" target="_blank" rel="noopener">{{ d.segment_id.split(':')[1] if ':' in d.segment_id else d.segment_id }}</a>
+        {% endif %}
+        {% if d.passage %}
+        <details class="embed-more">
+          <summary>Full passage</summary>
+          <div class="embed-passage">
+            {# block segments carry `pali`/`english`, not the `text_*` names the
+               anchor uses — see _fetch_block in sutta_definitions.py. Jinja
+               renders a wrong name as empty rather than raising, so a typo here
+               shows up as blank rows, not an error. #}
+            {% for s in d.passage %}
+            {% if s.pali %}<div class="mcd-cverse">{{ s.pali | markup }}</div>{% endif %}
+            {% if s.english %}<div class="mcd-cp">{{ s.english | markup }}</div>{% endif %}
+            {% endfor %}
+          </div>
+        </details>
+        {% endif %}
+      </div>
+      {% endfor %}
     </div>
     {% endfor %}
   </div>

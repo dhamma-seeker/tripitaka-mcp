@@ -247,12 +247,23 @@ def embed_define(
         ]
 
     # Split so a reader knows what they're getting before they read it: a
-    # direct definition and a simile are different kinds of answer.
-    groups = [
-        (label, [d for d in definitions if d["kind"] == kind])
-        for label, kind in (("Definitions", "direct"), ("Similes", "simile"))
-    ]
-    groups = [g for g in groups if g[1]]
+    # direct definition and a simile are different kinds of answer. Then group
+    # each side by sutta, because a term is often defined several times over in
+    # one discourse — five rows for `citta` are four from MN 138 and one from
+    # SN 51.20, which reads as five findings until you look at the citations.
+    # Sutta sits inside kind rather than outside it: a text can hold both a
+    # definition and a simile, and hoisting it would split that kind heading in
+    # two. Order follows rank throughout, so the best match stays first and its
+    # sutta leads.
+    groups = []
+    for label, kind in (("Definitions", "direct"), ("Similes", "simile")):
+        items = [d for d in definitions if d["kind"] == kind]
+        if not items:
+            continue
+        by_sutta: dict[str, list[dict[str, Any]]] = {}
+        for d in items:
+            by_sutta.setdefault(d["sutta_id"], []).append(d)
+        groups.append((label, list(by_sutta.items())))
 
     return templates.TemplateResponse(
         request=request,
