@@ -28,6 +28,11 @@ from typing import Any
 # render it. Register before app construction so StaticFiles sees it.
 mimetypes.add_type("image/webp", ".webp")
 
+# Safe at module level: `reader*` is excluded from the installable package
+# (pyproject), so this never reaches the lean local-install that must stay free
+# of psycopg2. db/connection.py imports it lazily for exactly that reason.
+from psycopg2.pool import PoolError
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -250,13 +255,24 @@ def embed_define(
     # behaviour every existing embed already has.
     per_sutta_cap = _int_param(per_sutta, default=0, lo=0, hi=n_limit) or None
 
-    definitions = (
-        fetch_definitions_embed(
-            term, limit=n_limit, sources=source_set, per_sutta=per_sutta_cap
+    # A busy moment shouldn't read as a broken widget. The connection pool holds
+    # 10, and this page is now embeddable from anywhere, so enough simultaneous
+    # first-time viewers can drain it — measured: 20 concurrent requests, 10
+    # served and 10 raising PoolError. Unhandled, FastAPI answers 500 and the
+    # host page shows "Internal Server Error" inside the frame, which looks like
+    # our fault rather than a passing spike. Caught here so the panel says so
+    # plainly and invites a retry.
+    busy = False
+    try:
+        definitions = (
+            fetch_definitions_embed(
+                term, limit=n_limit, sources=source_set, per_sutta=per_sutta_cap
+            )
+            if term
+            else []
         )
-        if term
-        else []
-    )
+    except PoolError:
+        definitions, busy = [], True
     # Resolve links here rather than in the template — keeps the scheme check
     # in one place instead of relying on every future template edit to repeat it.
     for d in definitions:
@@ -297,8 +313,13 @@ def embed_define(
             "definitions": definitions,
             "groups": groups,
             "theme": theme,
+            "busy": busy,
         },
-        headers={"Cache-Control": "public, max-age=300"},
+        # A busy answer must not be cached for five minutes — that would pin the
+        # apology in place long after the spike passed.
+        headers={
+            "Cache-Control": "no-store" if busy else "public, max-age=300"
+        },
     )
 
 

@@ -167,6 +167,13 @@
     {% endfor %}
   </div>
   {% endfor %}
+{% elif busy %}
+  {# Checked before the "nothing found" copy: a spike returns no rows either,
+     and telling someone the canon has no definition for their term would be a
+     wrong answer rather than a missing one. #}
+  <p class="embed-empty">
+    Busy right now, too many lookups at once. Give it a moment and reload.
+  </p>
 {% else %}
   <p class="embed-empty">
     {% if term %}
