@@ -88,15 +88,26 @@
     # load at once, and a longer one against sustained hammering.
     @embed_path path /read/embed/*
     handle @embed_path {
+        # Keyed on CF-Connecting-IP, not {client_ip}. Behind Cloudflare and with
+        # no trusted_proxies configured, {client_ip} resolves to the edge node
+        # that forwarded the request, so one visitor spread across edges gets a
+        # fresh allowance at each — 30 rapid requests drew no 429 at all until
+        # this changed. A request arriving straight at the origin carries no
+        # such header and lands in the empty-string bucket, which throttles it
+        # rather than exempting it.
+        #
+        # No `distributed` either: it coordinates limits across several Caddy
+        # instances through shared storage, we run one, and on this host its
+        # state files were already logging "corrupted rate limiter state file"
+        # on repeat.
         rate_limit {
-            distributed
             zone embed_burst {
-                key {client_ip}
+                key {http.request.header.CF-Connecting-IP}
                 events 20
                 window 10s
             }
             zone embed_sustained {
-                key {client_ip}
+                key {http.request.header.CF-Connecting-IP}
                 events 120
                 window 1m
             }
