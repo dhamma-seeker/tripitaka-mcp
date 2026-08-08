@@ -55,20 +55,58 @@
     # embed permission (legacy X-Frame-Options only supports one value), so
     # we drop the site-wide DENY and set frame-ancestors for just this path.
     #
-    # The allowlist covers the whole Dhamma.Gift family plus their Chrome
-    # extension, because the widget is reached three different ways:
-    #   dict.dhamma.gift                                  embedded directly
-    #   dhamma.gift → dict.dhamma.gift → here             popup dictionary mode
-    #   chrome-extension://… → here                       their lookup extension
-    # frame-ancestors is checked against EVERY ancestor in the chain, not just
-    # the immediate parent, so the middle case needs the apex listed too — it
-    # failed while only the dict subdomain was allowed.
-    # Both apex and wildcard are listed on purpose: `*.dhamma.gift` does not
-    # match bare `dhamma.gift`.
+    # Open to any origin, which an allowlist could not deliver. The Dhamma.Gift
+    # lookup extension injects its panel into whatever page you are reading, so
+    # the ancestor is that page, never the extension — it worked on dhamma.gift
+    # and nowhere else, and listing chrome-extension://… changed nothing.
+    # Supporting it at all therefore means allowing every origin.
+    #
+    # What frame-ancestors defends against is clickjacking, and there is nothing
+    # here to hijack: the widget is read-only, no session, no form, no control
+    # that changes state. The real cost of opening it is load, which is why the
+    # rate limit below is part of the same change and not a later nicety.
     @embed path /read/embed/*
     header @embed {
         -X-Frame-Options
-        Content-Security-Policy "frame-ancestors https://dhamma.gift https://*.dhamma.gift chrome-extension://dnnogjdcmhbiobpnkhdbfnfjnjlikabd"
+        Content-Security-Policy "frame-ancestors *"
+    }
+
+    # Every embed view is a live Postgres query: this path is not CDN-cached
+    # (Cloudflare answers it DYNAMIC despite the max-age we send) and nothing
+    # else throttles it. Fine while one site embedded it by invitation; not fine
+    # now that any page can.
+    #
+    # The rate_limit sits INSIDE this handle, next to the proxy it protects.
+    # At site level it never runs: Caddy sorts a bare rate_limit last, after
+    # every `handle`, and a handle that matches is terminal — so the request is
+    # already answered before the limiter is reached. `order rate_limit before
+    # reverse_proxy` doesn't rescue it either, because the reverse_proxy it
+    # names lives inside a handle rather than at the top level. Verified by
+    # reading the adapted JSON: the limiter was the last route in the list.
+    #
+    # Two windows: a short one that still lets a page holding several widgets
+    # load at once, and a longer one against sustained hammering.
+    @embed_path path /read/embed/*
+    handle @embed_path {
+        rate_limit {
+            distributed
+            zone embed_burst {
+                key {client_ip}
+                events 20
+                window 10s
+            }
+            zone embed_sustained {
+                key {client_ip}
+                events 120
+                window 1m
+            }
+        }
+        reverse_proxy reader:8090 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up Host {host}
+        }
     }
 
     @health path /health /healthz
