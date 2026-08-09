@@ -296,14 +296,28 @@ def embed_define(
     # two. Order follows rank throughout, so the best match stays first and its
     # sutta leads.
     groups = []
-    for label, kind in (("Definitions", "direct"), ("Similes", "simile")):
+    for label, kind, noun in (
+        ("Definitions", "direct", "definitions"),
+        ("Similes", "simile", "similes"),
+    ):
         items = [d for d in definitions if d["kind"] == kind]
         if not items:
             continue
         by_sutta: dict[str, list[dict[str, Any]]] = {}
         for d in items:
             by_sutta.setdefault(d["sutta_id"], []).append(d)
-        groups.append((label, list(by_sutta.items())))
+        # The noun travels with the group so the per-sutta count names the kind
+        # it is counting. Hardcoding "definitions" told a reader that SN 35.245's
+        # four similes for the parrot tree were four definitions of it, which is
+        # the opposite of what that sutta does: it depicts kiṁsuka, it never says
+        # what kiṁsuka is.
+        groups.append((label, noun, list(by_sutta.items())))
+
+    # The heading was hidden on a single group because "Definitions" restates the
+    # term already printed above it. A lone Similes group is the other case, and
+    # there the heading is the only thing distinguishing depiction from
+    # definition, so it has to stay.
+    show_kind = len(groups) > 1 or bool(groups) and groups[0][0] != "Definitions"
 
     return templates.TemplateResponse(
         request=request,
@@ -312,6 +326,7 @@ def embed_define(
             "term": term,
             "definitions": definitions,
             "groups": groups,
+            "show_kind": show_kind,
             "theme": theme,
             "busy": busy,
         },

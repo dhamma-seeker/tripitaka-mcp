@@ -123,9 +123,9 @@
 {% if term %}<p class="embed-term">{{ term }}</p>{% endif %}
 
 {% if definitions %}
-  {% for label, suttas in groups %}
+  {% for label, noun, suttas in groups %}
   <div class="embed-group">
-    {% if groups|length > 1 %}<p class="embed-group-head">{{ label }} · {{ term }}</p>{% endif %}
+    {% if show_kind %}<p class="embed-group-head">{{ label }} · {{ term }}</p>{% endif %}
     {% for sutta_id, items in suttas %}
     <div class="embed-sutta">
       {# Citation moved up here, one per text rather than one per row: the whole
@@ -133,7 +133,7 @@
          four hits in one discourse read as four separate findings. #}
       <div class="embed-sutta-head">
         <a class="mcd-chip" href="{{ items[0].citation_url }}" target="_blank" rel="noopener">{{ sutta_id }}</a>
-        {% if items|length > 1 %}<span class="embed-count">{{ items|length }} definitions</span>{% endif %}
+        {% if items|length > 1 %}<span class="embed-count">{{ items|length }} {{ noun }}</span>{% endif %}
       </div>
       {% for d in items %}
       <div class="embed-def">
