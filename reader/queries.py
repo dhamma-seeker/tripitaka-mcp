@@ -15,6 +15,7 @@ from markupsafe import Markup, escape
 from db.connection import get_connection, release_connection
 from db.normalize import fold_pali
 from sutta_definitions import find_definitions
+from sutta_titles import HEADING_SQL_RE, clean_title, last_heading
 
 
 # bilara-data marks emphasis inline: the lemma under discussion in the
@@ -126,11 +127,13 @@ def fetch_sutta(sutta_id: str) -> dict[str, Any] | None:
         title_pali = section_row[2]
         title_english = section_row[3]
         if not title_pali or not title_english:
-            for seg in segments:
-                if seg["segment_id"].endswith(":0.2"):
-                    title_pali = title_pali or seg["text_pali"]
-                    title_english = title_english or seg["text_english"]
-                    break
+            # heading ตัวสุดท้ายคือชื่อสูตร ไม่ใช่ `:0.2` — SN/AN/Iti/Dhp วาง
+            # ชื่อวรรคหรือชื่อนิบาตไว้ที่ :0.2 ทำให้หน้า sn35.245 เคยขึ้นหัวว่า
+            # "19. Āsīvisavagga" แทน "Kiṁsukopamasutta" (ดู sutta_titles.py)
+            head = last_heading(segments, lambda s: s["segment_id"])
+            if head:
+                title_pali = title_pali or clean_title(head["text_pali"])
+                title_english = title_english or clean_title(head["text_english"])
 
         return {
             "sutta_id": section_row[1],
@@ -548,10 +551,39 @@ def fetch_definitions_embed(
         cur = conn.cursor()
         over = limit * (8 if per_sutta else 3)
         raw = find_definitions(cur, "postgres", term, limit=over, sources=sources)
-        return _cap_per_sutta(_merge_same_passage(raw), per_sutta)[:limit]
+        results = _cap_per_sutta(_merge_same_passage(raw), per_sutta)[:limit]
+        titles = _fetch_titles(cur, {r["sutta_id"] for r in results})
+        for r in results:
+            r["title_pali"] = titles.get(r["sutta_id"])
+        return results
     finally:
         cur.close()
         release_connection(conn)
+
+
+def _fetch_titles(cur: Any, sutta_ids: set[str]) -> dict[str, str | None]:
+    """ชื่อบาลีของแต่ละสูตร — หนึ่ง query สำหรับทั้งหน้า
+
+    `sn35.245` บอกตำแหน่ง แต่ไม่บอกว่าสูตรนั้นว่าด้วยอะไร ส่วน `Kiṁsukopamasutta`
+    บอก และคนที่ค้น `taṇhā` แล้วเจอ `Taṇhāsutta` รู้ทันทีว่าตรงประเด็น
+    (Pavel เสนอมา — เขาทำแบบเดียวกันบน Dhamma.Gift)
+
+    DISTINCT ON เอา heading ตัวสุดท้ายของแต่ละสูตร ตรงกับ `last_heading` ฝั่ง
+    Python เพียงแต่ให้ DB คัดให้เพื่อไม่ต้องดึง heading ทุกบรรทัดกลับมา
+    """
+    if not sutta_ids:
+        return {}
+    cur.execute(
+        """
+        SELECT DISTINCT ON (sec.sutta_id) sec.sutta_id, seg.text_pali
+        FROM section sec
+        JOIN segment seg ON seg.section_id = sec.id
+        WHERE sec.sutta_id = ANY(%s) AND seg.segment_id ~ %s
+        ORDER BY sec.sutta_id, seg.id DESC
+        """,
+        (list(sutta_ids), HEADING_SQL_RE),
+    )
+    return {row[0]: clean_title(row[1]) for row in cur.fetchall()}
 
 
 def fetch_neighbors(sutta_id: str) -> dict[str, dict[str, Any] | None]:

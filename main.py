@@ -28,6 +28,7 @@ from db.backend import get_backend
 from db.normalize import fold_pali
 from db.schema import create_tables
 from sutta_definitions import find_definitions
+from sutta_titles import clean_title, last_heading
 
 load_dotenv()
 
@@ -1360,9 +1361,11 @@ def get_sutta(
     - **Quote `text_pali` / `text_english` directly from the returned
       segments** — do not rely on training memory. The system is
       verifiable; AI recall is often wrong.
-    - Short segments ending in `:0.1` or `:0.2` are usually **headers**
-      (nikāya/sutta names), not the teaching itself — actual content
-      starts around `:1.1`.
+    - Short segments numbered `:0.n` are **headers**, not the teaching
+      itself — actual content starts around `:1.1`. They run collection →
+      book → chapter → sutta, so the **last** one is the sutta's own name
+      (`sn35.245:0.3` = Kiṁsukopamasutta, while `:0.2` is its chapter).
+      How many there are varies: DN/MN stop at `:0.2`, Iti reaches `:0.4`.
     - Segments ending in "...niṭṭhitaṁ" (e.g. `mn1:194.10` =
       "Mūlapariyāyasuttaṁ niṭṭhitaṁ paṭhamaṁ") are **colophons**
       marking the close of the sutta.
@@ -1542,13 +1545,10 @@ def get_sutta(
 
         # สร้าง segments ตามภาษาที่ต้องการ
         # ภาษาที่ปิดใน ENABLED_LANGUAGES จะไม่ถูก include แม้ language="all"
-        # ขณะเดียวกัน เก็บ title fallback จาก segment :0.2 (SC convention —
-        # section.title_* ใน DB หลายแถวเป็น null, แต่ segment :0.2 มักมี
+        # ขณะเดียวกัน เก็บ title fallback จาก heading segment (SC convention —
+        # section.title_* ใน DB หลายแถวเป็น null, แต่ heading ตัวสุดท้ายคือ
         # ชื่อสูตรครบทุกภาษา เช่น "Mūlapariyāyasutta" / "The Root of All Things")
         segments = []
-        title_from_segment: dict[str, str | None] = {
-            "pali": None, "thai": None, "english": None,
-        }
         for seg_row in segment_rows:
             seg = {"segment_id": seg_row[0]}
             if "pali" in ENABLED_LANGUAGES and language in ("pali", "all"):
@@ -1558,14 +1558,15 @@ def get_sutta(
             if "english" in ENABLED_LANGUAGES and language in ("english", "all"):
                 seg["text_english"] = seg_row[3]
             segments.append(seg)
-            if seg_row[0].endswith(":0.2") and title_from_segment["pali"] is None:
-                title_from_segment = {
-                    "pali": seg_row[1],
-                    "thai": seg_row[2],
-                    "english": seg_row[3],
-                }
 
-        # title: prefer section.title_* (curated), fallback ไป segment :0.2
+        title_row = last_heading(segment_rows, lambda r: r[0])
+        title_from_segment: dict[str, str | None] = {
+            "pali": clean_title(title_row[1]) if title_row else None,
+            "thai": clean_title(title_row[2]) if title_row else None,
+            "english": clean_title(title_row[3]) if title_row else None,
+        }
+
+        # title: prefer section.title_* (curated), fallback ไป heading segment
         # respect ENABLED_LANGUAGES — ภาษาที่ปิดอยู่ return null
         def _title_for(lang: str, db_title: str | None) -> str | None:
             if lang not in ENABLED_LANGUAGES:
@@ -2166,24 +2167,30 @@ def get_reference(
         if not row:
             return {"error": f"Sutta not found: {sutta_id}"}
 
-        # title fallback จาก segment :0.2 (เช่นเดียวกับ get_sutta) — เพราะ
-        # section.title_* ใน DB หลายแถวเป็น null. หาตัวแรกที่ลงท้าย ":0.2"
-        # ใน section นี้
+        # title fallback จาก heading segment (เช่นเดียวกับ get_sutta) — เพราะ
+        # section.title_* ใน DB หลายแถวเป็น null. เอา heading ตัวสุดท้ายของ
+        # section นี้ ซึ่งคือชื่อสูตร ส่วนตัวก่อนหน้าเป็นชื่อนิบาต/วรรค
+        # (ดู sutta_titles.py) — เรื่องนี้สำคัญเป็นพิเศษตรงนี้ เพราะ citation
+        # ที่ประกอบด้านล่างคือสิ่งที่ผู้ใช้เอาไปอ้างอิงจริง
         title_pali_fb = title_thai_fb = title_english_fb = None
         cur.execute(
             """
-            SELECT text_pali, text_thai, text_english
+            SELECT segment_id, text_pali, text_thai, text_english
             FROM segment
             WHERE section_id = (SELECT id FROM section WHERE sutta_id = %s)
               AND segment_id LIKE %s
             ORDER BY id
-            LIMIT 1
             """,
-            (sutta_id, "%:0.2"),
+            # LIKE คัดหยาบให้ SQL (พกพาได้ทั้ง Postgres/SQLite ต่างจาก regex)
+            # แล้วให้ is_heading คัดจริงอีกชั้น — กัน dn33 ที่มีหลายพัน segment
+            # ไม่ให้ถูกดึงมาทั้งสูตรเพื่อหาชื่อบรรทัดเดียว
+            (sutta_id, "%:0.%"),
         )
-        fb_row = cur.fetchone()
+        fb_row = last_heading(cur.fetchall(), lambda r: r[0])
         if fb_row:
-            title_pali_fb, title_thai_fb, title_english_fb = fb_row
+            title_pali_fb = clean_title(fb_row[1])
+            title_thai_fb = clean_title(fb_row[2])
+            title_english_fb = clean_title(fb_row[3])
 
         title_pali = row[1] or title_pali_fb or sutta_id
         title_thai = row[2] or title_thai_fb

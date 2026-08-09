@@ -53,7 +53,10 @@
   }
   .embed-group + .embed-group { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--d-brd); }
   .embed-sutta + .embed-sutta { margin-top: 18px; padding-top: 15px; border-top: 1px solid var(--d-brd); }
-  .embed-sutta-head { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+  .embed-sutta-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 9px; margin-bottom: 9px; }
+  /* Wraps rather than squeezes the chip: some Pali names run long
+     (Saṁyojanappahānādisuttachakka) and the frame can be narrow. */
+  .embed-sutta-title { font-size: 13px; font-weight: 600; color: var(--d-fg); line-height: 1.35; }
   .embed-count { font-size: 10.5px; color: var(--d-fg2); opacity: .7; }
   /* Sits on the same line as the Full passage toggle, quieter than it: the
      anchor is there when wanted, not competing for attention. */
@@ -132,6 +135,10 @@
          group shares it, and repeating it under each definition was what made
          four hits in one discourse read as four separate findings. #}
       <div class="embed-sutta-head">
+        {# The id places the text, the name says what it is about. Someone
+           looking up taṇhā and landing on Taṇhāsutta knows at a glance, and
+           knows that DN 33 is the long list-of-everything one. #}
+        {% if items[0].title_pali %}<span class="embed-sutta-title">{{ items[0].title_pali }}</span>{% endif %}
         <a class="mcd-chip" href="{{ items[0].citation_url }}" target="_blank" rel="noopener">{{ sutta_id }}</a>
         {% if items|length > 1 %}<span class="embed-count">{{ items|length }} {{ noun }}</span>{% endif %}
       </div>
