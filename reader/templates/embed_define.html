@@ -128,7 +128,11 @@
 {% if definitions %}
   {% for label, noun, suttas in groups %}
   <div class="embed-group">
-    {% if show_kind %}<p class="embed-group-head">{{ label }} · {{ term }}</p>{% endif %}
+    {# Always shown, even when the page holds only one kind. Hiding it there
+       looked like the label was restating the term above it, but the term is
+       all a first-time reader has, and nothing else on the page says whether
+       they are looking at a definition or a picture of one. #}
+    <p class="embed-group-head">{{ label }} · {{ term }}</p>
     {% for sutta_id, items in suttas %}
     <div class="embed-sutta">
       {# Citation moved up here, one per text rather than one per row: the whole

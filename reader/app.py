@@ -313,12 +313,6 @@ def embed_define(
         # what kiṁsuka is.
         groups.append((label, noun, list(by_sutta.items())))
 
-    # The heading was hidden on a single group because "Definitions" restates the
-    # term already printed above it. A lone Similes group is the other case, and
-    # there the heading is the only thing distinguishing depiction from
-    # definition, so it has to stay.
-    show_kind = len(groups) > 1 or bool(groups) and groups[0][0] != "Definitions"
-
     return templates.TemplateResponse(
         request=request,
         name="embed_define.html",
@@ -326,7 +320,6 @@ def embed_define(
             "term": term,
             "definitions": definitions,
             "groups": groups,
-            "show_kind": show_kind,
             "theme": theme,
             "busy": busy,
         },
