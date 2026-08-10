@@ -83,8 +83,11 @@ _OBLIQUE_GENERIC_ENDINGS = ("smim", "su")
 # สัมพันธการก — ก้ำกึ่ง. `adhivacana` เรียกร้องมันตามไวยากรณ์ (`kāyassa adhivacanaṁ`
 # = "เป็นชื่อเรียกของกาย") จึงเป็นนิยามเต็มตัว. แต่ลำพังมันขยายคำอื่นในประโยค
 # `Katamesānaṁ dhammānaṁ nirodho 'nirodho'ti vuccati` นิยาม *nirodha* ไม่ใช่ *dhamma*
-_GENITIVE_A_ENDINGS = ("assa", "anam")
-_GENITIVE_GENERIC_ENDINGS = ("ssa", "nam", "no")
+# `-āya` อยู่ในกลุ่มนี้ด้วย (สัมพันธการก/จตุตถีของ ā-การันต์ เช่น `taṇhāya`, `satiyā`)
+# ตกหล่นตอนแรกจนแถว `esa paccayo taṇhāya, yadidaṁ vedanā` ("เวทนาเป็นปัจจัยของตัณหา")
+# ขึ้นเหนือ `Ayaṁ vuccati, bhikkhave, taṇhā` ที่เป็นนิยามตรงตัว
+_GENITIVE_A_ENDINGS = ("assa", "anam", "aya")
+_GENITIVE_GENERIC_ENDINGS = ("ssa", "nam", "no", "ya")
 _ADHIVACANA = "adhivacan"
 
 # `kataṁ` = "ทำแล้ว" fold แล้วได้ `katam` พอดี ชนกับ prefix ของ katama- ("อันไหน")
