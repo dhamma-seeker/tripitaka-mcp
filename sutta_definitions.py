@@ -74,6 +74,19 @@ _A_STEM_ENDINGS = (
 # endings ทั่วไปสำหรับ stem ที่ไม่ลงท้าย -a (i/u/พยัญชนะ)
 _GENERIC_ENDINGS = ("", "m", "ssa", "ya", "no", "ni", "na", "smim", "su", "nam")
 
+# สัตตมี/ตติยา/ปัญจมี — วิภัตติที่บอก "ที่ไหน/ด้วยอะไร/จากอะไร" ไม่ใช่ "อะไรคืออะไร".
+# นิยามจริงวางศัพท์เป็นประธาน (`ayaṁ vuccati loko`) หรือสัมพันธการกคู่ adhivacana
+# (`kāyassa adhivacanaṁ` = ชื่อเรียกของกาย) ทั้งสองอย่างไม่อยู่ในลิสต์นี้ จึงไม่ถูกตัด
+_OBLIQUE_A_ENDINGS = ("e", "amhi", "asmim", "esu", "ena", "ehi", "ebhi", "ato", "asma")
+_OBLIQUE_GENERIC_ENDINGS = ("smim", "su")
+
+# `kataṁ` = "ทำแล้ว" fold แล้วได้ `katam` พอดี ชนกับ prefix ของ katama- ("อันไหน")
+# ทั้งคลังมี 10,915 ท่อนที่มี kataṁ แบบนี้ ทำให้ `kataṁ buddhassa sāsanaṁ`
+# ("กิจแห่งพระพุทธเจ้าสำเร็จแล้ว") ถูกอ่านเป็นคำถามนิยาม.
+# ตัดด้วยการยกเว้น token ที่ยาวเท่ากับ `katam` เป๊ะ ไม่ใช่เปลี่ยน prefix เป็น `katama`
+# เพราะ katamo/katame ไม่ได้ขึ้นต้นด้วย katama — ลองแล้ว คำถามจริงหายไปด้วย
+_FALSE_MARKER_TOKENS = frozenset({"katam"})
+
 # ให้ระยะห่าง token ระหว่าง term กับ marker ที่ยังถือว่า "ใกล้พอจะนิยาม"
 _PROXIMITY_TOKENS = 14
 
@@ -100,6 +113,14 @@ def _inflected_forms(folded_term: str) -> set[str]:
     else:
         forms.update(folded_term + e for e in _GENERIC_ENDINGS)
     return {f for f in forms if f}
+
+
+def _oblique_forms(folded_term: str) -> set[str]:
+    """รูปที่ศัพท์ทำหน้าที่ "ฉาก" ไม่ใช่สิ่งที่ถูกนิยาม (ดู _OBLIQUE_A_ENDINGS)"""
+    if folded_term.endswith("a") and len(folded_term) > 2:
+        stem = folded_term[:-1]
+        return {stem + e for e in _OBLIQUE_A_ENDINGS}
+    return {folded_term + e for e in _OBLIQUE_GENERIC_ENDINGS}
 
 
 def _fetch_candidates_sqlite(cur, forms: set[str]) -> list[dict[str, Any]]:
@@ -152,13 +173,16 @@ def _min_distance(tokens: list[str], forms: set[str], prefixes: tuple[str, ...])
     """ระยะ token ที่สั้นที่สุดระหว่าง term (whole word) กับ marker (prefix). None = ไม่พบคู่."""
     term_idx = [i for i, t in enumerate(tokens) if t in forms]
     mark_idx = [i for i, t in enumerate(tokens)
-                if any(t.startswith(p) for p in prefixes)]
+                if t not in _FALSE_MARKER_TOKENS
+                and any(t.startswith(p) for p in prefixes)]
     if not term_idx or not mark_idx:
         return None
     return min(abs(a - b) for a in term_idx for b in mark_idx)
 
 
-def _classify(folded_text: str, forms: set[str]) -> dict[str, Any] | None:
+def _classify(
+    folded_text: str, forms: set[str], oblique: set[str] | None = None
+) -> dict[str, Any] | None:
     """Classify anchor: หา marker ที่ใกล้ term ที่สุด + kind (descriptive/enumerative).
 
     คืน None ถ้า term ไม่ปรากฏเป็น "คำเต็ม" (กัน compound-prefix false positive) หรือ
@@ -166,8 +190,17 @@ def _classify(folded_text: str, forms: set[str]) -> dict[str, Any] | None:
     """
     tokens = _tokens(folded_text)
     tokset = set(tokens)
-    if not (tokset & forms):
+    present = tokset & forms
+    if not present:
         return None  # term ไม่ใช่คำเต็มในท่อนนี้ → ตัดทิ้ง (เช่น dukkhudrayo)
+
+    # ศัพท์ปรากฏแต่ในรูปสัตตมี/ตติยา/ปัญจมี → มันเป็นฉากของประโยค ไม่ใช่สิ่งที่ถูกนิยาม.
+    # `ariyassa vinaye vuccanti` = "ในธรรมวินัยของพระอริยะ เรียกสิ่งนั้นว่า…" นิยามคำอื่น
+    # ไม่ใช่นิยาม vinaya. เช่นเดียวกับ `ayaṁ vuccati puggalo sīlesu ca paripūrakārī`
+    # ที่นิยาม*บุคคล* ไม่ใช่*ศีล*. ระยะห่างแยกสองกรณีนี้ไม่ได้ — `vinaye` อยู่ติด
+    # `vuccanti` เลย — วิภัตติเท่านั้นที่แยกได้
+    if oblique and present <= oblique:
+        return None
 
     # marker ที่ใกล้ term ที่สุดในแต่ละกลุ่ม (ภายในระยะ proximity)
     def near(prefixes):
@@ -340,6 +373,7 @@ def find_definitions(
     if not folded:
         return []
     forms = _inflected_forms(folded)
+    oblique = _oblique_forms(folded)
 
     if backend_name == "sqlite":
         rows = _fetch_candidates_sqlite(cur, forms)
@@ -356,7 +390,7 @@ def find_definitions(
 
     scored: list[dict[str, Any]] = []
     for row in rows:
-        cls = _classify(fold_pali(row["text_pali"]), forms)
+        cls = _classify(fold_pali(row["text_pali"]), forms, oblique)
         if cls is None:
             continue
         if cls["kind"] == "simile" and not include_similes:
@@ -365,17 +399,25 @@ def find_definitions(
 
     # dedup — ยุบท่อนที่ข้อความ (folded) เหมือนกัน (เช่น "cha viññāṇakāyā" ซ้ำหลายสูตร)
     # Pavel: uniqueness ช่วยกันไม่ให้ descriptive 1 ท่อนจมใต้ enumerative 10 ท่อน
+    #
+    # ตัวตัดสินตอนคะแนนเท่ากันคือ segment_id ไม่ใช่ลำดับที่แถวเข้ามา: `ayaṁ vuccati sati.`
+    # มีทั้งใน cnd10 และ mnd14 คะแนนเท่ากันเป๊ะ ตัวไหนถูกเก็บจึงเคยขึ้นกับลำดับที่ DB
+    # คืนมา ซึ่ง Postgres (regex) กับ SQLite (FTS) ไม่เหมือนกัน คำเดียวกันเลยได้คำตอบ
+    # คนละสูตรในสองแบ็กเอนด์ ทั้งที่ผลรวมทั้งหมดเท่ากันเป๊ะ
+    def _rank(item: dict[str, Any]) -> tuple[float, str, str]:
+        return (-item["score"], item["sutta_id"], item["segment_id"])
+
     best: dict[str, dict[str, Any]] = {}
     for item in scored:
         key = fold_pali(item["text_pali"])
-        if key not in best or item["score"] > best[key]["score"]:
+        if key not in best or _rank(item) < _rank(best[key]):
             keep = dict(item)
             keep["duplicates"] = best.get(key, {}).get("duplicates", 0)
             best[key] = keep
         else:
             best[key]["duplicates"] = best[key].get("duplicates", 0) + 1
 
-    top = sorted(best.values(), key=lambda x: x["score"], reverse=True)[:limit]
+    top = sorted(best.values(), key=_rank)[:limit]
 
     # block-windowing — ดึงท่อนนิยามเต็มรอบ anchor + refine descriptive/enumerative
     # จาก context ทั้ง block (ทำเฉพาะ top `limit` เพื่อคุมจำนวน query)
