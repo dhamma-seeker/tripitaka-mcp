@@ -122,9 +122,13 @@ _DEMONSTRATIVE = frozenset({
     "ayam", "ayan", "idam", "ime", "ima", "imani", "eso", "esa", "etam",
     "ete", "etani",
 })
-# ศัพท์ต้องตามหลัง vuccati ภายในระยะนี้ — กัน `kāyaṁ ganthati … ayaṁ vuccati
-# abhijjhākāyagantho` ที่ศัพท์อยู่คนละฝั่งของสูตรและนิยามคำอื่น
-_CLOSER_WINDOW = 3
+# ศัพท์ต้องตามหลัง vuccati โดยมีคั่นได้ไม่เกิน 1 token (ที่คั่นคือคำร้องเรียก —
+# bhikkhave, mahānāma, thapati) กันสองอย่างพร้อมกัน:
+#   `kāyaṁ ganthati … ayaṁ vuccati abhijjhākāyagantho` ศัพท์อยู่คนละฝั่งของสูตร
+#   `ayaṁ vuccati, bhikkhave, anariyo maggo`           นิยาม*คำประสม* ไม่ใช่ maggo
+# อันหลังสำคัญ: ตอนใช้ระยะ 3 คำว่า magga ตอบด้วย "นี้เรียกว่าอนริยมรรค" เป็นแถวแรก
+# และ 4 ใน 5 แถวเป็นคำประสมทั้งหมด ส่วน sn45.8 ตกไปอันดับ 5
+_CLOSER_WINDOW = 2
 _CLOSER_BONUS = 6
 
 
