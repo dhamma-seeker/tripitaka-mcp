@@ -108,6 +108,34 @@ _STRATUM = {
 _STRATUM_VINAYA = 2
 _STRATUM_OTHER = 3  # นิทเทส ปฏิสัมภิทา อภิธรรม มิลินท์ ชาดก อปทาน ฯลฯ
 
+# ชั้นคัมภีร์มีน้ำหนักในคะแนนด้วย ไม่ใช่แค่ตอนเสมอ: คัมภีร์ชั้นหลังใช้สูตร
+# `ayaṁ vuccati X` สั้นๆ บ่อยกว่ามาก พอไม่ถ่วงน้ำหนัก มันจะกวาดอันดับต้นไปหมด
+# (`loka` เคยได้ cnd5 · vb12 · kv1.1 ทั้งหน้า ทั้งที่ sn35.116 พูดเรื่องเดียวกัน)
+# ค่าน้อยเมื่อเทียบกับ marker (predicate 100 / interrogative 90) — จัดลำดับในกลุ่ม
+# ที่คะแนนใกล้กัน ไม่ใช่ลบคัมภีร์ชั้นหลังออกจากผลลัพธ์
+_STRATUM_PENALTY = {0: 0, 1: -2, 2: -4, 3: -8}
+
+# สูตรปิดของวิภังค์: คำชี้เฉพาะ + vuccati + ศัพท์ ("ayaṁ vuccati, bhikkhave, taṇhā")
+# ต่างจาก `ārā nibbāna vuccati` ("ท่านชื่อว่าอยู่ไกลจากนิพพาน") ที่ไม่มีคำชี้เฉพาะ
+# และไม่ได้นิยามอะไร ทั้งที่มี vuccati เหมือนกันและได้คะแนนเท่ากันเป๊ะมาก่อน
+_DEMONSTRATIVE = frozenset({
+    "ayam", "ayan", "idam", "ime", "ima", "imani", "eso", "esa", "etam",
+    "ete", "etani",
+})
+# ศัพท์ต้องตามหลัง vuccati ภายในระยะนี้ — กัน `kāyaṁ ganthati … ayaṁ vuccati
+# abhijjhākāyagantho` ที่ศัพท์อยู่คนละฝั่งของสูตรและนิยามคำอื่น
+_CLOSER_WINDOW = 3
+_CLOSER_BONUS = 6
+
+
+def _is_closer(tokens: list[str], forms: set[str]) -> bool:
+    return any(
+        tokens[i] in _DEMONSTRATIVE
+        and tokens[i + 1].startswith("vucc")
+        and any(t in forms for t in tokens[i + 2 : i + 2 + _CLOSER_WINDOW])
+        for i in range(len(tokens) - 1)
+    )
+
 
 def _stratum(sutta_id: str) -> int:
     book = book_prefix(sutta_id)
@@ -288,6 +316,7 @@ def _classify(
         "markers": markers,
         "kind": kind,
         "detail": detail,
+        "closer": _is_closer(tokens, forms),
         "min_distance": min(dists) if dists else _PROXIMITY_TOKENS,
     }
 
@@ -313,6 +342,9 @@ def _score(row: dict[str, Any], cls: dict[str, Any]) -> int:
         score += 15  # tiebreaker เบา ๆ — ไม่ให้ whitelist กลบ signal marker/detail
     # ยิ่ง marker ใกล้ term ยิ่งดี (สูงสุด +14)
     score += max(0, _PROXIMITY_TOKENS - cls["min_distance"])
+    if cls.get("closer"):
+        score += _CLOSER_BONUS
+    score += _STRATUM_PENALTY[_stratum(row["sutta_id"])]
     return score
 
 
