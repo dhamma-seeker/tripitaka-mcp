@@ -18,25 +18,53 @@ from sutta_definitions import find_definitions
 from sutta_titles import HEADING_SQL_RE, clean_title, last_heading
 
 
-# bilara-data marks emphasis inline: the lemma under discussion in the
-# Niddesas, verse lines elsewhere. Around 9,000 segments carry it, spread
-# across dn/mn/sn/an/snp/dhp and the commentarial books alike, and `<b>` is
-# the ONLY tag in the whole corpus (checked). Escaping it wholesale printed
-# "&lt;b&gt;Gedho&lt;/b&gt; vuccati taṇhā" at the reader.
-_BOLD_ESCAPED_RE = re.compile(r"&lt;(/?)b&gt;")
+# bilara-data carries inline markup. Counted across the whole corpus:
+#
+#   <b>…</b>                     8,869  the lemma under discussion
+#   <j>                            684  line break inside a verse (no closing tag)
+#   <em>…</em>                     400  emphasis
+#   <i lang='pi' translate='no'>   323  Pāli quoted inside the English
+#   <a href='…suttacentral…'>       46  cross-reference, Vinaya expansion notes
+#
+# An earlier version of this comment claimed `<b>` was the only tag in the
+# corpus. It was wrong, and the reader printed a literal
+# "<em>What one thing should be given up?</em>" at dn34 until Pavel's
+# screenshot showed it.
+_TAG_RE = re.compile(r"<(/?)(b|em|i|j|a)\b[^>]*>", re.IGNORECASE)
+_SENTINEL_RE = re.compile("[\x00\x01]")
+_KEEP = {"b", "em", "i"}
+
+
+def _stash(match: re.Match[str]) -> str:
+    closing, name = match.group(1), match.group(2).lower()
+    if name in _KEEP:
+        # Attributes are dropped rather than carried through: `lang`/`translate`
+        # are harmless, but passing any attribute the data happens to hold is
+        # exactly the door this function exists to keep shut.
+        return f"\x00{closing}{name}\x01"
+    if name == "j":
+        return "" if closing else "\x00br\x01"
+    return ""  # <a> unwrapped — the link text stays, the href does not
 
 
 def render_markup(text: str | None) -> Markup | None:
-    """Escape everything, then hand back only `<b>`.
+    """Escape everything, then hand back a fixed set of inline tags.
 
-    Allowlist rather than `|safe`: the escape runs first and unconditionally,
-    so anything that isn't literally `<b>` or `</b>` stays inert no matter what
-    the corpus grows to hold later. Marking segment text safe outright would
-    make every future data import a potential injection.
+    Allowlist rather than `|safe`: the escape runs first and unconditionally, so
+    a tag this function does not name stays inert and shows up as visible text,
+    no matter what the corpus grows to hold later. Marking segment text safe
+    outright would make every future data import a potential injection.
+
+    The swap happens before escaping, via sentinels, because the tags are not
+    all bare: `<i lang='pi' translate='no'>` becomes
+    `&lt;i lang=&#39;pi&#39;…` once escaped, and matching that back out again
+    would mean parsing entities to undo work already done.
     """
     if not text:
         return None
-    return Markup(_BOLD_ESCAPED_RE.sub(r"<\1b>", str(escape(text))))
+    stashed = _TAG_RE.sub(_stash, _SENTINEL_RE.sub("", text))
+    out = str(escape(stashed)).replace("\x00", "<").replace("\x01", ">")
+    return Markup(out)
 
 
 def _strip_diacritics(text: str) -> str:

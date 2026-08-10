@@ -80,6 +80,13 @@ _GENERIC_ENDINGS = ("", "m", "ssa", "ya", "no", "ni", "na", "smim", "su", "nam")
 _OBLIQUE_A_ENDINGS = ("e", "amhi", "asmim", "esu", "ena", "ehi", "ebhi", "ato", "asma")
 _OBLIQUE_GENERIC_ENDINGS = ("smim", "su")
 
+# สัมพันธการก — ก้ำกึ่ง. `adhivacana` เรียกร้องมันตามไวยากรณ์ (`kāyassa adhivacanaṁ`
+# = "เป็นชื่อเรียกของกาย") จึงเป็นนิยามเต็มตัว. แต่ลำพังมันขยายคำอื่นในประโยค
+# `Katamesānaṁ dhammānaṁ nirodho 'nirodho'ti vuccati` นิยาม *nirodha* ไม่ใช่ *dhamma*
+_GENITIVE_A_ENDINGS = ("assa", "anam")
+_GENITIVE_GENERIC_ENDINGS = ("ssa", "nam", "no")
+_ADHIVACANA = "adhivacan"
+
 # `kataṁ` = "ทำแล้ว" fold แล้วได้ `katam` พอดี ชนกับ prefix ของ katama- ("อันไหน")
 # ทั้งคลังมี 10,915 ท่อนที่มี kataṁ แบบนี้ ทำให้ `kataṁ buddhassa sāsanaṁ`
 # ("กิจแห่งพระพุทธเจ้าสำเร็จแล้ว") ถูกอ่านเป็นคำถามนิยาม.
@@ -121,6 +128,14 @@ def _oblique_forms(folded_term: str) -> set[str]:
         stem = folded_term[:-1]
         return {stem + e for e in _OBLIQUE_A_ENDINGS}
     return {folded_term + e for e in _OBLIQUE_GENERIC_ENDINGS}
+
+
+def _genitive_forms(folded_term: str) -> set[str]:
+    """รูปสัมพันธการก — นับเป็นนิยามเฉพาะตอนคู่กับ adhivacana (ดู _GENITIVE_A_ENDINGS)"""
+    if folded_term.endswith("a") and len(folded_term) > 2:
+        stem = folded_term[:-1]
+        return {stem + e for e in _GENITIVE_A_ENDINGS}
+    return {folded_term + e for e in _GENITIVE_GENERIC_ENDINGS}
 
 
 def _fetch_candidates_sqlite(cur, forms: set[str]) -> list[dict[str, Any]]:
@@ -181,7 +196,10 @@ def _min_distance(tokens: list[str], forms: set[str], prefixes: tuple[str, ...])
 
 
 def _classify(
-    folded_text: str, forms: set[str], oblique: set[str] | None = None
+    folded_text: str,
+    forms: set[str],
+    oblique: set[str] | None = None,
+    genitive: set[str] | None = None,
 ) -> dict[str, Any] | None:
     """Classify anchor: หา marker ที่ใกล้ term ที่สุด + kind (descriptive/enumerative).
 
@@ -201,6 +219,11 @@ def _classify(
     # `vuccanti` เลย — วิภัตติเท่านั้นที่แยกได้
     if oblique and present <= oblique:
         return None
+
+    # สัมพันธการกล้วนๆ ผ่านได้เฉพาะตอนมี adhivacana ในท่อนเดียวกัน
+    if genitive and present <= (genitive | (oblique or set())):
+        if not any(t.startswith(_ADHIVACANA) for t in tokset):
+            return None
 
     # marker ที่ใกล้ term ที่สุดในแต่ละกลุ่ม (ภายในระยะ proximity)
     def near(prefixes):
@@ -374,6 +397,7 @@ def find_definitions(
         return []
     forms = _inflected_forms(folded)
     oblique = _oblique_forms(folded)
+    genitive = _genitive_forms(folded)
 
     if backend_name == "sqlite":
         rows = _fetch_candidates_sqlite(cur, forms)
@@ -390,7 +414,7 @@ def find_definitions(
 
     scored: list[dict[str, Any]] = []
     for row in rows:
-        cls = _classify(fold_pali(row["text_pali"]), forms, oblique)
+        cls = _classify(fold_pali(row["text_pali"]), forms, oblique, genitive)
         if cls is None:
             continue
         if cls["kind"] == "simile" and not include_similes:
