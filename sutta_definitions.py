@@ -97,6 +97,24 @@ _ADHIVACANA = "adhivacan"
 # เพราะ katamo/katame ไม่ได้ขึ้นต้นด้วย katama — ลองแล้ว คำถามจริงหายไปด้วย
 _FALSE_MARKER_TOKENS = frozenset({"katam"})
 
+# ตัวตัดสินตอนคะแนนเสมอ: ชั้นคัมภีร์ก่อน แล้วค่อยชื่อสูตร.
+# ประโยค `nibbānaṁ iti vuccatī'ti.` มีเหมือนกันเป๊ะทั้งใน sn1.64, snp5.14 และ cnd17
+# ตอนยุบซ้ำเหลือได้ตัวเดียว การเรียงตาม sutta_id ล้วนๆ ทำให้ `cnd17` ชนะเพราะ c มาก่อน s
+# ซึ่งเอนไปทางคัมภีร์ชั้นหลังอย่างเป็นระบบ (cnd/mnd/ja/kv/mil/pp/vb ขึ้นต้นด้วยอักษรต้นๆ)
+_STRATUM = {
+    **{b: 0 for b in ("dn", "mn", "sn", "an")},                       # สี่นิกาย
+    **{b: 1 for b in ("dhp", "ud", "iti", "snp", "thag", "thig")},    # ขุททกะชั้นต้น
+}
+_STRATUM_VINAYA = 2
+_STRATUM_OTHER = 3  # นิทเทส ปฏิสัมภิทา อภิธรรม มิลินท์ ชาดก อปทาน ฯลฯ
+
+
+def _stratum(sutta_id: str) -> int:
+    book = book_prefix(sutta_id)
+    if book in _STRATUM:
+        return _STRATUM[book]
+    return _STRATUM_VINAYA if book.startswith("pli-tv") else _STRATUM_OTHER
+
 # ให้ระยะห่าง token ระหว่าง term กับ marker ที่ยังถือว่า "ใกล้พอจะนิยาม"
 _PROXIMITY_TOKENS = 14
 
@@ -427,12 +445,17 @@ def find_definitions(
     # dedup — ยุบท่อนที่ข้อความ (folded) เหมือนกัน (เช่น "cha viññāṇakāyā" ซ้ำหลายสูตร)
     # Pavel: uniqueness ช่วยกันไม่ให้ descriptive 1 ท่อนจมใต้ enumerative 10 ท่อน
     #
-    # ตัวตัดสินตอนคะแนนเท่ากันคือ segment_id ไม่ใช่ลำดับที่แถวเข้ามา: `ayaṁ vuccati sati.`
-    # มีทั้งใน cnd10 และ mnd14 คะแนนเท่ากันเป๊ะ ตัวไหนถูกเก็บจึงเคยขึ้นกับลำดับที่ DB
-    # คืนมา ซึ่ง Postgres (regex) กับ SQLite (FTS) ไม่เหมือนกัน คำเดียวกันเลยได้คำตอบ
-    # คนละสูตรในสองแบ็กเอนด์ ทั้งที่ผลรวมทั้งหมดเท่ากันเป๊ะ
-    def _rank(item: dict[str, Any]) -> tuple[float, str, str]:
-        return (-item["score"], item["sutta_id"], item["segment_id"])
+    # ตัวตัดสินตอนคะแนนเท่ากันคือชั้นคัมภีร์แล้วค่อยชื่อสูตร ไม่ใช่ลำดับที่แถวเข้ามา:
+    # `ayaṁ vuccati sati.` มีทั้งใน cnd10 และ mnd14 คะแนนเท่ากันเป๊ะ ตัวไหนถูกเก็บจึง
+    # เคยขึ้นกับลำดับที่ DB คืนมา ซึ่ง Postgres (regex) กับ SQLite (FTS) ไม่เหมือนกัน
+    # คำเดียวกันเลยได้คำตอบคนละสูตรในสองแบ็กเอนด์ ทั้งที่ผลรวมทั้งหมดเท่ากันเป๊ะ
+    def _rank(item: dict[str, Any]) -> tuple[float, int, str, str]:
+        return (
+            -item["score"],
+            _stratum(item["sutta_id"]),
+            item["sutta_id"],
+            item["segment_id"],
+        )
 
     best: dict[str, dict[str, Any]] = {}
     for item in scored:
