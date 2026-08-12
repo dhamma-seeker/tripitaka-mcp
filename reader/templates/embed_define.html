@@ -83,6 +83,10 @@
   .embed-passage { border-left: 2px solid var(--d-hbrd); padding-left: 11px; margin: 0 0 4px; }
   .embed-passage .mcd-cverse { border-left-width: 0; padding-left: 0; background: none; margin-bottom: 4px; }
   .embed-passage .mcd-cp { font-size: 12.5px; margin-bottom: 12px; }
+  .embed-ctx {
+    font-size: 11px; font-style: italic; color: var(--d-fg2); opacity: .7;
+    margin: 0 0 6px; line-height: 1.5;
+  }
   .embed-empty { font-size: 13px; color: var(--d-fg2); line-height: 1.6; }
   .embed-empty a { color: var(--d-acc); }
   .embed-footer {
@@ -150,6 +154,10 @@
       <div class="embed-def">
         <div class="mcd-cverse">{{ d.text_pali | markup }}</div>
         {% if d.text_english %}<div class="mcd-cp">{{ d.text_english | markup }}</div>{% endif %}
+        {# The jhāna similes contain no word for jhāna: they hang off the formula
+           that opens the paragraph. Saying so is not optional. Without the note
+           the row reads as a wrong answer rather than an indirect one. #}
+        {% if d.context %}<p class="embed-ctx">The term is not in this line. The simile illustrates the passage it sits in.</p>{% endif %}
         {% if items|length > 1 %}
         {# Grouping put one citation on the sutta head, which loses the
            per-definition anchor: reading the third definition and clicking

@@ -579,7 +579,14 @@ def fetch_definitions_embed(
         cur = conn.cursor()
         over = limit * (8 if per_sutta else 3)
         raw = find_definitions(cur, "postgres", term, limit=over, sources=sources)
-        results = _cap_per_sutta(_merge_same_passage(raw), per_sutta)[:limit]
+        merged = _cap_per_sutta(_merge_same_passage(raw), per_sutta)
+        # `find_definitions` กันที่นั่งให้อุปมาแบบ context ไว้แล้ว แต่การเฉือน `[:limit]`
+        # ตรงนี้ตัดมันทิ้งอีกที เพราะมันอยู่ท้ายอันดับเสมอ (คะแนนต่ำโดยธรรมชาติ)
+        # จึงต้องกันที่นั่งซ้ำในชั้นนี้ ด้วยสัดส่วนเดียวกัน
+        ctx = [r for r in merged if r.get("context")]
+        main = [r for r in merged if not r.get("context")]
+        n_ctx = min(2, limit // 3, len(ctx))
+        results = main[: limit - n_ctx] + ctx[:n_ctx]
         titles = _fetch_titles(cur, {r["sutta_id"] for r in results})
         for r in results:
             r["title_pali"] = titles.get(r["sutta_id"])

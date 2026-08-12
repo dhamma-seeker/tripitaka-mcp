@@ -2728,6 +2728,14 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
     *descriptive* definition characterises the term, an *enumerative* one
     lists its types — prefer the descriptive when explaining the essence.
 
+    ⚠️ A result tagged `context: true` **does not contain the term in its own
+    line**. The canon's stock similes attach to a formula rather than to a
+    word: the four jhāna similes (bath powder, deep lake, lotus pond, white
+    cloth) never say *jhāna*, they illustrate the `vivicceva kāmehi …` formula
+    that opens the paragraph. Such rows are found through that paragraph, so
+    **say so when quoting one** — present it as the simile the passage uses,
+    not as a line that defines the term.
+
     Args:
         term: Pāli term in its base/dictionary form (e.g. "dukkha",
               "viññāṇa", "samādhi"). Diacritics optional — folded internally.

@@ -131,6 +131,9 @@ _DEMONSTRATIVE = frozenset({
 _CLOSER_WINDOW = 2
 _CLOSER_BONUS = 6
 
+# corpus-wide, ไม่ขึ้นกับคำที่ค้น → คำนวณครั้งเดียวต่อ process (ดู _fetch_simile_pairs)
+_SIMILE_PAIR_CACHE: dict[str, dict[str, list[str]]] = {}
+
 
 def _is_closer(tokens: list[str], forms: set[str]) -> bool:
     return any(
@@ -230,6 +233,166 @@ def _fetch_candidates_postgres(cur, forms: set[str]) -> list[dict[str, Any]]:
         """,
         {"term": rf"\y({form_alt})\y", "marker": rf"\y({marker_alt})"},
     )
+    return [dict(zip(_CANDIDATE_COLS, r)) for r in cur.fetchall()]
+
+
+def _paragraph(segment_id: str) -> str:
+    """`mn119:18.3` → `mn119:18` · `dn34:1.2.11` → `dn34:1.2`"""
+    return segment_id.rsplit(".", 1)[0]
+
+
+def _fetch_context_similes(
+    cur, backend_name: str, forms: set[str], sources: set[str] | None
+) -> list[dict[str, Any]]:
+    """อุปมาที่ *ไม่มี* ศัพท์อยู่ในบรรทัดตัวเอง แต่ย่อหน้าเปิดด้วยศัพท์นั้น
+
+    อุปมาของฌานไม่มีคำว่า `jhāna` อยู่ในตัวมันเลย มันเกาะอยู่กับ**สูตร**ที่เปิดย่อหน้า:
+
+        mn119:18.1   … vivicceva kāmehi … paṭhamaṁ jhānaṁ upasampajja viharati
+        mn119:18.3   Seyyathāpi … dakkho nhāpako …           ← ตัวอุปมา
+        mn119:18.4   evameva kho …                            ← ตัวเทียบ
+
+    การยึดศัพท์ทีละ segment จึงมองไม่เห็นตลอดกาล (Pavel รายงาน)
+
+    เงื่อนไขสามชั้น วัดกับทั้งคลังแล้วทั้งหมด:
+      1. ท่อนมี `seyyathāpi`
+      2. ย่อหน้าเดียวกันมี `evameva` ปิดคู่ = เป็นอุปมาที่สมบูรณ์ ไม่ใช่คำเปรียบลอยๆ
+      3. **บรรทัดแรกของย่อหน้า** (`.1`) มีศัพท์ — บรรทัดแรกคือที่ที่สูตรตั้งต้นอยู่
+
+    ข้อ 3 คือตัวคัดจริง: jhāna 130 → 29 → **26 แถว** (ยังได้ mn119 กับ an6.60 ครบ)
+    ส่วนคำนามธรรมที่รก dukkha 389 → 21 · kāya 473 → 21 · citta 382 → 13 ·
+    magga 236 → 2 · taṇhā 46 → **0** (ยืนยันว่า `taṇhā sneho` ไม่มีทางจับด้วยกฎใดๆ
+    เพราะไม่มีตัวชี้อุปมาเลย — เคสแบบนั้นต้องใช้ลิสต์ที่ Pavel ทำมือ)
+
+    `.1` ใช้แทนการไล่ลำดับเอกสารเพราะพกพาได้ทั้งสอง backend และไม่ต้องอ่านทั้ง section
+    (91% ของย่อหน้าเริ่มที่ `.1` และเทียบกับการไล่ลำดับจริงแล้วต่างกัน 0-4 แถวต่อคำ)
+    """
+    pairs = _fetch_simile_pairs(cur, backend_name)      # ไม่ขึ้นกับคำที่ค้น
+    if not pairs:
+        return []
+    if sources:
+        pairs = {p: s for p, s in pairs.items()
+                 if _in_sources(p.split(":", 1)[0], sources)}
+    openers = _fetch_matching_openers(cur, backend_name, forms, pairs)
+    if not openers:
+        return []
+    return [
+        r
+        for r in _fetch_rows_by_segment(cur, backend_name, openers)
+        # ถ้าศัพท์อยู่ในบรรทัดนี้อยู่แล้ว เส้นทางปกติจับไปแล้ว ไม่ต้องซ้ำ
+        if not (set(_tokens(fold_pali(r["text_pali"]))) & forms)
+    ]
+
+
+def _fetch_simile_pairs(cur, backend_name: str) -> dict[str, list[str]]:
+    """ย่อหน้าที่มีอุปมาสมบูรณ์ → paragraph key ⇒ segment_id ของบรรทัด `seyyathāpi`
+
+    ตัวกรองใน Python ใช้ substring ล้วนๆ ไม่เรียก fold_pali เลย เพราะ `evameva`
+    ไม่มีสระยาว และ `seyyathāpi` มีส่วนหน้า `seyyath` ที่เป็น ASCII ล้วน — การ fold
+    ข้อความ 4,500 ท่อนทุกครั้งที่มีคนค้นหนึ่งคำแพงกว่าตัว query เสียอีก
+
+    ผลลัพธ์ **ไม่ขึ้นกับคำที่ค้น** เลย จึงจำไว้ในหน่วยความจำหลังเรียกครั้งแรก
+    (ราว 1,400 คู่ ไม่กี่ร้อยกิโลไบต์) คลังเป็น read-only ระหว่างที่ process ทำงาน
+    ทั้ง reader และ MCP server — ถ้าโหลดคลังใหม่ต้องรีสตาร์ทอยู่แล้ว
+    """
+    cached = _SIMILE_PAIR_CACHE.get(backend_name)
+    if cached is not None:
+        return cached
+    if backend_name == "sqlite":
+        marker = " OR ".join(f"{m}*" for m in ("seyyathapi", "evameva"))
+        cur.execute(
+            """
+            SELECT seg.segment_id, seg.text_pali
+            FROM segment_fts f
+            JOIN segment seg ON seg.id = f.rowid
+            WHERE f.segment_fts MATCH ?
+            """,
+            (f"text_pali : ({marker})",),
+        )
+    else:
+        cur.execute(
+            """
+            SELECT seg.segment_id, seg.text_pali
+            FROM segment seg
+            WHERE f_unaccent(seg.text_pali) ~* %(marker)s
+            """,
+            {"marker": r"\y(seyyathapi|evameva)"},
+        )
+    rows = cur.fetchall()
+    # เก็บทุกบรรทัด `seyyathāpi` ในย่อหน้า ไม่ใช่แค่บรรทัดแรก — mn143:4 มีอุปมา
+    # ความเจ็บปวดสี่อันติดกันในย่อหน้าเดียว (สว่านเจาะหัว, สายรัดขันศีรษะ, มีดเชือด,
+    # ย่างบนถ่าน) การเก็บอันเดียวทิ้งไปสามอันโดยไม่มีเหตุผล
+    opens: dict[str, list[str]] = {}
+    closes: set[str] = set()
+    for segment_id, text in rows:
+        low = (text or "").lower()
+        para = _paragraph(segment_id)
+        if "evameva" in low:
+            closes.add(para)
+        if "seyyath" in low:
+            opens.setdefault(para, []).append(segment_id)
+    pairs = {p: s for p, s in opens.items() if p in closes}
+    _SIMILE_PAIR_CACHE[backend_name] = pairs
+    return pairs
+
+
+def _fetch_matching_openers(
+    cur, backend_name: str, forms: set[str], pairs: dict[str, list[str]]
+) -> list[str]:
+    """จากย่อหน้าที่มีอุปมา เอาเฉพาะที่ *บรรทัดแรก* มีศัพท์ → segment_id ของตัวอุปมา
+
+    ยิงคำถามเรื่องศัพท์ใส่เฉพาะบรรทัดแรกของย่อหน้าที่คัดมาแล้ว (ราวพันกว่าแถว)
+    ไม่ใช่ทั้งตาราง — เวอร์ชันแรกกวาดทั้ง `segment` แล้ว `dhamma` ใช้เวลาเพิ่ม 0.5 วินาที
+    """
+    first_lines = {p + ".1": segs for p, segs in pairs.items()}
+    ids = sorted(first_lines)
+    if backend_name == "sqlite":
+        # SQLite ไม่มี unaccent — ใช้ FTS หาศัพท์แล้วตัดกันใน Python (DB อยู่ในเครื่อง)
+        cur.execute(
+            "SELECT seg.segment_id FROM segment_fts f JOIN segment seg ON seg.id = f.rowid "
+            "WHERE f.segment_fts MATCH ?",
+            (f"text_pali : ({' OR '.join(sorted(forms))})",),
+        )
+        hit = {r[0] for r in cur.fetchall()}
+        return [s for i in ids if i in hit for s in first_lines[i]]
+    form_alt = "|".join(re.escape(f) for f in sorted(forms))
+    cur.execute(
+        """
+        SELECT seg.segment_id
+        FROM segment seg
+        WHERE seg.segment_id = ANY(%(ids)s)
+          AND f_unaccent(seg.text_pali) ~* %(term)s
+        """,
+        {"ids": ids, "term": rf"\y({form_alt})\y"},
+    )
+    return [s for (i,) in cur.fetchall() for s in first_lines[i]]
+
+
+def _fetch_rows_by_segment(
+    cur, backend_name: str, segment_ids: list[str]
+) -> list[dict[str, Any]]:
+    """ดึงแถวเต็มของ segment ที่ระบุ (ไม่กี่สิบแถว) — segment_id มี unique index"""
+    if backend_name == "sqlite":
+        placeholders = ",".join("?" * len(segment_ids))
+        cur.execute(
+            f"""
+            SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english,
+                   seg.id, seg.section_id
+            FROM segment seg JOIN section sec ON seg.section_id = sec.id
+            WHERE seg.segment_id IN ({placeholders})
+            """,
+            tuple(segment_ids),
+        )
+    else:
+        cur.execute(
+            """
+            SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english,
+                   seg.id, seg.section_id
+            FROM segment seg JOIN section sec ON seg.section_id = sec.id
+            WHERE seg.segment_id = ANY(%s)
+            """,
+            (segment_ids,),
+        )
     return [dict(zip(_CANDIDATE_COLS, r)) for r in cur.fetchall()]
 
 
@@ -478,6 +641,21 @@ def find_definitions(
             continue
         scored.append({**row, **cls, "score": _score(row, cls)})
 
+    # อุปมาที่ศัพท์ไม่ได้อยู่ในบรรทัดตัวเอง แต่เปิดย่อหน้าไว้ (ดู _fetch_context_similes).
+    # ไม่มี proximity bonus เพราะไม่มีคู่ term/marker ให้วัดระยะ จึงตกไปอยู่ใต้อุปมา
+    # ปกติเองโดยธรรมชาติ ไม่ต้องหักคะแนนเพิ่ม
+    if include_similes:
+        for row in _fetch_context_similes(cur, backend_name, forms, sources):
+            cls = {
+                "markers": ["simile"],
+                "kind": "simile",
+                "detail": "descriptive",
+                "closer": False,
+                "min_distance": _PROXIMITY_TOKENS,
+                "context": True,
+            }
+            scored.append({**row, **cls, "score": _score(row, cls)})
+
     # dedup — ยุบท่อนที่ข้อความ (folded) เหมือนกัน (เช่น "cha viññāṇakāyā" ซ้ำหลายสูตร)
     # Pavel: uniqueness ช่วยกันไม่ให้ descriptive 1 ท่อนจมใต้ enumerative 10 ท่อน
     #
@@ -503,7 +681,15 @@ def find_definitions(
         else:
             best[key]["duplicates"] = best[key].get("duplicates", 0) + 1
 
-    top = sorted(best.values(), key=_rank)[:limit]
+    # อุปมาแบบ context ได้ที่นั่งกันไว้ ไม่ใช่แข่งคะแนน: มันไม่มี proximity bonus
+    # (ไม่มีคู่ term/marker ให้วัดระยะ) จึงอยู่ราว 65 ส่วนนิยามตรงอยู่ 137+ ถ้าปล่อยให้
+    # แข่งตามคะแนน มันจะไม่มีวันโผล่เลยแม้แต่ที่ limit=40 — วัดแล้ว
+    # เพดาน 2 ที่และไม่เกิน 1 ใน 3 ของ limit เพื่อไม่ให้เบียดนิยามจริงออกไป
+    ranked = sorted(best.values(), key=_rank)
+    ctx = [r for r in ranked if r.get("context")]
+    main = [r for r in ranked if not r.get("context")]
+    n_ctx = min(2, limit // 3, len(ctx))
+    top = sorted(main[: limit - n_ctx] + ctx[:n_ctx], key=_rank)
 
     # block-windowing — ดึงท่อนนิยามเต็มรอบ anchor + refine descriptive/enumerative
     # จาก context ทั้ง block (ทำเฉพาะ top `limit` เพื่อคุมจำนวน query)

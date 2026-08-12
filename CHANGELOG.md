@@ -5,6 +5,18 @@ All notable changes to Tripitaka MCP are documented here. Format loosely follows
 
 ## [Unreleased]
 
+### Added
+- `define_from_suttas` now finds similes that never name the term. The four jhāna
+  similes (bath powder, deep lake, lotus pond, white cloth) contain no word for
+  *jhāna*: they illustrate the `vivicceva kāmehi …` formula that opens the
+  paragraph. Such a simile is returned when its paragraph holds a complete
+  `seyyathāpi … evameva` pair and the paragraph's opening line carries the term.
+  Results are tagged `context: true` and the embed says plainly that the term is
+  not in the quoted line. Two reserved slots at most, so they cannot crowd out a
+  real definition. Measured over the corpus: jhāna 26 similes, kāya 21,
+  dukkha 21, citta 14, sati 8, magga 2, taṇhā and nibbāna none.
+  Reported by [Dhamma.Gift](https://github.com/dhammagift).
+
 ### Fixed
 - `define_from_suttas` counted a term as defined when it merely appeared beside a
   definitional formula. In `ariyassa vinaye vuccanti` ("in the training of the
