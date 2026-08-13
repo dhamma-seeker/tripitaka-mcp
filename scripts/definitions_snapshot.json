@@ -1,0 +1,185 @@
+{
+  "vinaya": [
+    "pli-tv-pvr1.1:60.4|direct",
+    "sn35.246:4.1|simile",
+    "mn152:4.10|simile|ctx"
+  ],
+  "loka": [
+    "sn35.116:8.15|direct",
+    "sn35.68:1.1|direct",
+    "sn35.84:2.3|direct",
+    "sn35.84:2.8|direct",
+    "an3.132:1.7|simile|ctx"
+  ],
+  "sila": [
+    "an3.73:2.5|direct",
+    "an5.32:7.1|direct",
+    "mn78:10.3|direct",
+    "mn78:11.3|direct",
+    "an6.50:1.6|simile|ctx"
+  ],
+  "sasana": [
+    "mil5.5.8:16.1|direct"
+  ],
+  "dhamma": [
+    "ds2.3.3:11.1|direct",
+    "an10.113:3.3|direct",
+    "an10.138:1.8|direct",
+    "an10.23:2.7|direct",
+    "dn33:3.1.153|simile|ctx"
+  ],
+  "dukkha": [
+    "mn141:16.3|direct",
+    "mn141:20.4|direct",
+    "dn22:18.20|direct",
+    "dn22:18.51|direct",
+    "an1.314:1.4|simile|ctx"
+  ],
+  "citta": [
+    "mn138:12.3|direct",
+    "mn138:13.2|direct",
+    "mn138:14.2|direct",
+    "mn138:15.2|direct",
+    "an3.110:2.3|simile|ctx"
+  ],
+  "tanha": [
+    "sn12.2:7.4|direct",
+    "dn15:18.5|direct",
+    "dn15:7.5|direct",
+    "sn12.2:7.1|direct",
+    "an4.177:6.1|direct"
+  ],
+  "sati": [
+    "sn47.20:3.3|direct",
+    "sn35.245:9.5|direct",
+    "sn35.247:6.1|direct",
+    "sn41.5:5.3|direct",
+    "an10.55:8.2|simile|ctx"
+  ],
+  "nibbana": [
+    "sn38.1:2.4|direct",
+    "sn35.95:13.6|direct",
+    "sn35.95:25.6|direct",
+    "sn35.95:35.6|direct",
+    "sn1.64:1.4|direct"
+  ],
+  "kaya": [
+    "an9.15:2.1|direct",
+    "mn23:4.1|direct",
+    "sn35.245:9.3|direct",
+    "sn41.5:5.5|direct",
+    "dn22:2.8|simile|ctx"
+  ],
+  "magga": [
+    "sn45.8:2.1|direct",
+    "sn45.4:4.2|direct",
+    "sn45.4:6.1|direct",
+    "dn14:2.21.2|direct",
+    "dn13:15.2|simile|ctx"
+  ],
+  "panna": [
+    "mn140:25.2|direct",
+    "dn15:32.11|direct",
+    "mn105:27.7|direct",
+    "mn146:12.6|direct",
+    "an5.28:6.2|simile|ctx"
+  ],
+  "kamma": [
+    "mn135:20.2|direct",
+    "an4.233:2.6|direct",
+    "an4.233:3.6|direct",
+    "an4.233:4.6|direct",
+    "mn129:30.2|simile|ctx"
+  ],
+  "vinnana": [
+    "sn12.2:12.4|direct",
+    "dn15:21.8|direct",
+    "sn22.79:6.2|direct",
+    "mn138:10.1|direct",
+    "an9.34:7.3|simile|ctx"
+  ],
+  "khandha": [
+    "cnd10:53.1|direct",
+    "cnd11:60.3|direct",
+    "cnd16:26.2|direct",
+    "cnd21:34.2|direct",
+    "cnd21:37.1|direct"
+  ],
+  "phassa": [
+    "sn12.2:9.4|direct",
+    "dn15:19.5|direct",
+    "sn12.2:9.1|direct",
+    "mnd10:33.4|direct",
+    "vb6:103.3|direct"
+  ],
+  "vedana": [
+    "sn12.2:8.4|direct",
+    "dn15:8.5|direct",
+    "sn22.79:3.2|direct",
+    "sn48.37:7.3|direct",
+    "mn140:24.6|simile|ctx"
+  ],
+  "avijja": [
+    "sn12.2:14.3|direct",
+    "mn9:65.5|direct",
+    "sn22.129:2.6|direct",
+    "sn38.9:1.4|direct",
+    "sn22.113:1.12|direct"
+  ],
+  "upadana": [
+    "sn12.2:6.4|direct",
+    "dn15:6.5|direct",
+    "sn12.2:6.1|direct",
+    "sn38.12:1.1|direct",
+    "vb6:122.3|direct"
+  ],
+  "samadhi": [
+    "sn43.12:3.8|direct",
+    "sn43.12:4.8|direct",
+    "sn43.3:1.2|direct",
+    "sn43.4:1.2|direct",
+    "an3.73:3.3|direct"
+  ],
+  "viriya": [
+    "sn51.20:11.3|direct",
+    "sn51.20:12.3|direct",
+    "sn51.20:13.3|direct",
+    "sn51.20:11.1|direct",
+    "mn5:4.3|simile|ctx"
+  ],
+  "jhana": [
+    "sn40.1:2.6|direct",
+    "sn40.2:1.5|direct",
+    "sn40.3:1.5|direct",
+    "sn40.4:1.5|direct",
+    "an5.28:3.4|simile|ctx"
+  ],
+  "saddha": [
+    "mn47:16.1|direct",
+    "pe8:55.16|direct",
+    "an6.30:4.5|direct",
+    "sn41.8:3.2|direct",
+    "an10.67:10.5|simile|ctx"
+  ],
+  "nivarana": [
+    "mn54:10.5|direct",
+    "mn54:11.5|direct",
+    "mn54:12.5|direct",
+    "mn54:13.5|direct",
+    "an5.51:3.2|simile|ctx"
+  ],
+  "saddhindriya": [
+    "sn48.10:1.7|direct",
+    "sn48.10:1.4|direct",
+    "vb5:19.3|direct",
+    "sn48.8:1.4|direct",
+    "vb5:19.1|direct"
+  ],
+  "kimsuka": [
+    "sn35.245:6.5|simile",
+    "sn35.245:7.14|simile",
+    "sn35.245:7.4|simile",
+    "sn35.245:7.9|simile",
+    "sn35.245:6.1|simile"
+  ]
+}
