@@ -14,7 +14,7 @@ from markupsafe import Markup, escape
 
 from db.connection import get_connection, release_connection
 from db.normalize import fold_pali
-from sutta_definitions import find_definitions
+from sutta_definitions import _inflected_forms, find_definitions
 from sutta_titles import HEADING_SQL_RE, clean_title, last_heading
 
 
@@ -31,7 +31,7 @@ from sutta_titles import HEADING_SQL_RE, clean_title, last_heading
 # "<em>What one thing should be given up?</em>" at dn34 until Pavel's
 # screenshot showed it.
 _TAG_RE = re.compile(r"<(/?)(b|em|i|j|a)\b[^>]*>", re.IGNORECASE)
-_SENTINEL_RE = re.compile("[\x00\x01]")
+_SENTINEL_RE = re.compile("[\x00-\x03]")
 _KEEP = {"b", "em", "i"}
 
 
@@ -47,7 +47,51 @@ def _stash(match: re.Match[str]) -> str:
     return ""  # <a> unwrapped — the link text stays, the href does not
 
 
-def render_markup(text: str | None) -> Markup | None:
+_MARK_OPEN, _MARK_CLOSE = "\x02", "\x03"
+# ตัวอักษรของคำบาลี — รวมสระยาว/จุดใต้ ไม่รวมตัวเลขและขีด
+_WORD_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
+
+
+def _mark_forms(stashed: str, forms: set[str]) -> str:
+    """คลุม token ที่ fold แล้วตรงกับรูปผันของศัพท์ ด้วย sentinel ของ `<mark>`
+
+    match ทั้ง token ไม่ใช่ substring — `sabba` ต้องไม่ไปไฮไลต์กลาง `sabbakāyaṁ`
+    เพราะนั่นคนละคำ (เหตุผลเดียวกับที่ `_classify` เช็ค whole-token)
+    """
+    return _WORD_RE.sub(
+        lambda m: (
+            f"{_MARK_OPEN}{m.group(0)}{_MARK_CLOSE}"
+            if fold_pali(m.group(0)) in forms
+            else m.group(0)
+        ),
+        stashed,
+    )
+
+
+def _mark_query(stashed: str, query: str) -> str:
+    """คลุมช่วงที่ตรงกับ `query` แบบไม่สนสระยาว (ผู้ใช้พิมพ์ kosambi → เจอ kosambī)"""
+    norm_text, idx_map = _normalize_with_map(stashed)
+    norm_query = _strip_diacritics(query)
+    if not norm_query:
+        return stashed
+    out: list[str] = []
+    cursor_norm = cursor_orig = 0
+    qlen = len(norm_query)
+    while cursor_norm < len(norm_text):
+        hit = norm_text.find(norm_query, cursor_norm)
+        if hit < 0:
+            break
+        start, end = idx_map[hit], idx_map[hit + qlen - 1] + 1
+        out.append(stashed[cursor_orig:start])
+        out.append(f"{_MARK_OPEN}{stashed[start:end]}{_MARK_CLOSE}")
+        cursor_norm, cursor_orig = hit + qlen, end
+    out.append(stashed[cursor_orig:])
+    return "".join(out)
+
+
+def render_markup(
+    text: str | None, forms: set[str] | None = None, query: str | None = None
+) -> Markup | None:
     """Escape everything, then hand back a fixed set of inline tags.
 
     Allowlist rather than `|safe`: the escape runs first and unconditionally, so
@@ -63,8 +107,27 @@ def render_markup(text: str | None) -> Markup | None:
     if not text:
         return None
     stashed = _TAG_RE.sub(_stash, _SENTINEL_RE.sub("", text))
-    out = str(escape(stashed)).replace("\x00", "<").replace("\x01", ">")
+    # ไฮไลต์ทำบนสตริงที่แท็กถูกแทนด้วย sentinel แล้ว จึงไม่มีทางไปคลุมกลางแท็ก
+    # และยังไม่ถูก escape จึงไม่ต้องหลบ entity
+    if forms:
+        stashed = _mark_forms(stashed, forms)
+    elif query:
+        stashed = _mark_query(stashed, query)
+    out = (
+        str(escape(stashed))
+        .replace("\x00", "<")
+        .replace("\x01", ">")
+        .replace(_MARK_OPEN, "<mark>")
+        .replace(_MARK_CLOSE, "</mark>")
+    )
     return Markup(out)
+
+
+def term_forms(term: str) -> set[str]:
+    """รูปผันของศัพท์ สำหรับไฮไลต์ในหน้า embed — ชุดเดียวกับที่ใช้ค้น
+    จึงไฮไลต์ `taṇhā` `taṇhaṁ` `taṇhāya` ครบทุกรูปที่ทำให้แถวนั้นถูกเลือกมา
+    """
+    return _inflected_forms(fold_pali(term)) if term else set()
 
 
 def _strip_diacritics(text: str) -> str:
@@ -730,41 +793,13 @@ def fetch_structure() -> list[dict[str, Any]]:
 
 
 def _highlight(text: str | None, query: str) -> Markup | None:
-    """HTML-escape `text` and wrap diacritic-insensitive matches of `query` in <mark>.
+    """ผลค้นหา: escape + ไฮไลต์ `query` แบบไม่สนสระยาว
 
-    User types "kosambi" → highlights "kosambī" (with diacritics) in the
-    rendered text. Walks the NFD-normalized form to find positions, then
-    slices the original text via an index map so the visible highlight is
-    the canonical-spelling substring, not the typed query.
-
-    Returns Markup so Jinja renders the tags directly (escape happens here).
+    เดิมฟังก์ชันนี้ escape เองแยกจาก `render_markup` ผลค้นหาจึงพิมพ์ `&lt;b&gt;`
+    ออกมาเป็นข้อความดิบ (14 คู่ในผลค้น `gedho`) ทั้งที่หน้า reader กับ embed
+    เรนเดอร์ `<b>` ถูกต้องแล้ว — ตอนนี้ใช้เส้นทางเดียวกันทั้งหมด
     """
-    if not text:
-        return None
-    if not query:
-        return Markup(escape(text))
-
-    norm_text, idx_map = _normalize_with_map(text)
-    norm_query = _strip_diacritics(query)
-    if not norm_query:
-        return Markup(escape(text))
-
-    out: list[Markup | str] = []
-    cursor_norm = 0
-    cursor_orig = 0
-    qlen = len(norm_query)
-    while cursor_norm < len(norm_text):
-        hit = norm_text.find(norm_query, cursor_norm)
-        if hit < 0:
-            out.append(escape(text[cursor_orig:]))
-            break
-        orig_start = idx_map[hit]
-        orig_end = idx_map[hit + qlen - 1] + 1
-        out.append(escape(text[cursor_orig:orig_start]))
-        out.append(Markup("<mark>") + escape(text[orig_start:orig_end]) + Markup("</mark>"))
-        cursor_norm = hit + qlen
-        cursor_orig = orig_end
-    return Markup("").join(out)
+    return render_markup(text, query=query)
 
 
 def search_text(query: str, limit: int = 50) -> list[dict[str, Any]]:

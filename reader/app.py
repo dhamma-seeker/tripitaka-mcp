@@ -50,6 +50,7 @@ from reader.queries import (
     lookup_word,
     parse_sources,
     render_markup,
+    term_forms,
     search_text,
     tokenize_pali,
 )
@@ -320,6 +321,8 @@ def embed_define(
             "term": term,
             "definitions": definitions,
             "groups": groups,
+            # ไฮไลต์รูปผันของศัพท์ในบรรทัดบาลี (Pavel ขอ — เขาทำแบบนี้บน Dhamma.Gift)
+            "term_forms": term_forms(term),
             "theme": theme,
             "busy": busy,
         },

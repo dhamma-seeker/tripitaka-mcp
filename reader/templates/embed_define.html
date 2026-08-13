@@ -87,6 +87,9 @@
     font-size: 11px; font-style: italic; color: var(--d-fg2); opacity: .7;
     margin: 0 0 6px; line-height: 1.5;
   }
+  /* ไฮไลต์คำที่ค้น — สีพื้นจางพอให้ตัวอักษรยังอ่านได้ทั้งสองธีม ไม่ใช่สีเหลืองสด */
+  mark { background: var(--d-hbg); color: var(--d-acc); border-radius: 3px;
+    padding: 0 2px; font-weight: 600; }
   .embed-empty { font-size: 13px; color: var(--d-fg2); line-height: 1.6; }
   .embed-empty a { color: var(--d-acc); }
   .embed-footer {
@@ -152,7 +155,7 @@
       </div>
       {% for d in items %}
       <div class="embed-def">
-        <div class="mcd-cverse">{{ d.text_pali | markup }}</div>
+        <div class="mcd-cverse">{{ d.text_pali | markup(term_forms) }}</div>
         {% if d.text_english %}<div class="mcd-cp">{{ d.text_english | markup }}</div>{% endif %}
         {# The jhāna similes contain no word for jhāna: they hang off the formula
            that opens the paragraph. Saying so is not optional. Without the note
@@ -174,7 +177,7 @@
                renders a wrong name as empty rather than raising, so a typo here
                shows up as blank rows, not an error. #}
             {% for s in d.passage %}
-            {% if s.pali %}<div class="mcd-cverse">{{ s.pali | markup }}</div>{% endif %}
+            {% if s.pali %}<div class="mcd-cverse">{{ s.pali | markup(term_forms) }}</div>{% endif %}
             {% if s.english %}<div class="mcd-cp">{{ s.english | markup }}</div>{% endif %}
             {% endfor %}
           </div>
