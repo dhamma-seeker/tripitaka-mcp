@@ -234,7 +234,7 @@ def _citation_url(link_base: str, sutta_id: str, segment_id: str) -> str:
 def embed_define(
     request: Request,
     term: str = "",
-    limit: str = "5",
+    limit: str = "6",
     theme: str = "light",
     link_base: str = "",
     sources: str = "",
@@ -248,7 +248,12 @@ def embed_define(
     specific path can be embedded on allowlisted third-party origins.
     """
     term = term.strip().lower()[:60]
-    n_limit = _int_param(limit, default=5, lo=1, hi=5)
+    # 6 rather than 5 so that two of the rows can be context similes. The slot
+    # reservation is one third of the limit (see fetch_definitions_embed), and
+    # at 5 that rounded down to a single slot, which was the whole allowance a
+    # page ever had for the similes that do not name the term. Six keeps the
+    # same one-in-three proportion and buys the second one.
+    n_limit = _int_param(limit, default=6, lo=1, hi=6)
     theme = theme if theme in ("light", "dark") else "light"
     link_base = link_base.strip()[:300]
     source_set = parse_sources(sources[:200])
