@@ -36,6 +36,17 @@ from db.normalize import fold_pali
 
 # คำถามเปิดนิยาม — "X คืออะไร/อย่างไร", "Kiñca X vadetha?" (จะเรียก X ว่าอะไร)
 _INTERROGATIVE = ("katam", "katham", "vadeth")  # katamañca/katamo/…, kathaṁ, vadetha
+
+# `daṭṭhabba` ("พึงเห็น") ลำพังไม่ใช่นิยาม — ทั้งคลังมี 456 ท่อน ส่วนใหญ่เป็น
+# **คำสอนให้ปฏิบัติ** เช่น "พึงเห็นรูปว่านั่นไม่ใช่ของเรา" ซึ่งบอกว่าควรมองอย่างไร
+# ไม่ได้บอกว่าคืออะไร (Pavel สรุปแบบเดียวกัน: it's closer to instruction)
+#
+# **แต่คู่กับ `kattha` มันเป็นสูตรเปิดนิยามเต็มตัว** ทำหน้าที่เหมือน `Katamañca X?`
+#   "Kattha ca, bhikkhave, saddhindriyaṁ daṭṭhabbaṁ?" → "catūsu sotāpattiyaṅgesu"
+#   ("สัทธินทรีย์พึงเห็นได้ที่ไหน" → "ในโสตาปัตติยังคะสี่")
+# ทั้งคลังมี 22 ท่อน อยู่ใน sn48.8 · an5.15 · ps1.4 และ**ไม่มีของปลอมเลยสักท่อน**
+_KATTHA = "kattha"
+_DATTHABBA = "datthabb"
 # คำชี้ขาด — "เรียกว่า X / X เป็นชื่อเรียกของ / กล่าวคือ"
 _PREDICATE = ("vucc", "adhivacan", "yadidam")   # vuccati/vuccanti, adhivacana, yadidaṁ
 # วินัย padabhājaniya — "<term> nāma" (ต้องติดกับ term → เช็ค adjacency ใน Python)
@@ -44,8 +55,11 @@ _NAMA = "nama"
 _SIMILE = ("seyyathapi", "upam", "opam", "opamm", "evameva")
 
 # FTS prefix tokens สำหรับ stage-1 recall (marker ตัวใดตัวหนึ่งอยู่ใน segment)
+# `_DATTHABBA` อยู่ใน recall ด้วย ไม่งั้น 22 ท่อนนั้นไม่มีทางเข้ามาเป็น candidate
+# ตัวคัดจริงว่าต้องมี `kattha` คู่กันอยู่ใน `_classify` — ท่อน daṭṭhabba ที่เหลืออีก
+# 434 ท่อนเข้ามาแล้วถูกทิ้งตรงนั้น
 _MARKER_PREFIXES = tuple(
-    f"{m}*" for m in (*_INTERROGATIVE, *_PREDICATE, _NAMA, *_SIMILE)
+    f"{m}*" for m in (*_INTERROGATIVE, _DATTHABBA, *_PREDICATE, _NAMA, *_SIMILE)
 )
 
 # ตัวเลขหมู่ (folded) — สัญญาณว่านิยามเป็นแบบ "แจกแจงประเภท" (enumerative)
@@ -221,7 +235,7 @@ def _fetch_candidates_postgres(cur, forms: set[str]) -> list[dict[str, Any]]:
     """
     # รูปผัน → alternation, marker → alternation ; match บน f_unaccent(text_pali)
     form_alt = "|".join(re.escape(f) for f in sorted(forms))
-    marker_alt = "|".join((*_INTERROGATIVE, *_PREDICATE, _NAMA, *_SIMILE))
+    marker_alt = "|".join((*_INTERROGATIVE, _DATTHABBA, *_PREDICATE, _NAMA, *_SIMILE))
     cur.execute(
         """
         SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english,
@@ -446,7 +460,11 @@ def _classify(
         d = _min_distance(tokens, forms, prefixes)
         return d if d is not None and d <= _PROXIMITY_TOKENS else None
 
-    d_interro = near(_INTERROGATIVE)
+    # daṭṭhabba นับเป็นคำถามเปิดนิยามเฉพาะตอนมี kattha อยู่ในท่อนเดียวกัน
+    interrogative = _INTERROGATIVE
+    if _KATTHA in tokset and any(t.startswith(_DATTHABBA) for t in tokens):
+        interrogative = (*_INTERROGATIVE, _DATTHABBA)
+    d_interro = near(interrogative)
     d_pred = near(_PREDICATE)
     d_simile = near(_SIMILE)
     # Vinaya "X nāma" — "nama" ต้องเป็น *คำเต็ม* และตามหลัง term ทันที.

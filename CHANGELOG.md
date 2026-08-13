@@ -6,6 +6,17 @@ All notable changes to Tripitaka MCP are documented here. Format loosely follows
 ## [Unreleased]
 
 ### Added
+- `kattha … daṭṭhabbaṁ` ("where is X to be seen?") now counts as a definitional
+  opener. On its own `daṭṭhabba` is an instruction rather than a definition, 456
+  segments of "you should see form as not-self" and the like, so it is only read
+  as a marker when `kattha` stands with it in the same segment. That pairing
+  occurs 22 times, in SN 48.8, AN 5.15 and Ps 1.4, and every one of them opens a
+  definition: "Kattha ca, bhikkhave, saddhindriyaṁ daṭṭhabbaṁ?" answered by "in
+  the four factors of stream-entry". Five terms gain a passage, twenty-five are
+  unchanged. Suggested by [Dhamma.Gift](https://github.com/dhammagift), who also
+  pointed out that bare daṭṭhabba belongs with instructions.
+
+### Added
 - `define_from_suttas` now finds similes that never name the term. The four jhāna
   similes (bath powder, deep lake, lotus pond, white cloth) contain no word for
   *jhāna*: they illustrate the `vivicceva kāmehi …` formula that opens the
