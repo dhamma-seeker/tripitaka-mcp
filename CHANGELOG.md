@@ -15,8 +15,6 @@ All notable changes to Tripitaka MCP are documented here. Format loosely follows
   the four factors of stream-entry". Five terms gain a passage, twenty-five are
   unchanged. Suggested by [Dhamma.Gift](https://github.com/dhammagift), who also
   pointed out that bare daṭṭhabba belongs with instructions.
-
-### Added
 - `define_from_suttas` now finds similes that never name the term. The four jhāna
   similes (bath powder, deep lake, lotus pond, white cloth) contain no word for
   *jhāna*: they illustrate the `vivicceva kāmehi …` formula that opens the
