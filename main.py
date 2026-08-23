@@ -2745,8 +2745,17 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
 
     Returns:
         `definitions[]` ranked most-definitional first — each with the cited
-        `segment_id`, `pali`, `english`, `markers`, `kind`, `detail`, and a
-        `cross_reference`. Only Sutta + Vinaya are searched (not dictionaries).
+        `segment_id`, `pali`, `english`, `markers`, `kind`, `detail`,
+        `source_layer`, and a `cross_reference`. Only Sutta + Vinaya are
+        searched (not dictionaries).
+
+        `source_layer` says which stratum of the canon the passage comes from:
+        `four-nikayas` (DN MN SN AN), `early-khuddaka` (Dhp Ud Iti Snp Thag
+        Thig), `vinaya`, or `later-texts` (Niddesa, Paṭisambhidāmagga,
+        Abhidhamma, Milindapañha and the like). Say which layer a definition
+        comes from when it matters — an analysis from the later texts does not
+        carry the same weight as a definition spoken in the four nikāyas, and
+        the reader is entitled to know which one they are being given.
     """
     limit = min(max(1, limit), 15)
     backend = get_backend()
@@ -2776,6 +2785,7 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
                 "kind": r["kind"],
                 "detail": r["detail"],
                 "markers": r["markers"],
+                "source_layer": r.get("source_layer"),
                 "block": r.get("block", []),
                 "cross_reference": _cross_reference_urls(r["sutta_id"], r["segment_id"]),
             }

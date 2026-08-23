@@ -129,6 +129,18 @@ _STRATUM_OTHER = 3  # นิทเทส ปฏิสัมภิทา อภ�
 # ที่คะแนนใกล้กัน ไม่ใช่ลบคัมภีร์ชั้นหลังออกจากผลลัพธ์
 _STRATUM_PENALTY = {0: 0, 1: -2, 2: -4, 3: -8}
 
+# ป้ายบอกที่มาของแถว — เราชั่งน้ำหนักชั้นคัมภีร์ในคะแนนอยู่แล้ว แต่ไม่เคยบอกผู้ใช้
+# ทำให้คนอ่านแยกไม่ออกว่านิยามที่ได้มาจากพระโอษฐ์ในสี่นิกาย หรือจากคัมภีร์วิเคราะห์
+# ชั้นหลัง ทั้งที่สองอย่างนี้มีน้ำหนักต่างกันมากเวลาจะยกไปอ้าง
+# (AN 2.24 เนยยัตถะ/นีตัตถะ — สิ่งที่ต้องตีความ ต้องไม่ถูกเสนอเป็นสิ่งที่ชัดในตัว
+#  AN 4.3 — ผู้อ่านต้องได้เห็นหลักฐาน ไม่ใช่แค่คำตัดสินของเรา)
+_SOURCE_LAYER = {
+    0: "four-nikayas",     # DN MN SN AN
+    1: "early-khuddaka",   # Dhp Ud Iti Snp Thag Thig
+    2: "vinaya",
+    3: "later-texts",      # นิทเทส ปฏิสัมภิทา อภิธรรม มิลินท์ ชาดก อปทาน ฯลฯ
+}
+
 # สูตรปิดของวิภังค์: คำชี้เฉพาะ + vuccati + ศัพท์ ("ayaṁ vuccati, bhikkhave, taṇhā")
 # ต่างจาก `ārā nibbāna vuccati` ("ท่านชื่อว่าอยู่ไกลจากนิพพาน") ที่ไม่มีคำชี้เฉพาะ
 # และไม่ได้นิยามอะไร ทั้งที่มี vuccati เหมือนกันและได้คะแนนเท่ากันเป๊ะมาก่อน
@@ -708,6 +720,10 @@ def find_definitions(
     main = [r for r in ranked if not r.get("context")]
     n_ctx = min(2, limit // 3, len(ctx))
     top = sorted(main[: limit - n_ctx] + ctx[:n_ctx], key=_rank)
+
+    # ป้ายที่มา (ดู `_SOURCE_LAYER`) — แสดงหลักฐานให้ผู้อ่านตัดสินเอง
+    for item in top:
+        item["source_layer"] = _SOURCE_LAYER[_stratum(item["sutta_id"])]
 
     # block-windowing — ดึงท่อนนิยามเต็มรอบ anchor + refine descriptive/enumerative
     # จาก context ทั้ง block (ทำเฉพาะ top `limit` เพื่อคุมจำนวน query)

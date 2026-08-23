@@ -58,6 +58,12 @@
      (Saṁyojanappahānādisuttachakka) and the frame can be narrow. */
   .embed-sutta-title { font-size: 13px; font-weight: 600; color: var(--d-fg); line-height: 1.35; }
   .embed-count { font-size: 10.5px; color: var(--d-fg2); opacity: .7; }
+  /* Which stratum of the canon this text belongs to. Quiet on purpose: it is
+     evidence for the reader to weigh, not a verdict we are handing down. An
+     analysis from the Abhidhamma and a definition spoken in the four nikāyas
+     both count, but they do not count the same, and until now the page said
+     nothing at all about which one you were reading. */
+  .embed-layer { font-size: 10.5px; color: var(--d-dim); letter-spacing: .02em; }
   /* Sits on the same line as the Full passage toggle, quieter than it: the
      anchor is there when wanted, not competing for attention. */
   .embed-seg {
@@ -140,6 +146,8 @@
        all a first-time reader has, and nothing else on the page says whether
        they are looking at a definition or a picture of one. #}
     <p class="embed-group-head">{{ label }} · {{ term }}</p>
+    {% set LAYER = {"four-nikayas": "Four Nikāyas", "early-khuddaka": "Khuddaka",
+                    "vinaya": "Vinaya", "later-texts": "Later texts"} %}
     {% for sutta_id, items in suttas %}
     <div class="embed-sutta">
       {# Citation moved up here, one per text rather than one per row: the whole
@@ -152,6 +160,7 @@
         {% if items[0].title_pali %}<span class="embed-sutta-title">{{ items[0].title_pali }}</span>{% endif %}
         <a class="mcd-chip" href="{{ items[0].citation_url }}" target="_blank" rel="noopener">{{ sutta_id }}</a>
         {% if items|length > 1 %}<span class="embed-count">{{ items|length }} {{ noun }}</span>{% endif %}
+        {% if items[0].source_layer %}<span class="embed-layer">{{ LAYER.get(items[0].source_layer, items[0].source_layer) }}</span>{% endif %}
       </div>
       {% for d in items %}
       <div class="embed-def">
