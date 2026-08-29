@@ -108,6 +108,15 @@ def _build_instructions() -> str:
         "message.\n\n"
         + coverage_note
         + "\n🧭 **Which search tool?**\n"
+        "- **A quote handed to you, that you did not get from these tools** — "
+        "\"did the Buddha really say this\", \"is this quote real\", \"check "
+        "this passage for me\", a line from a talk, a chant, a meme, a book, or "
+        "anything you are about to repeat from memory: use **`verify_quote`**. "
+        "It answers whether the canon contains that line, cites where, and if "
+        "not shows the closest thing that IS there. A fabricated line that "
+        "sounds canonical is the hardest error to catch by reading, because it "
+        "reads correctly — so check it rather than trusting it, and never "
+        "repeat unverified Pāli as though it were canonical.\n"
         "- **Coverage / counting / \"don't miss any\"** — e.g. \"how many "
         "times does Kusinārā appear\", \"every place ānāpānassati is "
         "mentioned\", \"which pitakas mention X\": use **`survey_corpus`**. It "
@@ -2701,7 +2710,10 @@ def get_word_definition(word: str, language: Literal["en", "thai", "th", "all"] 
     }
 )
 def verify_quote(text: str, limit: int = 3) -> dict[str, Any]:
-    """Check whether a passage **actually exists in the canon**, and where.
+    """Verify, check, or confirm a Buddha quote — does the canon really say it?
+
+    Fact-check a quotation attributed to the Buddha. Catches fake, misquoted,
+    misattributed and misremembered passages, and finds the true reading.
 
     Paste a line that has been quoted or half-remembered — Pāli or English —
     and this says whether the canon really contains it, cites where, and if
