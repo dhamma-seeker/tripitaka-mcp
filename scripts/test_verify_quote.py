@@ -45,6 +45,18 @@ CASES = [
         "ฝั่งอังกฤษต้องใช้ได้ด้วย ไม่ใช่บาลีอย่างเดียว",
     ),
     (
+        "Manopubbangama dhamma manosettha manomaya",
+        "exact", "dhp1:1",
+        "ธรรมบทคาถาแรก — คาถาถูกแบ่งเป็นท่อนละบาท ท่อนเดียวไม่มีทางมีครบทั้งวลี"
+        " ต้องต่อท่อนถัดไปถึงจะเจอ และต้องไม่ตกเพราะเครื่องหมายวรรคตอน",
+    ),
+    (
+        "Cattaro mahapadese desessami",
+        "close", None,
+        "ยกมาโดยขาดคำว่า bhikkhave ไปคำเดียว — ของจริงวางอยู่ตรงหน้า"
+        " เคยตอบ not_found เพราะเกณฑ์ดูแต่ ratio ไม่ดู coverage",
+    ),
+    (
         "The Buddha said that all beings possess Buddha nature",
         "not_found", None,
         "ประโยคมหายานที่ฟังดูเป็นพุทธ — เคสที่ AI ยกมาผิดบ่อยที่สุด",

@@ -35,9 +35,22 @@ _RECALL_TOKENS = 4
 # เพดาน candidate ที่ยอมให้เข้ามาให้คะแนน กัน worst case ของวลีที่ใช้คำธรรมดาล้วน
 _CANDIDATE_CAP = 400
 
-# ตัดสินผล — similarity จาก SequenceMatcher บนข้อความที่ fold แล้ว
-_EXACT = 0.995     # ต่างกันได้แค่ระดับ noise ของการ fold
-_CLOSE = 0.80      # ใกล้พอที่จะเป็น "ของจริงเขียนว่าอย่างนี้"
+# ตัดสินผล — ใช้สองค่าคู่กัน
+# `ratio` (SequenceMatcher) สมมาตร จึงลงโทษความยาวที่ต่างกัน
+# `coverage` = สัดส่วนตัวอักษรของ *วลีที่ถาม* ที่ไปปรากฏในท่อนนั้นตามลำดับ
+#   → ตอบคำถามที่เราสนใจจริงๆ คือ "สิ่งที่ผมยกมา อยู่ในบรรทัดนี้แค่ไหน"
+# เคสที่บังคับให้ต้องมี coverage: `Cattaro mahapadese desessami` ขาดคำว่า
+# `bhikkhave` ไปคำเดียว ratio ตก 0.778 แต่ coverage เกือบเต็ม — ของจริงอยู่ตรงหน้า
+# แต่เดิมตอบ not_found
+_EXACT = 0.995
+_CLOSE_COVERAGE = 0.85
+_CLOSE_RATIO = 0.55   # กันวลีสั้นที่ตัวอักษรบังเอิญไปโผล่ในท่อนยาวๆ
+
+# คาถาถูกแบ่งเป็นท่อนละบาท (`dhp1:1` = "Manopubbaṅgamā dhammā," สองคำ) วลีที่ยกมา
+# จึงมักคร่อมหลายท่อน ต้องลองต่อท่อนถัดไปแล้ววัดใหม่ — id ต่อเนื่องใน section
+# (ยืนยันแล้ว ดู `_fetch_block` ใน sutta_definitions.py)
+_JOIN_AHEAD = 3        # ต่อได้มากสุดกี่ท่อน
+_JOIN_RESCORE = 25     # เอา candidate อันดับต้นแค่นี้มาลองต่อ กันงานบาน
 
 _COLS = ("sutta_id", "segment_id", "text_pali", "text_english", "seg_id", "section_id")
 
@@ -56,18 +69,67 @@ def _recall_tokens(folded: str) -> list[str]:
     return sorted(uniq, key=len, reverse=True)[:_RECALL_TOKENS]
 
 
-def _fetch_candidates(cur, backend_name: str, toks: list[str]) -> list[dict[str, Any]]:
-    """ท่อนที่มี recall token **ครบทุกตัว** (AND) — ถ้าไม่เจอเลยค่อยผ่อนเป็น OR.
+def _token_exists(cur, backend_name: str, tok: str) -> bool:
+    """token นี้มีอยู่ในคลังไหม — ใช้คัดคำที่ยกมาผิดออกจากตะแกรง"""
+    if backend_name == "sqlite":
+        cur.execute(
+            "SELECT 1 FROM segment_fts WHERE segment_fts MATCH ? LIMIT 1",
+            ("{text_pali text_english} : " + tok,),
+        )
+    else:
+        cur.execute(
+            "SELECT 1 FROM segment WHERE f_unaccent(coalesce(text_pali,'') || ' ' || "
+            "coalesce(text_english,'')) ~* %s LIMIT 1",
+            (rf"\y{re.escape(tok)}",),
+        )
+    return cur.fetchone() is not None
 
-    AND ก่อนเพราะวลีที่ยกมาจริงจะมีคำหายากอยู่ด้วยกัน การผ่อนเป็น OR ไว้ทีหลัง
-    ทำให้เคส "จำผิดไปหนึ่งคำ" ยังหาเจอ ซึ่งเป็นเคสที่เครื่องมือนี้มีไว้ตอบพอดี
+
+def _fetch_candidates(cur, backend_name: str, toks: list[str]) -> list[dict[str, Any]]:
+    """ไล่ตะแกรงจากแคบไปกว้าง หยุดทันทีที่เจอ
+
+        AND ทุก token  →  AND สอง token ที่ยาวที่สุด  →  token ที่ยาวที่สุดตัวเดียว
+
+    **ห้ามใช้ OR รวมทุก token** เพราะ token ธรรมดาอย่าง `dhamma` มี 11,539 ท่อน
+    พอชน LIMIT แล้วแถวที่ต้องการก็ถูกตัดทิ้งแบบสุ่ม — ธรรมบทคาถาแรกหายไปทั้งที่
+    `manopubbangama` มีแค่ 19 ท่อน. ความยาวใช้แทนความหายากได้ดีพอ จึงไล่ลงมา
+    ทีละขั้นแทนที่จะเหวี่ยงแห
     """
     if not toks:
         return []
-    for mode in ("and", "or"):
+    # คัด token ที่ไม่มีอยู่ในคลังทิ้งก่อน **สำคัญมาก** เพราะเวลาคนยกข้อความมาผิด
+    # คำที่ผิดมักเป็นคำที่หายากที่สุด ซึ่งเป็นขั้นสุดท้ายของ ladder พอดี
+    # `andhivaram` ไม่มีในพระไตรปิฎกเลย ถ้าไม่คัดออก ทั้งวลีจะหาอะไรไม่เจอสักแถว
+    # ทั้งที่ `ayacatha` ในวลีเดียวกันพาไปถึง bv1:2.2 ได้
+    # การที่ token หนึ่งคืนศูนย์แถว **คือหลักฐานว่าตรงนั้นแหละที่ยกมาผิด**
+    def _run(ts: list[str]) -> list[dict[str, Any]]:
+        return _ladder(cur, backend_name, ts)
+
+    rows = _run(toks)
+    if rows:
+        return rows
+    # ยังไม่เจอ → ตอนนี้ค่อยจ่ายค่า existence check ซึ่งเป็น full scan บน Postgres
+    # **เวลาคนยกข้อความมาผิด คำที่ผิดมักเป็นคำที่หายากที่สุด** ซึ่งเป็นขั้นสุดท้าย
+    # ของตะแกรงพอดี `andhivaram` ไม่มีในคลังเลย ถ้าไม่คัดออกทั้งวลีจะหาไม่เจอสักแถว
+    # ทั้งที่ `ayacatha` ในวลีเดียวกันพาไปถึง bv1:2.2 ได้
+    # **การที่ token คืนศูนย์แถวคือหลักฐานว่าตรงนั้นแหละที่ยกมาผิด**
+    live = [t for t in toks if _token_exists(cur, backend_name, t)]
+    if not live or live == toks:
+        return []
+    return _run(live)
+
+
+def _ladder(cur, backend_name: str, live: list[str]) -> list[dict[str, Any]]:
+    """ไล่ตะแกรงจากแคบไปกว้างบน token ชุดที่ให้มา"""
+    ladders = [(live, "AND"), (live[:2], "AND"), (live[:1], "AND"), (live, "OR")]
+    seen: list[tuple[tuple[str, ...], str]] = []
+    for lad, op in ladders:
+        key = (tuple(lad), op)
+        if not lad or key in seen:
+            continue
+        seen.append(key)
         if backend_name == "sqlite":
-            joiner = " AND " if mode == "and" else " OR "
-            match = "{text_pali text_english} : (" + joiner.join(toks) + ")"
+            match = "{text_pali text_english} : (" + f" {op} ".join(lad) + ")"
             cur.execute(
                 """
                 SELECT sec.sutta_id, seg.segment_id, seg.text_pali, seg.text_english,
@@ -81,13 +143,14 @@ def _fetch_candidates(cur, backend_name: str, toks: list[str]) -> list[dict[str,
                 (match, _CANDIDATE_CAP),
             )
         else:
-            joiner = " AND " if mode == "and" else " OR "
-            where = joiner.join(
+            where = f" {op} ".join(
                 f"(f_unaccent(coalesce(seg.text_pali,'') || ' ' || "
                 f"coalesce(seg.text_english,'')) ~* %(t{i})s)"
-                for i in range(len(toks))
+                for i in range(len(lad))
             )
-            params = {f"t{i}": rf"\y{re.escape(t)}" for i, t in enumerate(toks)}
+            params: dict[str, Any] = {
+                f"t{i}": rf"\y{re.escape(t)}" for i, t in enumerate(lad)
+            }
             params["cap"] = _CANDIDATE_CAP
             cur.execute(
                 f"""
@@ -106,18 +169,54 @@ def _fetch_candidates(cur, backend_name: str, toks: list[str]) -> list[dict[str,
     return []
 
 
-def _score(folded_q: str, candidate: str | None) -> tuple[float, bool]:
-    """(similarity, contained) — `contained` = ข้อความที่ถามอยู่ในท่อนนี้ครบทั้งวลี
+def _fetch_join_windows(
+    cur, backend_name: str, anchors: list[dict[str, Any]]
+) -> dict[int, list[dict[str, Any]]]:
+    """{seg_id ของ anchor: [ท่อนถัดไปตามลำดับ]} — ใช้ต่อคาถาที่ถูกแบ่งเป็นบาท"""
+    if not anchors:
+        return {}
+    out: dict[int, list[dict[str, Any]]] = {}
+    for a in anchors:
+        lo, hi = a["seg_id"] + 1, a["seg_id"] + _JOIN_AHEAD
+        if backend_name == "sqlite":
+            cur.execute(
+                "SELECT text_pali, text_english FROM segment "
+                "WHERE section_id = ? AND id BETWEEN ? AND ? ORDER BY id",
+                (a["section_id"], lo, hi),
+            )
+        else:
+            cur.execute(
+                "SELECT text_pali, text_english FROM segment "
+                "WHERE section_id = %s AND id BETWEEN %s AND %s ORDER BY id",
+                (a["section_id"], lo, hi),
+            )
+        out[a["seg_id"]] = [
+            {"text_pali": r[0], "text_english": r[1]} for r in cur.fetchall()
+        ]
+    return out
 
-    ท่อนหนึ่งมักยาวกว่าวลีที่ยกมา การเทียบ ratio ตรงๆ จึงลงโทษวลีสั้นอย่างไม่เป็นธรรม
-    ถ้าเป็น substring ก็จบเลย = ตรงเป๊ะ
+
+def _score(folded_q: str, candidate: str | None) -> tuple[float, float, bool]:
+    """(ratio, coverage, contained)
+
+    `contained` = วลีที่ถามอยู่ในท่อนนี้ครบทุกตัวอักษรติดกัน → ตรงเป๊ะ จบเลย
+    `coverage` = ตัวอักษรของวลีที่ถามกี่ส่วนที่ไปตรงกับท่อนนี้ตามลำดับ
     """
     folded_c = fold_pali(candidate or "")
-    if not folded_c:
-        return 0.0, False
+    if not folded_c or not folded_q:
+        return 0.0, 0.0, False
     if folded_q in folded_c:
-        return 1.0, True
-    return SequenceMatcher(None, folded_q, folded_c).ratio(), False
+        return 1.0, 1.0, True
+    # เทียบเป็นลำดับ *คำ* ด้วย — คนยกข้อความมาไม่ลอกจุลภาคกับอัฒภาคมาด้วย
+    # ธรรมบทคาถาแรกถูกทุกคำแต่ได้แค่ 0.976 เพราะ `dhammā,` มีลูกน้ำติดมา
+    qt, ct = _tokens(folded_q), _tokens(folded_c)
+    if qt and len(qt) <= len(ct):
+        for i in range(len(ct) - len(qt) + 1):
+            if ct[i:i + len(qt)] == qt:
+                return 1.0, 1.0, True
+    sm = SequenceMatcher(None, folded_q, folded_c)
+    matched = sum(b.size for b in sm.get_matching_blocks())
+    return sm.ratio(), matched / len(folded_q), False
 
 
 def verify_quote(
@@ -144,24 +243,52 @@ def verify_quote(
     scored: list[dict[str, Any]] = []
     for row in rows:
         for field in ("text_pali", "text_english"):
-            sim, contained = _score(folded_q, row[field])
-            if sim <= 0.0:
+            ratio, cov, contained = _score(folded_q, row[field])
+            if ratio <= 0.0:
                 continue
             scored.append({
                 "sutta_id": row["sutta_id"],
                 "segment_id": row["segment_id"],
                 "field": "pali" if field == "text_pali" else "english",
                 "text": row[field],
-                "similarity": round(sim, 4),
+                "similarity": round(ratio, 4),
+                "coverage": round(cov, 4),
                 "contained": contained,
+                "spans": 1,
+                "_seg_id": row["seg_id"],
+                "_section_id": row["section_id"],
             })
 
-    scored.sort(key=lambda m: (-m["similarity"], m["segment_id"]))
-    top = scored[:limit]
+    # เลือก candidate ที่จะเอาไปลองต่อ **ด้วย ratio ไม่ใช่ coverage**: coverage
+    # เข้าข้างท่อนยาวโดยอัตโนมัติ (ท่อนยาวมีตัวอักษรของวลีเราบังเอิญครบง่ายกว่า)
+    # ส่วน ratio สมมาตร จึงดัน `dhp1:1` ("Manopubbaṅgamā dhammā," สองคำ) ขึ้นมา
+    # เหนือท่อนยาวที่ไม่เกี่ยว ซึ่งเป็นท่อนที่เราต้องได้เพื่อจะต่อบาทถัดไป
+    scored.sort(key=lambda m: -m["similarity"])
 
-    if top and top[0]["similarity"] >= _EXACT:
+    # คาถาคร่อมหลายท่อน — ลองต่อท่อนถัดไปให้ candidate อันดับต้น แล้ววัดใหม่
+    heads = scored[:_JOIN_RESCORE]
+    anchors = [{"seg_id": m["_seg_id"], "section_id": m["_section_id"]} for m in heads]
+    windows = _fetch_join_windows(cur, backend_name, anchors)
+    for m in heads:
+        field = "text_pali" if m["field"] == "pali" else "text_english"
+        joined = m["text"] or ""
+        for i, nxt in enumerate(windows.get(m["_seg_id"], []), start=2):
+            joined = f"{joined} {nxt[field] or ''}".strip()
+            ratio, cov, contained = _score(folded_q, joined)
+            if cov > m["coverage"] or (cov == m["coverage"] and ratio > m["similarity"]):
+                m.update(similarity=round(ratio, 4), coverage=round(cov, 4),
+                         contained=contained, text=joined, spans=i)
+
+    # เรียงสุดท้ายด้วย coverage + ratio: ต้องดีทั้งคู่ถึงจะขึ้น ท่อนยาวที่ไม่เกี่ยว
+    # ได้ coverage สูงแต่ ratio ต่ำ (0.5 + 0.28) จึงแพ้ของจริงที่ได้ทั้งสองทาง
+    scored.sort(key=lambda m: (not m["contained"],
+                               -(m["coverage"] + m["similarity"]),
+                               m["segment_id"]))
+    top = [{k: v for k, v in m.items() if not k.startswith("_")} for m in scored[:limit]]
+
+    if top and (top[0]["contained"] or top[0]["similarity"] >= _EXACT):
         verdict = "exact"
-    elif top and top[0]["similarity"] >= _CLOSE:
+    elif top and top[0]["coverage"] >= _CLOSE_COVERAGE and top[0]["similarity"] >= _CLOSE_RATIO:
         verdict = "close"
     else:
         verdict = "not_found"
