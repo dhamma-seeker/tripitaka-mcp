@@ -53,7 +53,7 @@ Install = "https://tripitaka-mcp.com/install/"
 [tool.setuptools]
 py-modules = [
     "main", "cli", "mcp_app", "mcp_app_viewer_html",
-    "sutta_definitions", "sutta_titles",
+    "sutta_definitions", "sutta_titles", "sutta_verify",
 ]
 
 [tool.setuptools.packages.find]

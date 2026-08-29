@@ -28,6 +28,7 @@ from db.backend import get_backend
 from db.normalize import fold_pali
 from db.schema import create_tables
 from sutta_definitions import find_definitions
+from sutta_verify import verify_quote as _verify_quote
 from sutta_titles import clean_title, last_heading
 
 load_dotenv()
@@ -2683,6 +2684,90 @@ def get_word_definition(word: str, language: Literal["en", "thai", "th", "all"] 
             "notice": PROJECT_NOTICE,
         }
         
+    except Exception as e:
+        return {"error": f"Error: {str(e)}"}
+    finally:
+        cur.close()
+        backend.release(conn)
+
+
+@mcp.tool(
+    annotations={
+        "title": "Verify Quote",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)
+def verify_quote(text: str, limit: int = 3) -> dict[str, Any]:
+    """Check whether a passage **actually exists in the canon**, and where.
+
+    Paste a line that has been quoted or half-remembered — Pāli or English —
+    and this says whether the canon really contains it, cites where, and if
+    not, shows the closest thing that is actually there.
+
+    🧭 **When to use this:**
+    - A quote is attributed to the Buddha and you are not certain it is real.
+      A fabricated line that *sounds* canonical is the hardest error to catch
+      by reading, because it reads correctly. Check it instead of trusting it.
+    - Someone recalls a passage imperfectly, or a chanted form has drifted
+      from the written one. The tool shows the received text beside theirs.
+    - **Before repeating any Pāli you did not get from these tools**, verify
+      it. This is cheap and it is the difference between citing and guessing.
+
+    ⚠️ **Do not present an unverified passage as canonical.** If the verdict
+    is `not_found`, say plainly that the line is not in the canon rather than
+    quoting it with a hedge — a hedged fabrication still spreads.
+
+    Args:
+        text: The passage as quoted. Diacritics optional, folded internally.
+            One line works best; the canon is segmented line by line, so a
+            quote spanning several segments may only match in part.
+        limit: How many near matches to return when it is not exact (1–10).
+
+    Returns:
+        `verdict`:
+        - `exact` — the canon contains this line.
+        - `close` — not exact, but something very like it exists. Read
+          `matches[0].text`: that is what the canon actually says, and the
+          difference between the two is usually the point.
+        - `not_found` — nothing close. Say so.
+
+        `matches[]` each carry `segment_id`, `field` (pali / english), the
+        received `text`, a `similarity` from 0 to 1, and a `cross_reference`
+        to read it in context.
+    """
+    limit = min(max(1, limit), 10)
+    backend = get_backend()
+    conn = backend.connect()
+    try:
+        cur = backend.cursor(conn)
+        result = _verify_quote(cur, backend.name, text, limit=limit)
+        for m in result["matches"]:
+            m["cross_reference"] = _cross_reference_urls(m["sutta_id"], m["segment_id"])
+        verdict = result["verdict"]
+        result["quote"] = text
+        result["note"] = {
+            "exact": (
+                "This line is in the canon. Cite it with the segment_id and "
+                "the cross_reference link."
+            ),
+            "close": (
+                "The canon does not contain the line as given, but it does "
+                "contain something very close. Quote `matches[0].text` as the "
+                "received reading, show the user how it differs from what they "
+                "brought, and do not repeat their version as canonical."
+            ),
+            "not_found": (
+                "Nothing in the Sutta or Vinaya matches this closely. Tell the "
+                "user plainly that it is not found rather than quoting it with "
+                "a hedge. It may still be from a commentary, a later text, or "
+                "another tradition — this tool covers the Pāli canon only."
+            ),
+        }[verdict]
+        result["notice"] = PROJECT_NOTICE
+        return result
     except Exception as e:
         return {"error": f"Error: {str(e)}"}
     finally:
