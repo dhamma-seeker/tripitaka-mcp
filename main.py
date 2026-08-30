@@ -27,7 +27,7 @@ from fastmcp import FastMCP
 from db.backend import get_backend
 from db.normalize import fold_pali
 from db.schema import create_tables
-from sutta_definitions import find_definitions
+from sutta_definitions import classify_answer, find_definitions
 from sutta_verify import verify_quote as _verify_quote
 from sutta_titles import clean_title, last_heading
 
@@ -2846,6 +2846,18 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
         `source_layer`, and a `cross_reference`. Only Sutta + Vinaya are
         searched (not dictionaries).
 
+        `answer_type` classifies the *question*, following the Buddha's four
+        ways of answering (AN 4.42). Read it before you write:
+        - `ekamsa` — one passage carries it. Answer categorically.
+        - `vibhajja` — defined in several places. Distinguish them; do not
+          flatten them into one sentence.
+        - `patipuccha` — **the term is not defined in its own right.** It is a
+          member of the set named in `member_of`, and the canon defines the
+          set. Ask which the user wants before answering, and say which member
+          this is. The passages returned define its neighbours, not it.
+        - `thapaniya` — not found in the suttas or Vinaya. Say so plainly.
+        `answer_type_guidance` carries the same in one line.
+
         `source_layer` says which stratum of the canon the passage comes from:
         `four-nikayas` (DN MN SN AN), `early-khuddaka` (Dhp Ud Iti Snp Thag
         Thig), `vinaya`, or `later-texts` (Niddesa, Paṭisambhidāmagga,
@@ -2862,10 +2874,12 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
         results = find_definitions(
             cur, backend.name, term, limit=limit, include_similes=include_similes
         )
+        answer_type, member_of = classify_answer(cur, backend.name, term, results)
         if not results:
             return {
                 "term": term,
                 "definitions": [],
+                "answer_type": answer_type,
                 "note": (
                     f"No sutta-internal definition formula found for '{term}'. "
                     "Try the base/stem form (parse_pali_word can help), or fall "
@@ -2889,9 +2903,33 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
             if r.get("duplicates"):
                 item["also_appears_elsewhere"] = r["duplicates"]
             definitions.append(item)
-        return {
+        guidance = {
+            "ekamsa": (
+                "One passage carries the definition. Answer categorically from it."
+            ),
+            "vibhajja": (
+                "The canon defines this in more than one place. Do not flatten them "
+                "into a single sentence — distinguish them, and say which context "
+                "each belongs to."
+            ),
+            "patipuccha": (
+                f"This term is not defined in its own right. It is one member of "
+                f"'{member_of}', and what the canon defines is the set. Ask the user "
+                f"whether they want the definition of '{member_of}', and say which "
+                f"member this is, before offering the passages below — they define "
+                f"the neighbouring members, not this word."
+            ),
+            "thapaniya": "",
+        }[answer_type]
+        payload = {
             "term": term,
             "definitions": definitions,
+            "answer_type": answer_type,
+            "answer_type_guidance": guidance,
+        }
+        if member_of:
+            payload["member_of"] = member_of
+        payload.update({
             "note": (
                 "Canonical definitional passages from the suttas/Vinaya, ranked. "
                 "IMPORTANT: read each result's `block` — the full surrounding "
@@ -2904,7 +2942,8 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
                 "— this tool covers only the suttas and Vinaya, not dictionaries."
             ),
             "notice": PROJECT_NOTICE,
-        }
+        })
+        return payload
     except Exception as e:
         return {"error": f"Error: {str(e)}"}
     finally:

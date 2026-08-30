@@ -33,7 +33,7 @@ from typing import Any, Callable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from db.normalize import fold_pali  # noqa: E402
-from sutta_definitions import find_definitions  # noqa: E402
+from sutta_definitions import classify_answer, find_definitions  # noqa: E402
 
 SNAPSHOT_PATH = Path(__file__).resolve().parent / "definitions_snapshot.json"
 LIMIT = 5
@@ -171,6 +171,61 @@ INVARIANTS: list[Check] = [
 ]
 
 
+# วิภัชชพยากรณ์ — (ศัพท์, answer_type ที่ต้องได้, หมู่ที่ต้องชี้ | None, ทำไม)
+ANSWER_TYPES = [
+    (
+        "kayagantha", "patipuccha", "gantha",
+        "เคสที่ทำให้ต้องมีฟีเจอร์นี้ — Pavel ค้นแล้วไม่ได้นิยามที่ใช้ได้ ของจริงคือ"
+        " คำนี้ไม่ได้ถูกนิยาม มันเป็น 1 ใน 4 ของ gantha (sn45.174) คำตอบที่ถูกคือย้อนถาม",
+    ),
+    (
+        "khandha", "vibhajja", None,
+        "กันการตัดหัวคำสมาสมั่ว — `khandha` ตัดได้ `andha` (คนตาบอด) ซึ่งมีนิยามจริง"
+        " ต้องไม่ผ่านเพราะตัวบทไม่เคยแจกแจง khandha ใต้หมู่ andha",
+    ),
+    (
+        "sasana", "ekamsa", None,
+        "เคสเดียวกัน — `sasana` ตัดได้ `asana` (อาสนะ) ซึ่งมีนิยามจริง"
+        " ที่คุมคือ parent ต้องเป็น None ส่วน ekamsa มาจากนิยามอยู่สูตรเดียว",
+    ),
+    (
+        "zzzznotaword", "thapaniya", None,
+        "ไม่มีในคลัง ต้องบอกว่าไม่มี ไม่ใช่เค้นคำตอบออกมา",
+    ),
+    (
+        "vedana", "vibhajja", None,
+        "นิยามหลายแห่งหลายสูตร ต้องบอกให้จำแนก ไม่ใช่ยุบเป็นประโยคเดียว",
+    ),
+]
+
+
+def run_answer_types() -> int:
+    from db.backend import get_backend
+
+    print("── answer types (วิภัชชพยากรณ์)")
+    backend = get_backend()
+    conn = backend.connect()
+    failed = 0
+    try:
+        cur = backend.cursor(conn)
+        for term, want, want_parent, why in ANSWER_TYPES:
+            rows = find_definitions(cur, backend.name, term, limit=LIMIT)
+            got, parent = classify_answer(cur, backend.name, term, rows)
+            ok = got == want and parent == want_parent
+            print(f"  {'✅' if ok else '❌'} {want:<11} {term}")
+            if not ok:
+                failed += 1
+                print(f"       why: {why}")
+                print(f"       got: {got}  parent={parent}")
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
+        backend.release(conn)
+    return failed
+
+
 def run_invariants() -> int:
     print("── invariants")
     failed = 0
@@ -257,6 +312,7 @@ def main() -> int:
     backend = os.getenv("TRIPITAKA_BACKEND", "postgres")
     print(f"define_from_suttas regression — backend={backend}\n")
     failed = run_invariants()
+    failed += run_answer_types()
     failed += run_snapshot(update="--update" in args)
     if "--both" in args:
         failed += run_parity()

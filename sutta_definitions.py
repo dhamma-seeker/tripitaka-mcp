@@ -734,3 +734,104 @@ def find_definitions(
         )
         item["detail"] = _detail_from_block(item["block"])
     return top
+
+
+# ---------------------------------------------------------------------------
+# วิภัชชพยากรณ์ — จำแนกชนิดของคำตอบ (AN 4.42)
+#
+# พระพุทธเจ้าทรงจำแนกวิธีตอบปัญหาไว้สี่แบบ เครื่องมือนี้เดิมตอบได้แบบเดียวคือ
+# **เอกังสะ** — คืนแถวมาเสมอราวกับว่ามีนิยามอยู่เสมอ ทั้งที่บางคำควรตอบว่า
+# "ต้องย้อนถามก่อน" หรือ "ไม่มีในคลัง"
+#
+#   ekamsa      ตอบโดยส่วนเดียว   — มีนิยามชัดเจนแหล่งเดียว
+#   vibhajja    ตอบโดยจำแนก      — มีหลายที่ ต้องแยกตามบริบท
+#   patipuccha  ย้อนถามก่อน       — ศัพท์เป็น *สมาชิก* ของหมู่ ไม่ใช่สิ่งที่ถูกนิยามเอง
+#   thapaniya   พึงงดตอบ         — ไม่มีในสุตตะ/วินัย
+#
+# เคสที่ทำให้ต้องมี `patipuccha`: Pavel ค้น `kāyagantha` แล้วไม่ได้นิยามที่ใช้ได้
+# ของจริงคือ **คำนี้ไม่ได้ถูกนิยาม มันเป็น 1 ใน 4 ของ `gantha`** (sn45.174)
+# คำตอบที่ถูกต้องจึงเป็นการย้อนถาม ไม่ใช่การเค้นนิยามที่ไม่มีอยู่ออกมา
+# ---------------------------------------------------------------------------
+
+# ตัดหัวคำสมาสไม่ต่ำกว่านี้ — สั้นกว่านี้ชนคำอื่นมั่ว (`ntha` `kkha`)
+_MEMBER_MIN_TAIL = 5
+
+
+def _listed_together(cur, backend_name: str, member: str, group: str) -> bool:
+    """ตัวบทยืนยันไหมว่า `member` ถูกแจกแจงอยู่ใต้หมู่ `group`
+
+    หน้าตาของหมู่ธรรมในพระไตรปิฎกคือ
+
+        1.1  Cattārome, bhikkhave, ganthā.        ← ตั้งหัวข้อ = เลขหมู่ + ชื่อหมู่
+        1.3  Abhijjhā kāyagantho, byāpādo …       ← สมาชิกอยู่ตรงนี้
+
+    จึงเช็คว่า **ท่อนข้างเคียงของสมาชิก มีชื่อหมู่คู่กับคำบอกจำนวน** ไหม
+    ถ้าไม่มีหลักฐานแบบนี้ = บังเอิญตัวอักษรพ้องกันเฉยๆ ไม่ใช่ความสัมพันธ์จริง
+    (`khandha` ตัดหัวได้ `andha` = คนตาบอด · `sasana` ได้ `asana` = อาสนะ)
+    """
+    forms = _inflected_forms(member)
+    gforms = _inflected_forms(group)
+    if backend_name == "sqlite":
+        cur.execute(
+            """
+            SELECT seg.id, seg.section_id FROM segment_fts f
+            JOIN segment seg ON seg.id = f.rowid
+            WHERE f.segment_fts MATCH ? LIMIT 25
+            """,
+            ("text_pali : (" + " OR ".join(sorted(forms)) + ")",),
+        )
+    else:
+        alt = "|".join(re.escape(f) for f in sorted(forms))
+        cur.execute(
+            "SELECT seg.id, seg.section_id FROM segment seg "
+            "WHERE f_unaccent(seg.text_pali) ~* %s LIMIT 25",
+            (rf"\y({alt})\y",),
+        )
+    anchors = cur.fetchall()
+    for seg_id, section_id in anchors:
+        for seg in _fetch_block(cur, backend_name, section_id, seg_id, 3, 3):
+            toks = set(_tokens(fold_pali(seg["pali"] or "")))
+            if (toks & gforms) and (toks & _NUMERAL_WORDS):
+                return True
+    return False
+
+
+def parent_set(cur, backend_name: str, term: str) -> str | None:
+    """หมู่ที่ศัพท์นี้สังกัด — ตัดหัวคำสมาสจากยาวไปสั้น **แล้วให้ตัวบทยืนยัน**
+
+    `kayagantha` → `yagantha` (ไม่มีนิยาม) → `agantha` (ไม่มี) → **`gantha`**
+    แล้วเช็คต่อว่า sn45.174 แจกแจง `kāyagantho` ใต้หัวข้อ `cattārome … ganthā` จริง
+
+    เรียกเฉพาะตอนที่ศัพท์ตัวเองให้ผลอ่อน จึงไม่กระทบเวลาตอบของคำทั่วไป
+    """
+    folded = fold_pali(term)
+    for n in range(len(folded) - 1, _MEMBER_MIN_TAIL - 1, -1):
+        tail = folded[-n:]
+        if tail == folded:
+            continue
+        if not find_definitions(cur, backend_name, tail, limit=1):
+            continue
+        if _listed_together(cur, backend_name, folded, tail):
+            return tail
+    return None
+
+
+def classify_answer(
+    cur, backend_name: str, term: str, results: list[dict[str, Any]]
+) -> tuple[str, str | None]:
+    """(answer_type, ชื่อหมู่ถ้าเป็น patipuccha) — ดู `_SOURCE_LAYER` ประกอบ"""
+    if not results:
+        return "thapaniya", None
+    direct = [r for r in results if r["kind"] == "direct"]
+    if not direct:
+        return "vibhajja", None  # มีแต่อุปมา ต้องอธิบายว่าเป็นภาพ ไม่ใช่นิยาม
+
+    # "อ่อน" = นิยามที่ได้มาจากคัมภีร์ชั้นหลังล้วน ไม่มีพระโอษฐ์ในสี่นิกายเลย
+    # เป็นสัญญาณว่าศัพท์นี้อาจไม่ได้ถูกนิยามในฐานะตัวมันเอง
+    if all(r.get("source_layer") == _SOURCE_LAYER[3] for r in direct):
+        parent = parent_set(cur, backend_name, term)
+        if parent:
+            return "patipuccha", parent
+
+    suttas = {r["sutta_id"] for r in direct}
+    return ("ekamsa" if len(suttas) == 1 else "vibhajja"), None
