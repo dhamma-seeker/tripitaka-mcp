@@ -43,6 +43,15 @@ load_dotenv()
 # เป็นบาลีโรมัน/อังกฤษก่อนเรียก search tools.
 SUPPORTED_LANGUAGES = frozenset({"pali", "thai", "english"})
 
+# ข้อความเดียว ใช้ทั้งเส้นทางที่มีผลลัพธ์และเส้นทางที่ไม่มี — เดิมเส้นทางที่ไม่มี
+# ผลลัพธ์ไม่ส่ง answer_type_guidance เลย client ที่อ่าน field นี้จึงได้ค่าว่าง
+_THAPANIYA_GUIDANCE = (
+    "Not found in the suttas or Vinaya — the only layers searched here. Say that "
+    "plainly. Do not supply a meaning from general knowledge as though it had been "
+    "found; if you give one anyway, say outright that it does not come from the "
+    "canon searched here."
+)
+
 
 def _parse_enabled_languages() -> frozenset[str]:
     raw = os.getenv("TRIPITAKA_ENABLED_LANGUAGES", "pali,english")
@@ -2851,11 +2860,16 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
         - `ekamsa` — one passage carries it. Answer categorically.
         - `vibhajja` — defined in several places. Distinguish them; do not
           flatten them into one sentence.
-        - `patipuccha` — **the term is not defined in its own right.** It is a
-          member of the set named in `member_of`, and the canon defines the
-          set. Ask which the user wants before answering, and say which member
-          this is. The passages returned define its neighbours, not it.
-        - `thapaniya` — not found in the suttas or Vinaya. Say so plainly.
+        - `patipuccha` — **the suttas never define this term on its own.** It is
+          a member of the set named in `member_of`, and it is the set that
+          carries the definition; the passages returned define its neighbours.
+          Say that before answering. A definition found in the Abhidhamma or a
+          commentary does not contradict it — those layers are not searched
+          here — but name the layer when you give one.
+        - `thapaniya` — not found in the suttas or Vinaya. Say so plainly
+          rather than defining the word from general knowledge.
+        Only Sutta + Vinaya are searched, so every one of these classifications
+        is a statement about those two layers, not about the whole canon.
         `answer_type_guidance` carries the same in one line.
 
         `source_layer` says which stratum of the canon the passage comes from:
@@ -2880,6 +2894,7 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
                 "term": term,
                 "definitions": [],
                 "answer_type": answer_type,
+                "answer_type_guidance": _THAPANIYA_GUIDANCE,
                 "note": (
                     f"No sutta-internal definition formula found for '{term}'. "
                     "Try the base/stem form (parse_pali_word can help), or fall "
@@ -2913,13 +2928,18 @@ def define_from_suttas(term: str, limit: int = 5, include_similes: bool = True) 
                 "each belongs to."
             ),
             "patipuccha": (
-                f"This term is not defined in its own right. It is one member of "
-                f"'{member_of}', and what the canon defines is the set. Ask the user "
-                f"whether they want the definition of '{member_of}', and say which "
-                f"member this is, before offering the passages below — they define "
-                f"the neighbouring members, not this word."
+                f"In the suttas and Vinaya — the only layers searched here — this "
+                f"term is never defined on its own. It appears as one member of "
+                f"'{member_of}', and it is the set that carries the definition; the "
+                f"passages below define its neighbours. Say that much plainly, and "
+                f"name '{member_of}', before anything else. Then either give the "
+                f"definition of '{member_of}' or ask which the user wants. Finding a "
+                f"definition of this word in the Abhidhamma, a commentary or a "
+                f"dictionary does not contradict any of this — those layers are not "
+                f"searched here — so you may give it, but say which layer it came "
+                f"from and keep it separate from what the suttas do."
             ),
-            "thapaniya": "",
+            "thapaniya": _THAPANIYA_GUIDANCE,
         }[answer_type]
         payload = {
             "term": term,
