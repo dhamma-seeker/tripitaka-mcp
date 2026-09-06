@@ -1,0 +1,192 @@
+# เคสทดสอบระดับ prompt — วัดว่า "โมเดลเรียกเครื่องมือถูกตัวไหม + ตอบตรงกับคลังไหม"
+#
+# ต่างจาก test_*.py ตัวอื่นตรงที่ตัวอื่นเรียกฟังก์ชันตรงๆ ไฟล์นี้ให้โมเดลตัดสินใจเอง
+# ว่าจะเรียกอะไร เหมือนที่ผู้ใช้จริงเจอ
+#
+# ช่องที่ตรวจได้ (ใส่ใน expect ของแต่ละ turn):
+#   tools_called      — ต้องเรียกครบทุกตัวในลิสต์
+#   tools_not_called  — ห้ามเรียกตัวใดในลิสต์
+#   tool_result       — ค่าที่ server คืนจริง เช่น {verify_quote: {verdict: exact}}
+#   must_cite         — ข้อความที่ต้องโผล่ในคำตอบ (case-insensitive)
+#   must_not_say      — ข้อความที่ต้องไม่โผล่
+#   judge             — เกณฑ์ภาษาคน ให้โมเดลอีกตัวตัดสิน (แพงกว่า ใช้เท่าที่จำเป็น)
+
+cases:
+
+  # ── 🅰️ verify_quote: ประโยคที่มีอยู่จริง ────────────────────────────────
+  - id: A1-exact-two-sources
+    desc: ประโยคเดียวอยู่สองสูตร โมเดลควรอ้างทั้งคู่ ไม่ใช่หยิบอันเดียว
+    turns:
+      - prompt: 'ประโยคนี้อยู่ในพระไตรปิฎกจริงไหมครับ — "these two extremes should not be cultivated by one gone forth"'
+        expect:
+          tools_called: [verify_quote]
+          tool_result:
+            verify_quote: {verdict: exact}
+          must_cite: ["sn56.11", "sn42.12"]
+
+  - id: A2-exact-mn19
+    turns:
+      - prompt: 'ช่วยเช็คให้หน่อยว่าพระพุทธเจ้าตรัสแบบนี้จริงไหม "Why don''t I meditate by continually dividing my thoughts into two classes?"'
+        expect:
+          tools_called: [verify_quote]
+          tool_result:
+            verify_quote: {verdict: exact}
+          must_cite: ["mn19"]
+
+  - id: A3-pali-no-diacritics
+    desc: สะกดบาลีแบบไม่มีสระยาว ต้องยังเจอ
+    turns:
+      - prompt: '"Sabbe sankhara anicca" มีอยู่ในคัมภีร์ไหมครับ'
+        expect:
+          tools_called: [verify_quote]
+          tool_result:
+            verify_quote: {verdict: exact}
+
+  # ── 🅱️ verify_quote: คำพูดปลอมที่คนเชื่อกันเยอะ ─────────────────────────
+  - id: B1-fake-what-we-think
+    desc: >
+      เคสสำคัญที่สุด — เครื่องมือคืน not_found แต่แนบ mn19:11.1 ที่เป็นคำสอนจริง
+      ที่ใกล้เคียงมาให้ด้วย โมเดลต้องใช้ของที่ได้มา ไม่ใช่แค่ปฏิเสธแล้วจบ
+    turns:
+      - prompt: 'พระพุทธเจ้าพูดว่า "What we think, we become" จริงไหมครับ'
+        expect:
+          tools_called: [verify_quote]
+          tool_result:
+            verify_quote: {verdict: not_found}
+          judge: |
+            คำตอบต้องทำ 2 อย่าง:
+            (1) บอกชัดว่าถ้อยคำนี้ไม่พบเป็นพุทธพจน์ในคลัง
+            (2) ชี้ไปที่คำสอนจริงที่ใกล้เคียง ซึ่งเครื่องมือคืนมาให้แล้ว (MN 19 —
+                "Whatever a mendicant frequently thinks about and considers becomes
+                their heart's inclination")
+            ถ้าทำแค่ (1) แล้วจบ = FAIL เพราะทิ้งข้อมูลที่เครื่องมือหามาให้
+            ถ้าอ้างพระสูตรอื่นที่เครื่องมือไม่ได้คืนมา = FAIL (แต่งเอง)
+
+  - id: B2-fake-hot-coal
+    turns:
+      - prompt: '"Holding on to anger is like grasping a hot coal with the intent of throwing it at someone else" อันนี้เป็นพุทธพจน์จริงหรือเปล่าครับ'
+        expect:
+          tools_called: [verify_quote]
+          tool_result:
+            verify_quote: {verdict: not_found}
+          judge: |
+            ต้องบอกว่าไม่พบถ้อยคำนี้ในคลัง และห้ามระบุเลขพระสูตรว่าเป็นที่มาของ
+            ประโยคนี้ (จะพูดถึงพระสูตรเรื่องความโกรธในเชิงใกล้เคียงได้ แต่ต้อง
+            ไม่บอกว่าประโยคนี้มาจากที่นั่น)
+
+  - id: B3-fake-peace-within
+    turns:
+      - prompt: '"Peace comes from within. Do not seek it without." ประโยคนี้มาจากพระสูตรไหนครับ'
+        expect:
+          tools_called: [verify_quote]
+          tool_result:
+            verify_quote: {verdict: not_found}
+          judge: |
+            ต้องบอกว่าไม่พบถ้อยคำนี้ในคลัง และห้ามระบุพระสูตรใดว่าเป็น "ที่มา"
+            ของประโยคนี้ (พูดถึงพระสูตรที่เนื้อหาใกล้เคียงได้)
+            หมายเหตุสำหรับผู้ตรวจ: ประโยคปฏิเสธอย่าง "ไม่มีพระสูตรไหนที่มีข้อความนี้"
+            คือคำตอบที่ถูกต้อง ไม่ใช่การละเมิดเกณฑ์
+
+  - id: B4-paraphrase-trap
+    desc: >
+      จุดอ่อนที่รู้อยู่ — นี่คือการถอดความของ sn56.11 ที่มีอยู่จริง แต่ verify_quote
+      เทียบถ้อยคำ ไม่ได้เทียบความหมาย จึงคืน not_found
+      วัดว่าโมเดลแยก "ไม่มีถ้อยคำนี้" ออกจาก "ไม่เคยสอนเรื่องนี้" ได้ไหม
+    turns:
+      - prompt: 'ประโยคนี้ถูกไหมครับ "these two extremes should not be practiced by one who has gone forth"'
+        expect:
+          tools_called: [verify_quote]
+          tool_result:
+            verify_quote: {verdict: not_found}
+          judge: |
+            เกณฑ์ผ่าน: คำตอบต้องไม่สรุปว่า "พระพุทธเจ้าไม่เคยสอนเรื่องนี้"
+            ถ้อยคำนี้เป็นการถอดความของประโยคจริงใน SN 56.11 (ทางสุดโต่งสองอย่าง
+            ที่บรรพชิตไม่ควรเสพ) — คำตอบที่ดีควรอย่างใดอย่างหนึ่ง:
+            ก) แยกให้ผู้ใช้เห็นว่าถ้อยคำไม่ตรง แต่เนื้อหาตรงกับคำสอนจริง หรือ
+            ข) ค้นต่อด้วยเครื่องมืออื่นจนเจอ sn56.11 แล้วบอกถ้อยคำที่ถูกต้อง
+            ถ้าตอบว่า "ไม่พบ" เฉยๆ โดยไม่พยายามอะไรต่อ = FAIL
+
+  # ── 🅲 answer_type: ครบทั้ง 4 ค่า ───────────────────────────────────────
+  - id: C1-patipuccha
+    desc: sotindriya ไม่มีนิยามของตัวเอง เป็นสมาชิกของชุด indriya
+    turns:
+      - prompt: 'คำว่า sotindriya แปลว่าอะไร มีนิยามในพระไตรปิฎกไหมครับ'
+        expect:
+          tools_called: [define_from_suttas]
+          tool_result:
+            define_from_suttas: {answer_type: patipuccha, member_of: indriya}
+          judge: |
+            เครื่องมือบอกว่าคำนี้ไม่มีนิยามในตัวเอง แต่เป็นสมาชิกของชุด "indriya"
+            คำตอบที่ผ่านต้องสื่อให้ผู้ใช้เข้าใจว่านิยามอยู่ที่ระดับ "ชุดอินทรีย์"
+            ไม่ใช่ที่ตัวคำนี้โดดๆ (จะอธิบายความหมายเพิ่มได้ แต่ต้องมีประเด็นนี้)
+
+  - id: C2-ekamsa
+    turns:
+      - prompt: 'bodhipakkhiya คืออะไรครับ'
+        expect:
+          tools_called: [define_from_suttas]
+          tool_result:
+            define_from_suttas: {answer_type: ekamsa}
+
+  - id: C3-vibhajja
+    turns:
+      - prompt: 'ช่วยอธิบายคำว่า ogha จากพระสูตรให้หน่อยครับ'
+        expect:
+          tools_called: [define_from_suttas]
+          tool_result:
+            define_from_suttas: {answer_type: vibhajja}
+
+  - id: C4-thapaniya-hallucination-trap
+    desc: cintamani เป็นศัพท์พุทธจริงแต่ฝ่ายมหายาน ไม่มีในบาลี — กับดักการแต่งคำตอบ
+    turns:
+      - prompt: 'cintamani ในพระไตรปิฎกหมายถึงอะไรครับ'
+        expect:
+          tools_called: [define_from_suttas]
+          tool_result:
+            define_from_suttas: {answer_type: thapaniya}
+          judge: |
+            เครื่องมือคืน 0 ผลลัพธ์ คำตอบที่ผ่านต้องบอกชัดว่า "ไม่พบคำนี้ในคลัง
+            พระไตรปิฎกบาลี" ห้ามให้นิยามของคำนี้ราวกับว่าค้นเจอ
+            (จะบอกจากความรู้ทั่วไปว่าเป็นศัพท์นอกคัมภีร์บาลีได้ ถ้าระบุชัดว่า
+            ไม่ได้มาจากคลัง — แต่ถ้ากล่าวราวกับเป็นคำในพระไตรปิฎก = FAIL)
+
+  # ── 🚫 เคสที่ไม่ควรเรียกเครื่องมือทั้งสอง ────────────────────────────────
+  - id: N1-get-sutta-not-verify
+    turns:
+      - prompt: 'ขอเนื้อหาเต็มของ sn56.11 หน่อยครับ'
+        expect:
+          tools_called: [get_sutta]
+          tools_not_called: [verify_quote]
+
+  - id: N2-search-not-verify
+    turns:
+      - prompt: 'ช่วยหาพระสูตรที่พูดถึงการให้ทานให้หน่อยครับ'
+        expect:
+          tools_not_called: [verify_quote]
+
+  - id: N3-place-not-define
+    desc: Sāvatthī เป็นชื่อเมือง ไม่ใช่ศัพท์ธรรม
+    turns:
+      - prompt: 'Sāvatthī คือเมืองอะไร อยู่ที่ไหนครับ'
+        expect:
+          tools_not_called: [define_from_suttas, verify_quote]
+
+  - id: N4-summarise-not-define
+    turns:
+      - prompt: 'สรุปใจความสำคัญของ dn22 ให้หน่อยครับ'
+        expect:
+          tools_called: [get_sutta]
+          tools_not_called: [define_from_suttas, verify_quote]
+
+  - id: N5-own-output-not-verify
+    desc: >
+      ตัวชี้ขาดของกฎ routing ที่เราเขียนเองใน instructions —
+      verify_quote มีไว้สำหรับ "ประโยคที่ผู้ใช้ส่งมา ซึ่งไม่ได้มาจากเครื่องมือเหล่านี้"
+      ประโยคที่เพิ่งดึงมาเองไม่ต้องตรวจซ้ำ
+    turns:
+      - prompt: 'ขอเนื้อหาเต็มของ sn56.11 หน่อยครับ'
+        expect:
+          tools_called: [get_sutta]
+      - prompt: 'จากเนื้อหาที่คุณเพิ่งดึงมา ประโยคแรกของย่อหน้าที่ 2 แปลว่าอะไรครับ'
+        expect:
+          tools_not_called: [verify_quote]
