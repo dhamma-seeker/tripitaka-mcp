@@ -768,6 +768,14 @@ def _listed_together(cur, backend_name: str, member: str, group: str) -> bool:
     จึงเช็คว่า **ท่อนข้างเคียงของสมาชิก มีชื่อหมู่คู่กับคำบอกจำนวน** ไหม
     ถ้าไม่มีหลักฐานแบบนี้ = บังเอิญตัวอักษรพ้องกันเฉยๆ ไม่ใช่ความสัมพันธ์จริง
     (`khandha` ตัดหัวได้ `andha` = คนตาบอด · `sasana` ได้ `asana` = อาสนะ)
+
+    **`ORDER BY` จำเป็น ห้ามตัดออก** — เราดูแค่ 25 ท่อนแรกจากทั้งหมดที่อาจมี
+    เป็นร้อย ถ้าไม่เรียง แต่ละอินสแตนซ์จะได้คนละชุดตามลำดับกายภาพของแถว
+    แล้วคำเดียวกันจะได้ `answer_type` ต่างกันระหว่าง local กับ prod
+    (`sotindriya` เคยเป็น `vibhajja` ที่ local แต่ `patipuccha` บน prod
+    ทั้งที่ข้อมูลเหมือนกันเป๊ะ) เรียงตาม id ยังได้ผลพลอยได้คือไล่จากคัมภีร์ที่
+    โหลดก่อน = ชั้นสุตตะ ซึ่งเป็นที่อยู่ของหัวข้อแจกแจงหมู่พอดี — `sotindriya`
+    เจอการยืนยันที่ลำดับ 2 จาก 178
     """
     forms = _inflected_forms(member)
     gforms = _inflected_forms(group)
@@ -776,7 +784,7 @@ def _listed_together(cur, backend_name: str, member: str, group: str) -> bool:
             """
             SELECT seg.id, seg.section_id FROM segment_fts f
             JOIN segment seg ON seg.id = f.rowid
-            WHERE f.segment_fts MATCH ? LIMIT 25
+            WHERE f.segment_fts MATCH ? ORDER BY seg.id LIMIT 25
             """,
             ("text_pali : (" + " OR ".join(sorted(forms)) + ")",),
         )
@@ -784,7 +792,7 @@ def _listed_together(cur, backend_name: str, member: str, group: str) -> bool:
         alt = "|".join(re.escape(f) for f in sorted(forms))
         cur.execute(
             "SELECT seg.id, seg.section_id FROM segment seg "
-            "WHERE f_unaccent(seg.text_pali) ~* %s LIMIT 25",
+            "WHERE f_unaccent(seg.text_pali) ~* %s ORDER BY seg.id LIMIT 25",
             (rf"\y({alt})\y",),
         )
     anchors = cur.fetchall()
