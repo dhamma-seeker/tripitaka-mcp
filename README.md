@@ -118,6 +118,18 @@ Then point Claude Desktop / Cursor at the local command — no `npx`, no `mcp-re
 
 (If `tripitaka-mcp` isn't on the client's `PATH`, use the absolute path from `which tripitaka-mcp`.)
 
+**Need a URL instead of stdio?** Some tools — scripts, notebooks, anything that
+wants to share one server across several clients — want an HTTP endpoint rather
+than a subprocess:
+
+```bash
+tripitaka-mcp serve --http                 # http://127.0.0.1:8765/mcp
+tripitaka-mcp serve --http --port 9000     # or MCP_HOST / MCP_PORT
+```
+
+It binds `127.0.0.1` unless you say otherwise; the canon is read-only, but
+nothing here asks who is calling, so think before binding a public interface.
+
 **Hosted vs local — what's different**
 
 Both serve the same ~444K-segment canon. The differences:

@@ -4,7 +4,7 @@ Tripitaka MCP — command-line interface สำหรับ local install.
 
 Subcommands:
   tripitaka-mcp init    ดาวน์โหลด SQLite database (~120 MB) จาก HuggingFace
-  tripitaka-mcp serve   รัน MCP server แบบ stdio (สำหรับ Claude Desktop / Cursor)
+  tripitaka-mcp serve   รัน MCP server — stdio (ค่าเริ่มต้น) หรือ HTTP ด้วย --http
 
 local install ใช้ SQLite backend เสมอ — ดู Dual-Backend Discipline ใน CLAUDE.md.
 """
@@ -77,8 +77,37 @@ def cmd_init(args: argparse.Namespace) -> int:
     return 0
 
 
+# transport ที่ fastmcp รับ — "http" เป็นชื่อย่อที่คนพิมพ์บ่อยกว่าชื่อจริง
+_HTTP_TRANSPORTS = {"http": "streamable-http", "streamable-http": "streamable-http",
+                    "sse": "sse"}
+
+
+def _resolve_transport(args: argparse.Namespace) -> tuple[str, str, int]:
+    """(transport, host, port) จาก flag ก่อน แล้วค่อย env
+
+    เดิม `serve` ฮาร์ดโค้ด stdio ทิ้ง `MCP_TRANSPORT` ไปเงียบๆ คนที่ตั้ง env
+    ตามเอกสารของ server จึงได้ stdio ที่ไม่มีใครคุยด้วย โดยไม่มี error ให้ดู
+    ตอนนี้ env ถูกอ่านจริง และค่าที่ไม่รู้จักจะบอกออกมา ไม่ใช่เมินเฉย
+    """
+    host = args.host or os.getenv("MCP_HOST", "127.0.0.1")
+    port = args.port or int(os.getenv("MCP_PORT", "8765"))
+
+    if args.http:
+        return "streamable-http", host, port
+
+    env = (os.getenv("MCP_TRANSPORT") or "").strip().lower()
+    if not env or env == "stdio":
+        return "stdio", host, port
+    if env in _HTTP_TRANSPORTS:
+        return _HTTP_TRANSPORTS[env], host, port
+
+    _log(f"warning: MCP_TRANSPORT={env!r} is not a transport I know "
+         f"({', '.join(sorted({'stdio', *_HTTP_TRANSPORTS}))}) — using stdio")
+    return "stdio", host, port
+
+
 def cmd_serve(args: argparse.Namespace) -> int:
-    """รัน MCP server แบบ stdio. ตั้ง backend = sqlite ก่อน import main."""
+    """รัน MCP server. ตั้ง backend = sqlite ก่อน import main."""
     # ตั้ง env ก่อน import main — main.py อ่าน env ตอน module load
     os.environ["TRIPITAKA_BACKEND"] = "sqlite"
     os.environ.setdefault("TRIPITAKA_SKIP_MIGRATIONS", "true")
@@ -91,10 +120,20 @@ def cmd_serve(args: argparse.Namespace) -> int:
         _log("run `tripitaka-mcp init` first to download it.")
         return 1
 
+    transport, host, port = _resolve_transport(args)
+
     _log(f"Tripitaka MCP (local / SQLite) — db: {db_path}")
     import main  # noqa: E402 — ต้อง import หลังตั้ง env
 
-    main.mcp.run(transport="stdio")
+    if transport == "stdio":
+        main.mcp.run(transport="stdio")
+        return 0
+
+    if host not in ("127.0.0.1", "localhost", "::1"):
+        _log(f"warning: binding {host} — reachable from outside this machine. "
+             "The canon is read-only, but nothing here asks who is calling.")
+    _log(f"listening on http://{host}:{port}/mcp  ({transport})")
+    main.mcp.run(transport=transport, host=host, port=port)
     return 0
 
 
@@ -111,7 +150,22 @@ def main() -> int:
     )
     p_init.set_defaults(func=cmd_init)
 
-    p_serve = sub.add_parser("serve", help="run the MCP server (stdio transport)")
+    p_serve = sub.add_parser(
+        "serve",
+        help="run the MCP server (stdio by default, --http to listen on a port)",
+    )
+    p_serve.add_argument(
+        "--http", action="store_true",
+        help="serve over HTTP instead of stdio, for clients that want a URL",
+    )
+    p_serve.add_argument(
+        "--host", default=None,
+        help="interface to bind with --http (default 127.0.0.1, or MCP_HOST)",
+    )
+    p_serve.add_argument(
+        "--port", type=int, default=None,
+        help="port to bind with --http (default 8765, or MCP_PORT)",
+    )
     p_serve.set_defaults(func=cmd_serve)
 
     args = parser.parse_args()
