@@ -103,6 +103,23 @@ tripitaka-mcp init             # one-time: downloads the SQLite database
 tripitaka-mcp serve            # runs the MCP server over stdio
 ```
 
+**If the install fails like this:**
+
+```
+Because the current Python version (3.9.6) does not satisfy Python>=3.10
+```
+
+pipx is using a different interpreter than you think. It builds its own
+isolated environment on purpose and ignores whatever venv you have active — so
+an old system Python gets picked even when the shell you typed in has 3.12.
+Tell it which to use:
+
+```bash
+pipx install --python python3.12 tripitaka-mcp
+```
+
+(Any 3.10 or newer works; `pipx environment` shows what it defaults to.)
+
 Then point Claude Desktop / Cursor at the local command — no `npx`, no `mcp-remote`, no internet:
 
 ```json
