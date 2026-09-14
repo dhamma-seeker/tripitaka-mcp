@@ -1830,6 +1830,26 @@ def search_hybrid(
     mindfulness-of-breathing suttas use `assasati/passasati/dīghaṁ`
     instead of `ānāpānassati`).
 
+    ⚠️ **Send the question and nothing else. Do not pad the query.**
+    The whole string becomes one vector, so every word you add moves it.
+    Appending your own candidate terms — synonyms, Pāli equivalents, a
+    keyword list — searches for the blend, not for the question.
+
+    Measured on `Buddha flies in the sky`: asking it plainly put the right
+    passage at **rank 1** (3 relevant suttas). Appending three guessed Pāli
+    terms (`buddha, agga, sagga`) pushed it down to **rank 5** and left
+    only 1 — because `agga` (supreme) and `sagga` (heaven) drag the vector
+    toward their own meanings.
+
+    Have candidate terms worth searching? Give them their own
+    `search_by_keyword` call and merge the two result lists. One tool asks
+    what a passage means, the other asks where a word occurs; combined into
+    a single string they cancel out.
+
+    Rewriting the question to sound more canonical does not help either —
+    the same query phrased as `rose into the air and flew like a bird`
+    scored **zero** relevant hits.
+
     💡 **Hints for the AI client:**
     - English queries usually work best (e.g. `mindfulness of breathing`)
       because the embedding model is multilingual but EN-primary.
@@ -1838,6 +1858,14 @@ def search_hybrid(
       instructions).
     - The default `limit=5` is often too small for a topic survey — use
       `limit=15-20` (max 20) for good coverage.
+    - `language` only chooses what comes back; it does not change what
+      matches or how results are ranked.
+    - Looking for a concrete thing rather than a concept (an animal, an
+      object, a place)? `search_by_keyword` over `language="english"` is
+      often better. The translations are segment-aligned to the Pāli, so
+      one search for `turtle` finds every turtle passage whatever the Pāli
+      underneath says (`kacchapa`, `kumma`, `maṇḍūkakacchapa`), and each
+      hit still carries its segment id.
     - Ranking is by similarity, NOT canonical importance — locus
       classicus suttas (e.g. MN118, DN22) may rank below smaller suttas
       that happen to use the exact vocabulary. Treat results as a
