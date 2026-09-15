@@ -613,13 +613,14 @@ def search_by_keyword(
     passage that teaches anything. Two things to do instead:
     - Search the **rarest distinctive noun** in the passage, not its most
       obvious one. For the simile of the blind turtle, `turtle`/`kacchapa`
-      finds it; `ocean`/`samudda` does not.
-    - **Search it in English.** English has no compounding, so a word stands
-      on its own: `turtle` reaches SN 56.47 and SN 56.48, while the Pāli
-      misses SN 56.47 because it says `mahāsamudde` — the word is buried
-      inside a compound *and* inflected, and trigram matching scores that
-      0.50 against `samudda`, below the 0.6 cutoff. This is a real limit of
-      keyword search, not something to work around by trying more spellings.
+      gets there; `ocean`/`samudda` does not, in either language.
+    - **Prefer English, or raise the limit.** `turtle` returns SN 56.47 and
+      SN 56.48 inside the default window; `kacchapa` matches them too but
+      ranks them past 30, so you need `limit=50` to see them.
+    - A word inside a **compound** may be out of reach entirely: `samudda`
+      scores 0.50 against `mahāsamudde` (compounded *and* inflected), under
+      the 0.6 cutoff, so SN 56.47 is not ranked low — it is excluded. Trying
+      more spellings will not recover it; search a different word instead.
 
     🔍 **Pick the right search tool for the question shape:**
     - **Term lookup (exact word appearances)** — e.g. "occurrences of
