@@ -11,36 +11,53 @@ routing rule ที่เราเขียนไว้ "ติด" จริง
 กันการปนเปื้อน: รันใน cwd ว่าง (ไม่ให้เจอ CLAUDE.md ของ repo),
 --strict-mcp-config (ไม่เอา MCP อื่นของเครื่อง), --restricted (ตัด Bash ทิ้ง)
 
+**ต้องบอกปลายทางเองเสมอ** — ไม่มี default ให้เผลอ (`--local`, `--url`, หรือ MCP_URL)
+โดยปกติสิ่งที่อยากเทสคือโค้ดในไดเรกทอรีนี้ → `--local` แล้วต้องสตาร์ท server เอง
+
 ใช้:
-    .venv/bin/python scripts/test_mcp_prompts.py --dry-run
-    .venv/bin/python scripts/test_mcp_prompts.py                    # prod + opus
-    .venv/bin/python scripts/test_mcp_prompts.py --case B1 --case C4
-    .venv/bin/python scripts/test_mcp_prompts.py --model haiku       # เทียบโมเดลต่ำ
-    .venv/bin/python scripts/test_mcp_prompts.py --url http://localhost:8080/mcp
-    .venv/bin/python scripts/test_mcp_prompts.py --repeat 3          # วัดความไม่นิ่ง
+    .venv/bin/python scripts/test_mcp_prompts.py --local --dry-run
+    .venv/bin/python scripts/test_mcp_prompts.py --local             # ของที่เพิ่งแก้
+    .venv/bin/python scripts/test_mcp_prompts.py --local --case B1 --case C4
+    .venv/bin/python scripts/test_mcp_prompts.py --local --model haiku  # เทียบโมเดลต่ำ
+    .venv/bin/python scripts/test_mcp_prompts.py --local --repeat 3  # วัดความไม่นิ่ง
+    .venv/bin/python scripts/test_mcp_prompts.py --url https://mcp.<domain>/mcp
+
+บรรทัดหัวที่พิมพ์ `url=` คือสิ่งที่กำลังเทสจริง — ดูมันก่อนเชื่อผล
+ยิงไปเครื่องที่ไม่ใช่ localhost จะขึ้นคำเตือนสีแดงว่ากำลังดูโค้ดที่ deploy อยู่
 
 Exit code 0 ถ้าผ่านทุกเคส, 1 ถ้ามี fail
 """
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
 import tempfile
 import time
+import urllib.parse
 from pathlib import Path
 
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 CASES_FILE = ROOT / "scripts" / "prompt_cases.yaml"
-DEFAULT_URL = "https://mcp.tripitaka-mcp.com/mcp"
+# ไม่มี default โดยตั้งใจ — เคยตั้งเป็น URL ของ prod แล้วมันกัด: สั่งด้วย
+# MCP_URL=... (ซึ่งสคริปต์นี้ไม่เคยอ่าน) เทสก็วิ่งไป prod เงียบๆ = ทดสอบโค้ดเก่า
+# บนเครื่องจริง โดยเข้าใจว่ากำลังเทสของที่เพิ่งแก้
+LOCAL_URL = "http://localhost:8080/mcp"
+MCP_URL_ENV = "MCP_URL"
 SERVER = "tripitaka"
 PREFIX = f"mcp__{SERVER}__"
 TURN_TIMEOUT = 600
 
 C_OK, C_BAD, C_DIM, C_OFF = "\033[32m", "\033[31m", "\033[90m", "\033[0m"
+
+
+def _is_loopback(url: str) -> bool:
+    host = urllib.parse.urlsplit(url).hostname or ""
+    return host in ("localhost", "127.0.0.1", "::1")
 
 
 class CliError(RuntimeError):
@@ -219,7 +236,10 @@ def main():
     sys.stdout.reconfigure(line_buffering=True)
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--url", default=DEFAULT_URL)
+    ap.add_argument("--url", default=os.environ.get("MCP_URL"),
+                    help="ปลายทางที่จะเทส (หรือตั้ง MCP_URL) — ต้องระบุเอง ไม่มีค่าเริ่มต้น")
+    ap.add_argument("--local", action="store_true",
+                    help=f"ทางลัดของ --url {LOCAL_URL}")
     ap.add_argument("--model", default="opus")
     ap.add_argument("--judge-model", default="opus")
     ap.add_argument("--effort", default="high",
@@ -230,6 +250,21 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--out", default="", help="เขียนผลลง JSON")
     args = ap.parse_args()
+
+    if args.local:
+        if args.url and args.url != LOCAL_URL:
+            print(f"{C_BAD}--local ขัดกับ --url/{MCP_URL_ENV}={args.url}{C_OFF}")
+            return 1
+        args.url = LOCAL_URL
+    if not args.url:
+        print(f"{C_BAD}ต้องบอกก่อนว่าจะเทสที่ไหน{C_OFF} — สคริปต์นี้ไม่มีปลายทางเริ่มต้น\n"
+              f"  เครื่องตัวเอง : --local  (= {LOCAL_URL})\n"
+              "  ที่อื่น        : --url <URL>  หรือ  MCP_URL=<URL>\n"
+              "ที่ไม่มี default เพราะเคยตั้งเป็น prod แล้วเผลอเทสโค้ดเก่าบนเครื่องจริง")
+        return 1
+    if not _is_loopback(args.url):
+        print(f"{C_BAD}⚠️  กำลังเทสเครื่องที่ไม่ใช่ localhost: {args.url}{C_OFF}\n"
+              f"{C_BAD}   สิ่งที่เห็นคือโค้ดที่ deploy อยู่ ไม่ใช่โค้ดในไดเรกทอรีนี้{C_OFF}\n")
 
     if not shutil.which("claude"):
         print("ไม่พบคำสั่ง claude ในเครื่อง")
