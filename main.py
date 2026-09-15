@@ -558,7 +558,8 @@ def _keyword_search_sqlite(
             sql += " AND p.code = ?"
             sql_params.append(pitaka)
 
-    sql += " ORDER BY rank LIMIT ?"
+    # seg.id ปิดท้ายเสมอ — bm25 เสมอกันได้บ่อย ถ้าไม่ตัดสินท้ายจะได้คนละแถวแต่ละครั้ง
+    sql += " ORDER BY rank, seg.id LIMIT ?"
     sql_params.append(limit)
 
     cur.execute(sql, sql_params)
@@ -602,6 +603,23 @@ def search_by_keyword(
     keyword to **Romanised Pāli (preferred) or English** before calling this
     tool — e.g. "suffering" → "dukkha", "mindfulness of breathing" →
     "ānāpānassati". See the server instructions for the enabled language set.
+
+    ✅ **Diacritics do not matter.** `anapanassati` and `ānāpānassati` return
+    the same thing; so do `nibbana` and `nibbāna`. Write the macrons if you
+    know them, guess without them if you don't — neither costs you results.
+
+    ⚠️ **A common Pāli noun is a poor query.** `samudda` (sea) matches ~700
+    segments and the top of that list is mostly section headings, not the
+    passage that teaches anything. Two things to do instead:
+    - Search the **rarest distinctive noun** in the passage, not its most
+      obvious one. For the simile of the blind turtle, `turtle`/`kacchapa`
+      finds it; `ocean`/`samudda` does not.
+    - **Search it in English.** English has no compounding, so a word stands
+      on its own: `turtle` reaches SN 56.47 and SN 56.48, while the Pāli
+      misses SN 56.47 because it says `mahāsamudde` — the word is buried
+      inside a compound *and* inflected, and trigram matching scores that
+      0.50 against `samudda`, below the 0.6 cutoff. This is a real limit of
+      keyword search, not something to work around by trying more spellings.
 
     🔍 **Pick the right search tool for the question shape:**
     - **Term lookup (exact word appearances)** — e.g. "occurrences of
@@ -678,7 +696,9 @@ def search_by_keyword(
                 query += " AND p.code = %(pitaka)s"
                 params["pitaka"] = pitaka
 
-            query += " ORDER BY word_similarity DESC, similarity DESC LIMIT %(limit)s"
+            # seg.id ปิดท้ายเสมอ — ไม่งั้นแถวที่คะแนนเท่ากันสลับกันได้ทุกครั้งที่รัน
+            query += (" ORDER BY word_similarity DESC, similarity DESC, seg.id"
+                      " LIMIT %(limit)s")
             cur.execute(query, params)
             cols = [desc[0] for desc in cur.description]
             results = [dict(zip(cols, row)) for row in cur.fetchall()]
@@ -693,20 +713,23 @@ def search_by_keyword(
                     seg.text_pali,
                     seg.text_thai,
                     seg.text_english,
-                    similarity(seg.{text_col}, %(kw)s) AS similarity,
-                    word_similarity(%(kw)s, seg.{text_col}) AS word_similarity
+                    similarity(f_unaccent(seg.{text_col}), f_unaccent(%(kw)s))
+                        AS similarity,
+                    word_similarity(f_unaccent(%(kw)s), f_unaccent(seg.{text_col}))
+                        AS word_similarity
                 FROM segment seg
                 JOIN section sec ON seg.section_id = sec.id
                 JOIN book b ON sec.book_id = b.id
                 JOIN nikaya n ON b.nikaya_id = n.id
                 JOIN pitaka p ON n.pitaka_id = p.id
-                WHERE %(kw)s <%% seg.{text_col}
+                WHERE f_unaccent(%(kw)s) <%% f_unaccent(seg.{text_col})
             """
             if pitaka:
                 query += " AND p.code = %(pitaka)s"
                 params["pitaka"] = pitaka
 
-            query += " ORDER BY word_similarity DESC, similarity DESC LIMIT %(limit)s"
+            query += (" ORDER BY word_similarity DESC, similarity DESC, seg.id"
+                      " LIMIT %(limit)s")
             cur.execute(query, params)
             cols = [desc[0] for desc in cur.description]
             results = [dict(zip(cols, row)) for row in cur.fetchall()]
