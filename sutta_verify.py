@@ -94,6 +94,11 @@ def _fetch_candidates(cur, backend_name: str, toks: list[str]) -> list[dict[str,
     พอชน LIMIT แล้วแถวที่ต้องการก็ถูกตัดทิ้งแบบสุ่ม — ธรรมบทคาถาแรกหายไปทั้งที่
     `manopubbangama` มีแค่ 19 ท่อน. ความยาวใช้แทนความหายากได้ดีพอ จึงไล่ลงมา
     ทีละขั้นแทนที่จะเหวี่ยงแห
+
+    ตะแกรงลดโอกาสชนเพดานลงมาก แต่ไม่ได้ลบทิ้ง — พอชนแล้ว `LIMIT` ที่ไม่มี `ORDER BY`
+    จะเลือกแถวแบบตามใจ Postgres/SQLite แปลว่า `not_found` อาจเกิดจากการตัดแถวทิ้ง
+    ไม่ใช่เพราะข้อความนั้นไม่มีจริง. `ORDER BY seg.id` ในสองคิวรีข้างล่างจึง
+    **ห้ามตัดออก** — คำตอบผิดแบบนี้คือการปฏิเสธพุทธพจน์ที่มีอยู่จริง
     """
     if not toks:
         return []
@@ -138,6 +143,7 @@ def _ladder(cur, backend_name: str, live: list[str]) -> list[dict[str, Any]]:
                 JOIN segment seg ON seg.id = f.rowid
                 JOIN section sec ON seg.section_id = sec.id
                 WHERE f.segment_fts MATCH ?
+                ORDER BY seg.id
                 LIMIT ?
                 """,
                 (match, _CANDIDATE_CAP),
@@ -159,6 +165,7 @@ def _ladder(cur, backend_name: str, live: list[str]) -> list[dict[str, Any]]:
                 FROM segment seg
                 JOIN section sec ON seg.section_id = sec.id
                 WHERE {where}
+                ORDER BY seg.id
                 LIMIT %(cap)s
                 """,
                 params,

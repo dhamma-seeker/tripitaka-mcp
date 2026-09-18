@@ -859,8 +859,12 @@ def _survey_sqlite(cur, keyword, language, pitaka, scope, page_size, cursor):
     by_pitaka = {code: cnt for code, cnt in cur.fetchall()}
 
     # matched surface forms (audit) — scan matching texts up to the cap
+    # ORDER BY จำเป็น ห้ามตัดออก: คำที่ชนเพดานจะได้ตัวอย่างคนละชุดทุกครั้งที่รัน
+    # และคนละชุดระหว่างสอง backend ทั้งที่ข้อมูลเดียวกัน — matched_forms เป็นผลลัพธ์
+    # ที่ผู้ใช้เห็น ไม่ใช่ของภายใน
     cur.execute(
-        f"SELECT seg.{text_col}{base} LIMIT ?", where_params + [_FORMS_SCAN_CAP]
+        f"SELECT seg.{text_col}{base} ORDER BY seg.id LIMIT ?",
+        where_params + [_FORMS_SCAN_CAP],
     )
     scanned = [row[0] for row in cur.fetchall()]
     matched_forms = _matched_surface_forms(scanned, folded_kw, scope)
@@ -935,8 +939,10 @@ def _survey_postgres(cur, keyword, language, pitaka, scope, page_size, cursor):
     cur.execute(f"SELECT p.code, COUNT(*){base} GROUP BY p.code", params)
     by_pitaka = {code: cnt for code, cnt in cur.fetchall()}
 
+    # ORDER BY จำเป็น ห้ามตัดออก — เหตุผลเดียวกับกิ่ง SQLite ด้านบน
     cur.execute(
-        f"SELECT seg.{text_col}{base} LIMIT %(cap)s", {**params, "cap": _FORMS_SCAN_CAP}
+        f"SELECT seg.{text_col}{base} ORDER BY seg.id LIMIT %(cap)s",
+        {**params, "cap": _FORMS_SCAN_CAP},
     )
     scanned = [row[0] for row in cur.fetchall()]
     matched_forms = _matched_surface_forms(scanned, folded_kw, scope)
@@ -1023,11 +1029,16 @@ def _semantic_layer_postgres(cur, query, k, threshold, folded_kw, scope, languag
     if pitaka:
         sql += " AND p.code = %(pitaka)s"
         params["pitaka"] = pitaka
+    # ORDER BY มี distance ตัวเดียวเท่านั้น — เติม key ที่สองเข้าไปเมื่อไหร่ HNSW index
+    # ถูกทิ้งทันที (plan กลายเป็น Sort + Parallel Seq Scan) และ semantic ช้าลง 12 เท่า
+    # ตัวตัดสินท้ายไปทำในฝั่ง Python ข้างล่างแทน ดู _SORT_TIEBREAK_NOTE
     sql += " ORDER BY distance LIMIT %(k)s"
 
     cur.execute(sql, params)
     cols = ["segment_id", "sutta_id", "text_pali", "text_english", "distance"]
-    rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+    rows = _stable_by_distance(
+        [dict(zip(cols, r)) for r in cur.fetchall()]
+    )
 
     # judge in_lexical against the column the lexical layer actually matched
     lex_col = LANGUAGE_COLUMNS[language]
@@ -1812,7 +1823,9 @@ def search_semantic(
         )
 
         columns = ["segment_id", "sutta_id", "text_pali", "text_thai", "text_english", "distance"]
-        results = [_build_context(row, columns) for row in cur.fetchall()]
+        results = _stable_by_distance(
+            [_build_context(row, columns) for row in cur.fetchall()]
+        )
 
         if not results:
             return [{"message": f"No semantic matches found (distance < {threshold}). Try a higher threshold for a broader search."}]
@@ -1830,6 +1843,37 @@ def search_semantic(
     finally:
         cur.close()
         backend.release(conn)
+
+
+_SORT_TIEBREAK_NOTE = """ทำไมตัวตัดสินท้ายของ vector search ถึงอยู่ใน Python ไม่ใช่ SQL
+
+ข้อความที่ซ้ำกันในคลังให้เวกเตอร์เดียวกันเป๊ะ `distance` จึงเสมอกันจริง — วัดแล้ว
+เสมอกัน 4-10 แถวจาก ~45 แถวแรก ถ้าไม่ตัดสินท้ายลำดับจะสลับกันเองได้
+
+แต่เขียน `ORDER BY distance, seg.id` ใน SQL **ไม่ได้** เพราะ key ตัวที่สองทำให้
+pgvector ทิ้ง HNSW index ทันที plan เปลี่ยนจาก `Index Scan using idx_segment_embedding`
+เป็น `Sort + Parallel Seq Scan` ทั้ง 444,673 แถว — วัดแล้ว `search_semantic`
+20 ms → 253 ms และ `search_hybrid` 25 ms → 139 ms
+
+จึงดึงด้วย `ORDER BY distance` ให้ index ทำงาน แล้วเรียงซ้ำในฝั่ง Python
+**สิ่งที่การทำแบบนี้ให้:** ลำดับของสิ่งที่คืนมาแล้วนิ่งแน่นอน
+**สิ่งที่มันไม่ให้:** สมาชิกตรงรอยตัดยังขึ้นกับ index — ซึ่งซื้อไม่ได้อยู่ดี
+เพราะ HNSW เป็น index แบบประมาณ สมาชิกจึงไม่เคยเป็นของแน่นอนตั้งแต่แรก
+ต่างจาก `survey_corpus`/`verify_quote`/keyword ที่ `ORDER BY` ใน SQL ปิดช่องได้สนิท
+และไม่มีราคาต้องจ่าย
+"""
+
+
+def _stable_by_distance(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """เรียงซ้ำด้วย (distance, segment_id) — ดู _SORT_TIEBREAK_NOTE"""
+    # distance หายหรือเป็น None ได้ถ้ารูปแบบแถวเปลี่ยน — อย่าให้การเรียงพังทั้งคำขอ
+    return sorted(
+        rows,
+        key=lambda r: (
+            r.get("distance") if isinstance(r.get("distance"), (int, float)) else float("inf"),
+            r.get("segment_id") or "",
+        ),
+    )
 
 
 # สัดส่วนของคลังที่ถือว่าคำนั้น "พบได้ทั่วไปเกินกว่าจะบอกอะไร"
@@ -1976,7 +2020,8 @@ def search_hybrid(
             """,
             (query_embedding,)
         )
-        semantic_results = cur.fetchall()
+        # (id, distance) → เรียงซ้ำด้วย (distance, id) ก่อนแจกอันดับ ดู _SORT_TIEBREAK_NOTE
+        semantic_results = sorted(cur.fetchall(), key=lambda r: (r[1], r[0]))
         semantic_ranks = {row[0]: rank + 1 for rank, row in enumerate(semantic_results)}
 
         # 2. Keyword Search (Top 50)
@@ -2667,7 +2712,7 @@ def get_word_definition(word: str, language: Literal["en", "thai", "th", "all"] 
                     SELECT word, source, text
                     FROM dictionary
                     WHERE word ILIKE %s
-                    ORDER BY length(word)
+                    ORDER BY length(word), word
                     LIMIT 3
                     """,
                     (f"{word_search}%",)
@@ -2678,7 +2723,7 @@ def get_word_definition(word: str, language: Literal["en", "thai", "th", "all"] 
                     SELECT word, source, text
                     FROM dictionary
                     WHERE word ILIKE %s AND language = %s
-                    ORDER BY length(word)
+                    ORDER BY length(word), word
                     LIMIT 3
                     """,
                     (f"{word_search}%", language)
