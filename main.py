@@ -17,6 +17,7 @@ Tools:
     - get_reference: สร้างการอ้างอิงที่ถูกต้อง
 """
 
+import json
 import os
 import re
 from typing import Any, Literal
@@ -1831,6 +1832,45 @@ def search_semantic(
         backend.release(conn)
 
 
+# สัดส่วนของคลังที่ถือว่าคำนั้น "พบได้ทั่วไปเกินกว่าจะบอกอะไร"
+# 5% ของ 444,673 segment ≈ 22,000 — `the` ประมาณ 87,799 และ `and` 48,862 เกินชัดเจน
+# ส่วน `turtle`/`ocean` ได้ 42 จึงรอด · ใช้สถิติของคลังตัดสิน ไม่ใช่ลิสต์ที่เขียนตายตัว
+# จึงใช้ได้กับบาลีด้วยโดยไม่ต้องมีลิสต์แยกรายภาษา
+_STOPWORD_ROW_FRACTION = 0.05
+_stopword_cache: dict[str, bool] = {}
+
+
+def _is_stopword(cur, token: str, enabled_cols: list[str]) -> bool:
+    """คำนี้พบทั่วไปจนไม่ช่วยจัดอันดับหรือเปล่า — ถามจาก planner ไม่ใช่นับจริง
+
+    นับจริงด้วย `count(*)` แพงเกินไป (`%the%` ใช้ 917 ms) แต่ `EXPLAIN` ให้ค่าประมาณ
+    ในเวลา 0.5-29 ms ซึ่งแม่นพอสำหรับการแยกว่าเป็นคำทั่วไปหรือคำเฉพาะ
+    ผิดพลาดได้ แต่ผิดแล้วเสียแค่ความเร็ว ไม่เสียความถูกต้อง เพราะอันดับจริงมาจาก
+    จำนวน token ที่โดนอยู่ดี
+
+    พังเมื่อไหร่ให้ตอบ False — ยอมช้าดีกว่าทิ้งคำที่ผู้ใช้ตั้งใจค้นหา
+    """
+    if token in _stopword_cache:
+        return _stopword_cache[token]
+    try:
+        cur.execute("SELECT count(*) FROM segment")
+        total = cur.fetchone()[0] or 0
+        cur.execute(
+            "EXPLAIN (FORMAT JSON) SELECT id FROM segment WHERE "
+            + " OR ".join(f"{c} ILIKE %s" for c in enabled_cols),
+            tuple([f"%{token}%"] * len(enabled_cols)),
+        )
+        plan = cur.fetchone()[0]
+        if isinstance(plan, str):
+            plan = json.loads(plan)
+        est = plan[0]["Plan"]["Plan Rows"]
+        verdict = total > 0 and est > total * _STOPWORD_ROW_FRACTION
+    except Exception:
+        verdict = False
+    _stopword_cache[token] = verdict
+    return verdict
+
+
 @hosted_only_tool(
     annotations={
         "title": "Hybrid Search",
@@ -1941,46 +1981,51 @@ def search_hybrid(
 
         # 2. Keyword Search (Top 50)
         # Tokenize query: multi-word phrases rarely appear verbatim in any column,
-        # so split and OR-match each token across text columns + translation table.
+        # so match each token separately and rank by HOW MANY tokens a segment hits.
+        #
+        # เดิมเป็น `WHERE (tok1) OR (tok2) OR … LIMIT 50` **ไม่มี ORDER BY** แล้วเอา
+        # ลำดับที่ Postgres บังเอิญคายออกมาไปเป็น rank 1..50 ป้อน RRF ตรงๆ
+        # "turtle in the ocean" แตกเป็น turtle / the / ocean — `the` เพียงคำเดียว
+        # แมตช์ 124,778 จาก 444,673 segment (28% ของคลัง) 50 แถวที่ได้จึงเป็น
+        # an11.14 ทั้งแผง ไม่เกี่ยวกับเต่าสักตัว = ขยะล้วนที่ไปแย่งที่กับฝั่ง semantic
         tokens = [t for t in re.split(r"[\s\-]+", query.strip()) if len(t) >= 3]
         if not tokens:
             tokens = [query.strip()] if query.strip() else []
 
         keyword_ranks: dict[int, int] = {}
+        enabled_cols = [
+            LANGUAGE_COLUMNS[lang]
+            for lang in ("pali", "thai", "english")
+            if lang in ENABLED_LANGUAGES
+        ]
+        tokens = [t for t in tokens if not _is_stopword(cur, t, enabled_cols)]
+
         if tokens:
-            # สร้าง ILIKE conditions เฉพาะคอลัมน์ภาษาที่เปิดใช้งาน
-            enabled_cols = [
-                LANGUAGE_COLUMNS[lang]
-                for lang in ("pali", "thai", "english")
-                if lang in ENABLED_LANGUAGES
-            ]
-            per_token_seg = " OR ".join(f"{c} ILIKE %s" for c in enabled_cols)
-            seg_conds = " OR ".join([f"({per_token_seg})"] * len(tokens))
-            seg_params: list[str] = []
+            # หนึ่ง SELECT ต่อหนึ่ง token แล้วนับว่า segment ไหนโดนกี่ token
+            # แยกเป็น UNION ALL เพื่อให้แต่ละกิ่งใช้ trgm index ได้ (bitmap index scan)
+            # — เร็วกว่า OR ก้อนเดียวที่บังคับ seq scan ทั้งตาราง
+            legs, params = [], []
             for t in tokens:
-                seg_params.extend([f"%{t}%"] * len(enabled_cols))
-
-            sql = f"SELECT id as seg_id FROM segment WHERE {seg_conds}"
-
-            # union กับ translation table เฉพาะเมื่อ Thai เปิดอยู่
-            # (translation table มีแค่ภาษาไทย)
-            if "thai" in ENABLED_LANGUAGES:
-                trans_conds = " OR ".join(["text ILIKE %s"] * len(tokens))
-                trans_params = [f"%{t}%" for t in tokens]
-                sql = (
-                    f"SELECT seg_id FROM ("
-                    f"  {sql}"
-                    f"  UNION"
-                    f"  SELECT segment_id as seg_id FROM translation"
-                    f"  WHERE language = 'th' AND ({trans_conds})"
-                    f") AS combined_search LIMIT 50"
+                legs.append(
+                    "SELECT id FROM segment WHERE "
+                    + " OR ".join(f"{c} ILIKE %s" for c in enabled_cols)
                 )
-                params = tuple(seg_params + trans_params)
-            else:
-                sql = f"SELECT seg_id FROM ({sql}) AS combined_search LIMIT 50"
-                params = tuple(seg_params)
+                params.extend([f"%{t}%"] * len(enabled_cols))
+                # translation table มีแค่ภาษาไทย — รวมเข้ามาเฉพาะตอน Thai เปิด
+                if "thai" in ENABLED_LANGUAGES:
+                    legs.append(
+                        "SELECT segment_id AS id FROM translation "
+                        "WHERE language = 'th' AND text ILIKE %s"
+                    )
+                    params.append(f"%{t}%")
 
-            cur.execute(sql, params)
+            # id ปิดท้ายเสมอ — segment ที่โดนเท่ากันต้องได้ลำดับเดิมทุกครั้งที่รัน
+            sql = (
+                "SELECT id, count(*) AS n FROM ("
+                + " UNION ALL ".join(legs)
+                + ") u GROUP BY id ORDER BY n DESC, id LIMIT 50"
+            )
+            cur.execute(sql, tuple(params))
             keyword_results = cur.fetchall()
             keyword_ranks = {row[0]: rank + 1 for rank, row in enumerate(keyword_results)}
 
