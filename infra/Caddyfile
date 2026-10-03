@@ -61,6 +61,15 @@
     # and nowhere else, and listing chrome-extension://… changed nothing.
     # Supporting it at all therefore means allowing every origin.
     #
+    # But `*` is not "everything". In CSP it matches http(s) and ws(s) only, so
+    # the same extension's side panel, whose ancestor IS chrome-extension://,
+    # was still refused: a grey "can't load" box in the side panel while the
+    # in-page popup and normal tabs worked. The other dictionaries it frames
+    # send no frame-ancestors at all, which is why only ours broke. The
+    # extension schemes are listed by scheme, not by ID, for the same reason
+    # `*` is: unpacked builds get a different ID, and the Safari and Firefox
+    # ports use their own schemes.
+    #
     # What frame-ancestors defends against is clickjacking, and there is nothing
     # here to hijack: the widget is read-only, no session, no form, no control
     # that changes state. The real cost of opening it is load, which is why the
@@ -68,7 +77,7 @@
     @embed path /read/embed/*
     header @embed {
         -X-Frame-Options
-        Content-Security-Policy "frame-ancestors *"
+        Content-Security-Policy "frame-ancestors * chrome-extension: moz-extension: safari-web-extension:"
     }
 
     # Every embed view is a live Postgres query: this path is not CDN-cached
