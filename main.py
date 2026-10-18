@@ -1820,9 +1820,35 @@ def search_semantic(
                    to 0.9 for broader.
 
     Returns:
-        Results sorted by ascending distance. Each item:
-        - segment_id, sutta_id, text_pali/text_english (per language flag),
-          distance, cross_reference URLs.
+        Results sorted by ascending `distance`. Each item:
+        - `segment_id` / `sutta_id` — the citable ids. Cite a claim at the
+          `segment_id` it came from.
+        - `text_pali` / `text_english` — the segment's text per the
+          `language` flag; a disabled language's field is dropped from the
+          row rather than returned empty.
+        - `distance` — the **cosine distance** (pgvector `<=>`) between the
+          embedding of your query and the embedding of the segment's
+          `text_pali`. Smaller is closer: 0 is the same direction, and the
+          operator's range runs to 2. A row is returned only if its distance
+          is at or under `threshold` (default 0.7), so an empty result means
+          nothing cleared that cut, not that the canon is silent. The number
+          is proximity in one embedding model's space — it does not say the
+          segment answers the question, and it is not a confidence score.
+        - `cross_reference` — the reader links for that row
+          (`tripitaka_mcp_reader`, `is_primary: true`): `url` for the sutta,
+          `segment_url` for the cited line. Render it as clickable markdown
+          for every sutta you name; it is the only verify link to give.
+        No match returns one item, `[{"message": ...}]`; SQLite mode, a
+        missing embedding module or a failed query returns `[{"error": ...}]`.
+
+        ⚠️ **What the ranking does not tell you.** Ordering is by embedding
+        distance, NOT canonical importance: the locus classicus for a topic
+        (e.g. MN 118, DN 22) can rank below a smaller sutta whose wording
+        happens to embed closer, and because Pāli stock phrases recur across
+        many suttas the top rows are often near-identical lines from
+        unrelated places. Treat the list as a place to start, then read the
+        passage in context — and call `get_sutta` for the canonical
+        references — before relying on it.
     """
     limit = min(max(1, limit), 20)
 
