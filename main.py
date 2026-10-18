@@ -2969,16 +2969,58 @@ def verify_quote(text: str, limit: int = 3) -> dict[str, Any]:
         limit: How many near matches to return when it is not exact (1–10).
 
     Returns:
-        `verdict`:
-        - `exact` — the canon contains this line.
-        - `close` — not exact, but something very like it exists. Read
-          `matches[0].text`: that is what the canon actually says, and the
-          difference between the two is usually the point.
-        - `not_found` — nothing close. Say so.
+        `verdict` — this tool's own reading of `matches[0]`, decided by the
+        numbers below at fixed thresholds:
+        - `exact` — `contained` is true, **or** `similarity` ≥ 0.995. The
+          canon contains this line.
+        - `close` — `coverage` ≥ 0.85 **and** `similarity` ≥ 0.55. Not
+          exact, but something very like it exists. Read `matches[0].text`:
+          that is what the canon actually says, and the difference between
+          the two is usually the point.
+        - `not_found` — neither test passed. Nothing close. Say so.
+        Note what `exact` rests on: a string comparison against folded text
+        (diacritics stripped, case lowered), not a human's confirmation of
+        the reading.
 
-        `matches[]` each carry `segment_id`, `field` (pali / english), the
-        received `text`, a `similarity` from 0 to 1, and a `cross_reference`
-        to read it in context.
+        `matches[]`, best first, each carry:
+        - `segment_id` / `sutta_id` — where the match sits, and what to cite.
+        - `field` — `pali` or `english`. Both are searched every time.
+        - `text` — the received reading **verbatim from the corpus**: what
+          the canon says, as against what was quoted to you.
+        - `similarity` — 0 to 1, how far the whole quoted string and the
+          whole passage match (a `SequenceMatcher` ratio on folded text).
+          It is symmetric, so a short quote sitting inside a longer line
+          scores low even when every word of it is present.
+        - `coverage` — 0 to 1, the share of **the quoted phrase's** letters
+          that appear in that passage in order. It answers the question
+          `similarity` cannot: how much of what I brought is in this line.
+          `Cattaro mahapadese desessami`, one word short of the canonical
+          line, scores `coverage` 1.0 at `similarity` 0.778.
+        - `contained` — true when the quoted phrase sits in the passage
+          whole: every letter consecutively, or every word as a consecutive
+          run. True sets `similarity` and `coverage` to 1.0.
+        - `spans` — how many consecutive segments were joined to build
+          `text` (1 to 4). Verse is segmented one line per pāda, so a quoted
+          couplet usually straddles segments, and `spans` above 1 means the
+          match only appeared once they were joined. ⚠️ **When `spans` > 1,
+          `segment_id` names only the FIRST of those segments** — the rest
+          of `text` lies in the ones after it, so cite the run rather than
+          that one id, and read it with `get_sutta(around=<segment_id>)`
+          before quoting. The Dhammapada's first verse matches at `dhp1:1`
+          with `spans: 2`.
+        - `cross_reference` — the reader links for that match
+          (`tripitaka_mcp_reader`, `is_primary: true`): `url` for the sutta,
+          `segment_url` for the cited line. Render it as clickable markdown
+          for every sutta you name; it is the only verify link to give.
+
+        Top level also carries `quote` (the text you passed in), `note`
+        (what to do about this verdict), `notice` (project attribution) and
+        `searched_tokens` — up to four of the longest distinct words of the
+        quote, folded, used as the coarse sieve that pulls candidates before
+        any scoring. Only words of five letters or more qualify, so a quote
+        built entirely of short common words gives the sieve nothing to work
+        with and can return `not_found` without the canon having been
+        searched for the phrase as a whole.
     """
     limit = min(max(1, limit), 10)
     backend = get_backend()
