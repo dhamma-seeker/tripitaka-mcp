@@ -165,8 +165,11 @@ def _build_instructions() -> str:
         "paraphrase it, or merely mention it (e.g. \"SN 45.8\", \"DN 22\") — "
         "you MUST attach the Tripitaka reader link for it as clickable "
         "markdown, proactively and without being asked. A bare citation like "
-        "\"SN 45.8\" with no link is NOT acceptable. This one-click "
-        "verification is the project's core anti-hallucination guarantee.\n"
+        "\"SN 45.8\" with no link is NOT acceptable. This one click is what "
+        "makes your answer checkable: the user opens the cited line and "
+        "holds your words against it. A correct link does not by itself "
+        "make the answer around it true — which is exactly why every sutta "
+        "you name needs one, every time.\n"
         "**Why a link and not a bare citation: a citation the user cannot "
         "open is a claim they cannot check.** The reader shows the same text "
         "this server returned to you — SuttaCentral's `bilara-data` rendered "
@@ -1510,6 +1513,16 @@ def get_sutta(
     Only one selector (around / segment_range / offset+limit) may be used at a
     time. Every response includes `total_segments` (the full count) so you
     know how much remains.
+    ⚠️ **A window can hand you half a sentence or half a verse.** The corpus
+    is segmented line by line, not sentence by sentence, so the first and last
+    segments of any `around` / `segment_range` / `offset`+`limit` slice may
+    each be a fragment. `get_sutta("dhp1-20", offset=4, limit=1)` returns one
+    segment, `dhp1:1` = "Manopubbaṅgamā dhammā," — half of the opening line
+    of the Dhammapada, which goes on in `dhp1:2` ("manoseṭṭhā manomayā;").
+    Before quoting anything from the edge of a window, read its neighbours:
+    widen `window` / `limit`, or fetch `around=<segment_id>` for the passage
+    you actually mean to cite. `verify_quote` joins up to four consecutive
+    segments for this same reason.
 
     ✅ **Coverage (v1.1+):** all three pitakas at parity with SuttaCentral
     `bilara-data`:
