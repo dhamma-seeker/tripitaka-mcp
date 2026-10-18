@@ -188,7 +188,7 @@ def register_mcp_app_ui(mcp, get_sutta, reader_base: str | None = None) -> list[
         """Open an interactive sutta viewer inside the chat — Pāli + English,
         plus an optional third row in the user's own language translated BY YOU.
 
-        Renders each segment as: Pāli on top (canonical), the Bhikkhu Sujato
+        Renders each segment as: Pāli on top (canonical), the bilara-data
         English below it (verification anchor), and — when you supply
         `translations` — your translation in the user's language, clearly
         badged as AI-generated. Prefer this over dumping raw segments when the

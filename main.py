@@ -38,7 +38,7 @@ load_dotenv()
 # =============================================================================
 # Language Coverage (feature flag)
 # =============================================================================
-# canonical = SuttaCentral bilara-data (Pāli + Sujato English).
+# canonical = SuttaCentral bilara-data (Pāli + bilara English translations).
 # Thai/อื่น ๆ จะเปิดได้เมื่อ index ฉบับแปลพร้อม — ไม่งั้นปิดไว้ใน prod เพื่อ
 # ป้องกัน user ได้ผลลัพธ์ครึ่ง ๆ กลาง ๆ. AI client ฝั่งผู้ใช้ควรแปล query
 # เป็นบาลีโรมัน/อังกฤษก่อนเรียก search tools.
@@ -111,10 +111,13 @@ def _build_instructions() -> str:
         "Reply to the user in **the language they wrote in**. The user's "
         "input language is the only signal for response language — do NOT "
         "default to Thai or any other language just because this server "
-        "documents Thai-source data. The corpus is bilingual (Pāli "
-        "canonical + Bhikkhu Sujato English; Thai for select translations); "
-        "translate Pāli quotes and explanations into the user's language as "
-        "needed. If unsure, mirror the language of the user's most recent "
+        "documents Thai-source data. The canonical text is Pāli; the "
+        "English comes from `bilara-data`'s several translators (Bhikkhu "
+        "Sujato for the Sutta Piṭaka and most of the Khuddaka Nikāya, "
+        "Bhikkhu Brahmali for the Vinaya, other bilara translators for a few "
+        "Khuddaka books; the Abhidhamma has no English). Translate Pāli "
+        "quotes and explanations into the user's language as needed. If "
+        "unsure, mirror the language of the user's most recent "
         "message.\n\n"
         + coverage_note
         + "\n🧭 **Which search tool?**\n"
@@ -414,7 +417,7 @@ def _tripitaka_reader_urls(
     บนโดเมนเดียวกับ MCP server — user verify ได้โดยไม่ออก trust boundary.
 
     Returns:
-        - url: หน้าสูตรเต็ม (แสดง Pāli + Sujato EN ทุก segment)
+        - url: หน้าสูตรเต็ม (แสดง Pāli คู่คำแปลอังกฤษจาก bilara ทุก segment)
         - segment_url: deep-link พร้อม fragment ที่ highlight + scroll-center
           segment ที่อ้างถึง (auto-applied โดย CSS `:target` + JS)
         - is_primary: ธง True — บอก client ว่านี่คือ verify link หลักที่ควร surface
@@ -424,7 +427,7 @@ def _tripitaka_reader_urls(
           highlight segment → reader ตอบโจทย์ "อ่านเทียบบาลี/อังกฤษ" ได้เหมือนกัน
     """
     base = f"{TRIPITAKA_READER_BASE}/read/{sutta_id}"
-    shows = "Pāli + Sujato English side by side on one page"
+    shows = "Pāli + English side by side on one page"
     if segment_id:
         shows += "; the #segment anchor highlights & scroll-centres the cited line"
     urls: dict[str, Any] = {"url": base, "is_primary": True, "shows": shows}
@@ -1429,8 +1432,8 @@ def get_sutta(
       stock phrases.
     - **Citing this sutta? Link the reader — it IS the authoritative text.**
       The response's `cross_reference.tripitaka_mcp_reader` (`is_primary: true`)
-      renders SuttaCentral's `bilara-data` verbatim (the same canonical Pāli +
-      Sujato English), so it is the correct verification target — not a
+      renders SuttaCentral's `bilara-data` verbatim (the same canonical Pāli
+      and bilara English), so it is the correct verification target — not a
       self-promotional link. Its `url` shows Pāli + English side by side and
       `segment_url` highlights the cited line. Render it as clickable markdown
       for EVERY sutta you name. It is the only verify link to give.
@@ -1465,7 +1468,9 @@ def get_sutta(
 
     ✅ **Coverage (v1.1+):** all three pitakas at parity with SuttaCentral
     `bilara-data`:
-    - Sutta Piṭaka (DN/MN/SN/AN/KN): Pāli + Sujato EN (5,791 sections)
+    - Sutta Piṭaka (DN/MN/SN/AN/KN): Pāli + bilara EN (5,791 sections) —
+      Sujato for DN/MN/SN/AN and most of KN; a few KN books have other
+      bilara translators
     - Vinaya Piṭaka: Pāli + Brahmali EN — SC codes e.g.
       `pli-tv-bu-vb-pj1` (Bhikkhu Pārājika 1), `pli-tv-bi-vb-pj1`
       (Bhikkhunī), `pli-tv-kd1` (Mahāvagga), `pli-tv-pvr10` (Parivāra),
@@ -2156,7 +2161,9 @@ def list_structure() -> dict[str, Any]:
 
     📊 **Current state (v1.1+, at parity with SuttaCentral bilara-data):**
     - **Sutta Piṭaka** complete: DN 37, MN 155, SN 1,829, AN 1,419, KN
-      2,351 sections (~284,702 segments) — Pāli + Sujato EN
+      2,351 sections (~284,702 segments) — Pāli + bilara EN (Sujato for
+      DN/MN/SN/AN and most of KN; a few KN books have other bilara
+      translators)
     - **Vinaya Piṭaka** complete: Bhikkhu Vibhaṅga 222, Bhikkhunī Vibhaṅga
       127, Khandhaka 22, Parivāra 51 + Pātimokkha 2 (~71,557 segments) —
       Pāli + Brahmali EN
@@ -2428,7 +2435,7 @@ def list_editions() -> list[dict[str, Any]]:
     are returned.
 
     ⚠️ **Current state:** the DB mostly holds Pāli (default from
-    SuttaCentral bilara) and English (Sujato). Thai editions
+    SuttaCentral bilara) and English (bilara's translators). Thai editions
     (`dhiranandi`, `jayasaro`, `mbu`, `royal`) aren't indexed yet — the
     list returns empty until they're loaded.
 
@@ -2539,7 +2546,8 @@ def compare_translations(
     Returns:
         - segment_id, sutta_id
         - text_pali: Pāli source (Mahāsaṅgīti)
-        - text_english: Sujato translation (from bilara-data)
+        - text_english: English translation from bilara-data (which
+          translator depends on the book)
         - text_thai_default: bilara Thai translation (currently null —
           Thai disabled)
         - translations[]: filtered by ENABLED_LANGUAGES — list of
