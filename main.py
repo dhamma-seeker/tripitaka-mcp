@@ -3140,8 +3140,6 @@ def parse_pali_word(word: str) -> dict[str, Any]:
     - You find an inflected Pāli word (e.g. `dukkhassa`, `bhikkhūnaṁ`) and
       `get_word_definition` doesn't find it directly — Pāli inflects nouns
       across 7 cases × 2 numbers, ~16 forms per root.
-    - You want to split a compound (`sammāsambuddhassa` → `sammā` +
-      `sambuddha` + `-ssa` genitive).
     - You want to see possible stems before another `get_word_definition`
       lookup.
 
@@ -3162,9 +3160,24 @@ def parse_pali_word(word: str) -> dict[str, Any]:
               "sīlavā").
 
     Returns:
-        - original_word: normalised input
-        - matched_suffixes_removed: list of stripped suffixes
-        - possible_stems: candidate root forms
+        The output of this tool's suffix-stripping rules, applied to your
+        input — **not anything read out of the canon or a dictionary.**
+        Nothing here was looked up, so no field carries a `segment_id` and
+        none of it is verified; `get_word_definition` is what turns one of
+        these guesses into a finding.
+        - original_word: the input, lowercased and whitespace-stripped.
+        - matched_suffixes_removed: which suffixes from the rule table the
+          word happened to end with. A suffix here means the spelling matched,
+          not that the word is in that case.
+        - possible_stems: the candidate spellings the rules produce — the
+          input itself, plus the input minus each matched suffix plus each
+          replacement vowel for it. **Some of these are not Pāli words at
+          all.** `sammāsambuddhassa` yields `sammāsambuddhaa`,
+          `sammāsambuddhau` and `sammāsambuddhai` beside the real
+          `sammāsambuddha`, because the rules combine mechanically and
+          nothing checks the result against a lexicon. Use them as
+          spellings to try in `get_word_definition` — never quote one to
+          the user as a Pāli form, and never present one as attested.
         - guidance: next-step workflow hint.
     """
     word = word.lower().strip()
@@ -3216,7 +3229,13 @@ def parse_pali_word(word: str) -> dict[str, Any]:
         "original_word": word,
         "matched_suffixes_removed": list(set(matched_suffixes)),
         "possible_stems": list(possible_stems),
-        "guidance": "ลองนำคำใน possible_stems ไปค้นใน get_word_definition เพื่อหาความหมายที่แท้จริง"
+        # payload ออกไปถึงผู้ใช้ทุกภาษา — ข้อความใน field เป็นอังกฤษ (คอมเมนต์ไทยได้)
+        "guidance": (
+            "Try each form in possible_stems with get_word_definition. These "
+            "are candidate spellings from suffix rules, not attested words — "
+            "some may not exist in Pāli. A definition lookup is what tells "
+            "you which one is real."
+        ),
     }
 
 
