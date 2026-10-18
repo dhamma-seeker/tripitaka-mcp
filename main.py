@@ -2736,13 +2736,44 @@ def get_word_definition(word: str, language: Literal["en", "thai", "th", "all"] 
         limit_context: Number of sutta-context examples to include (1-5).
 
     Returns:
-        Dictionary entries from SuttaCentral/Payutto plus context
-        examples (`appears_in_context[]`) showing how the word is used in
-        segments. Each context carries a `cross_reference` — when you cite
-        a usage, render its `tripitaka_mcp_reader.segment_url` (`is_primary:
-        true`; renders bilara-data verbatim, bilingual Pāli+English,
-        highlights the cited line) as clickable markdown. It is the only
-        verify link to give.
+        Two different kinds of thing arrive in one payload. Keep them apart:
+        - `definitions[]` — entries from the **dictionaries**, not from the
+          canon: `source`, `text` and an `attribution`. A dictionary entry
+          is not a passage, so it carries **no `segment_id`** and there is
+          no line for the reader to open. Cite it as that dictionary's
+          statement, naming the source — never as words of the Buddha.
+        - `appears_in_context[]` — **text from the corpus**, at most one
+          segment per sutta, each with `sutta_id`, `segment_id`, `pali`,
+          `english`, `thai` and a `cross_reference`. This is the traceable
+          half: quote the word's use from here and cite its `segment_id`.
+          When you cite a usage, render its
+          `tripitaka_mcp_reader.segment_url` (`is_primary: true`; renders
+          bilara-data verbatim, bilingual Pāli+English, highlights the
+          cited line) as clickable markdown. It is the only verify link to
+          give.
+          ⚠️ These examples are drawn at **random** (`ORDER BY random()`) —
+          they are not the clearest, the earliest or the most
+          representative uses, and two identical calls return different
+          ones. For `dhamma`, one call gave `ja457:2.4` and the next
+          `pli-tv-kd9:7.20.129`. So the set you get is not evidence about
+          where the word mostly occurs, and a missing example is not
+          evidence of absence. Use `survey_corpus` when the question is
+          where a word really appears.
+        - `related_words[]` — dictionary headwords that **contain your query
+          as a substring** (`word LIKE %<word>%`), up to ten, shortest
+          first. That is a relation between spellings, not between
+          meanings, so the list carries negations and opposites: `dhamma`
+          returns `adhamma` — its opposite — in first place, only because
+          it is the shortest headword with those letters inside it. Do not
+          pass these on as related concepts, and do not read a connection
+          into a word appearing here.
+        - `word` — the query as given. `notice` — project attribution.
+
+        When nothing matches the word exactly, the response is a different
+        shape: `{"note": ..., "suggestions": [...]}`, up to three
+        prefix-matched headwords — words to look up next, not definitions
+        of the word you asked for. A word absent from the dictionary, or a
+        failure, returns `{"error": ...}`.
     """
     word_search = word.lower().strip()
     limit_context = min(max(1, limit_context), 5)
