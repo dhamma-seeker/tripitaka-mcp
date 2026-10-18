@@ -655,6 +655,48 @@ def search_by_keyword(
                 (all). ✅ v1.1+: all three pitakas at parity with SuttaCentral
                 bilara — see list_structure for live counts.
         limit: Maximum results (default: 10, max: 50).
+
+    Returns:
+        A list of matching segments, ordered by `word_similarity` descending,
+        then `similarity` descending, then `segment_id`. Each row carries:
+        - `segment_id` / `sutta_id` — the citable ids. Cite a claim at the
+          `segment_id` it came from.
+        - `text_pali` / `text_english` / `text_thai` — the segment's text in
+          the languages this server has enabled; a disabled language's field
+          is dropped from the row rather than returned empty. A Thai search
+          also reports the `edition` the hit came from.
+        - `similarity` and `word_similarity` — **two measures of how far the
+          letters resemble each other, and nothing else.** On the hosted
+          server both come from Postgres `pg_trgm`, comparing trigrams of
+          your query with the segment's text in the language searched, 0 to 1:
+            • `word_similarity` scores your query against the best-matching
+              word-boundary span inside the segment, so an exact occurrence
+              of the word scores 1.0 however long the line is. It is the
+              primary sort key, and a row appears at all only if it clears
+              pg_trgm's 0.6 cutoff.
+            • `similarity` scores your query against the segment's **whole
+              text**, so it drops as the line gets longer and reports line
+              length as much as match quality. `turtle` returns `sn17.3:0.3`
+              ("A Turtle") at 0.78 and `sn17.3:1.8` ("Then that turtle went
+              back to the other turtle.") at 0.22 — both `word_similarity`
+              1.0, both containing the word. The 0.78 row is a section
+              heading; the 0.22 row is the narrative.
+          A local (SQLite) install has no pg_trgm: there both fields carry
+          the same figure, derived from the FTS5 BM25 rank, so read them
+          only against other rows of the same response.
+        - `cross_reference` — the reader links for that row
+          (`tripitaka_mcp_reader`, `is_primary: true`): `url` for the sutta,
+          `segment_url` for the cited line. Render it as clickable markdown
+          for every sutta you name; it is the only verify link to give.
+        A search with no match returns one item, `[{"message": ...}]`; a
+        rejected argument or a failed query returns `[{"error": ...}]`.
+
+        ⚠️ **What the ranking does not tell you.** Neither score measures
+        doctrinal importance, and a high one does not make a passage the
+        canonical locus for its topic — as above, a heading can outrank the
+        teaching it heads. Ranking is by resemblance of wording, NOT
+        canonical importance. Treat the list as a place to start, then read
+        the passage in context before relying on it.
     """
     try:
         language = _validate_choice(language, VALID_LANGUAGES_SEARCH, "language")
