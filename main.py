@@ -647,6 +647,12 @@ def search_by_keyword(
     - **General keyword survey** — set `limit≥30` and filter client-side,
       or call multiple related forms (root verb + noun + compound).
 
+    📊 **Reading the two scores.** `word_similarity` is the primary sort key: it
+    scores your query against the best-matching span inside the line, 0 to 1,
+    and a row appears at all only if it clears the 0.6 cutoff. `similarity`
+    scores it against the **whole line**, so it falls as the line grows longer.
+    Both measure resemblance of letters — neither measures doctrinal importance.
+
     Args:
         keyword: The word/phrase to search for.
         language: Search language — must be in the server's ENABLED_LANGUAGES
@@ -1823,6 +1829,12 @@ def search_semantic(
     - Pāli stock phrases recur in many suttas → similarity scores
       cluster; read the top 10, don't trust rank 1 alone
 
+    📐 **Reading `distance`.** It is cosine distance between your query's
+    embedding and the segment's, so smaller is closer, and a row is returned
+    only at or under `threshold` (default 0.7) — an empty result means nothing
+    cleared that cut. Ordering is proximity of meaning in one model's space, not
+    doctrinal importance.
+
     Args:
         query: Query text (English works best, then Pāli, Thai is weakest).
         language: Output language — "pali", "thai", "english", or "all"
@@ -2742,6 +2754,13 @@ def get_word_definition(word: str, language: Literal["en", "thai", "th", "all"] 
     ENABLED_LANGUAGES has Thai disabled. The AI client should translate
     Thai entries into the user's language if needed.
 
+    🔀 **Two kinds of thing in one payload.** `definitions[]` come from the
+    dictionaries, not the canon, so they carry **no `segment_id`**;
+    `appears_in_context[]` is corpus text and does carry one. `related_words[]`
+    are headwords holding your query as a substring, so opposites appear —
+    `dhamma` returns `adhamma`. Context examples are drawn at random: two
+    identical calls return different ones.
+
     Args:
         word: Word to look up (e.g. "dukkha", "กฐิน").
         language: Dictionary language (e.g. "en", "thai", or "all" as
@@ -3005,6 +3024,13 @@ def verify_quote(text: str, limit: int = 3) -> dict[str, Any]:
     ⚠️ **Do not present an unverified passage as canonical.** If the verdict
     is `not_found`, say plainly that the line is not in the canon rather than
     quoting it with a hedge — a hedged fabrication still spreads.
+
+    ⚖️ **Verdict thresholds.** `exact` = `contained` **or** `similarity` ≥
+    0.995; `close` = `coverage` ≥ 0.85 **and** `similarity` ≥ 0.55; else
+    `not_found`. `exact` means letters matched once folded, not that a human
+    confirmed the reading. Matches also carry `coverage` (your letters present,
+    in order), `contained` (present whole) and `spans` (segments joined; >1 →
+    `segment_id` is the first only).
 
     Args:
         text: The passage as quoted. Diacritics optional, folded internally.
@@ -3308,6 +3334,12 @@ def parse_pali_word(word: str) -> dict[str, Any]:
       broken into `dukkha` + `nirodha`.
     - Sandhi (sound junctions) like `tena ahaṁ → tenāhaṁ` aren't reversed.
     - Returns **possible** stems — verify each via `get_word_definition`.
+
+    ⚠️ **`possible_stems` are rule output, not findings.** They come from the
+    suffix table applied to your input — nothing was looked up, so no field
+    carries a `segment_id`, and some candidates are not Pāli words at all. Treat
+    each as a spelling to try in `get_word_definition`, never as an attested
+    form.
 
     Args:
         word: An inflected Pāli word (e.g. "dukkhassa", "bhikkhūnaṁ",
