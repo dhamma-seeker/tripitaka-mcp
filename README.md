@@ -1,7 +1,7 @@
 # Tripitaka MCP Server
 
 <p align="center">
-  <img src="https://tripitaka-mcp.com/favicon-192.png" alt="Tripitaka MCP logo — folded hands over a dhammacakka in pixel art" width="160" height="160">
+  <img src="https://tripitaka-mcp.com/favicon-192.png" alt="Tripitaka MCP logo: folded hands over a dhammacakka in pixel art" width="160" height="160">
 </p>
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
@@ -12,30 +12,30 @@
 [![Glama](https://glama.ai/mcp/servers/dhamma-seeker/tripitaka-mcp/badges/score.svg)](https://glama.ai/mcp/servers/dhamma-seeker/tripitaka-mcp)
 [![Smithery](https://smithery.ai/badge/dhamma-seeker/tripitaka-mcp)](https://smithery.ai/server/dhamma-seeker/tripitaka-mcp)
 
-An MCP Server for searching and citing content from the Pāli Tipiṭaka.
-Gives AI agents (such as Claude or Cursor) the ability to look up suttas, quote the teachings, and compare translations across languages.
+An MCP server for searching and citing content from the Pāli Tipiṭaka.
+It lets AI clients such as Claude or Cursor look up suttas, quote the teachings, and compare translations across languages.
 
-> 🙏 **This project is offered as Dhamma Dāna** — 100% free, non-commercial only.
-> License details: [LICENSE](./LICENSE) (code) + [NOTICE.md](./NOTICE.md) (data)
+> 🙏 **This project is offered as Dhamma Dāna:** 100% free, non-commercial only.
+> License details: [LICENSE](./LICENSE) (code) and [NOTICE.md](./NOTICE.md) (data)
 
 ## ✨ Features
 
-- 📚 **Full Tipiṭaka coverage at parity with SuttaCentral** — all three baskets indexed (~444K segments): Sutta (Pāli + English from `bilara-data`'s translators — Bhikkhu Sujato for DN/MN/SN/AN and most of the Khuddaka Nikāya, with John Kelly, Bhikkhu Kovilo and others for a few KN books), Vinaya (Pāli + Bhikkhu Brahmali's English), and Abhidhamma (Pāli only — no English in upstream `bilara-data` for any Abhidhamma book). Live counts via `list_structure`.
-- ⚖️ **Hybrid Search** — highest precision by combining keyword and semantic search through Reciprocal Rank Fusion (RRF). Ready to use.
-- 🔍 **Keyword Search** — trigram fuzzy matching with cross-language alignment.
-- 🧠 **Semantic Search** — meaning-based search via vector similarity (pgvector).
-- 📖 **Translation Comparison** — view and compare renderings across editions, aligned at the segment level.
-- 📚 **Dictionary Bridge** — built-in dictionary of 20,000+ entries (P. A. Payutto, PTS, DPPN).
-- 📖 **Get Sutta & Reference** — fetch sutta content by ID (e.g. `mn1`, `pli-tv-bu-vb-pj1`, `patthana1.1`) and generate properly formatted academic citations.
-- 🔬 **Pāli word analyzer** — strip inflectional suffixes to find the root form when dictionary lookup misses (`bhikkhūnaṁ` → `bhikkhu`).
-- 🔗 **Cross-reference URLs in every response** — a clickable deep link to the project's own bilingual reader (Pāli + English, with a segment anchor that highlights the cited verse). The reader renders SuttaCentral's `bilara-data` verbatim, so it is the authoritative text; AI clients surface this link so users verify the source in one click.
-- 📡 **Dual transport** — both legacy SSE (`/sse`) and canonical Streamable HTTP (`/mcp`, MCP spec 2025-03-26).
-- 📦 **MCP Resources** — `tripitaka://structure`, `tripitaka://sutta/{id}`, `tripitaka://word/{w}` for clients that pin context as resources.
-- 📄 **Curated reference pages** at [`/topics/*`](https://mcp.tripitaka-mcp.com/topics/) — six markdown pages covering canon structure, getting-started + tool selection, places (Mahājanapada + holy sites + cosmology), 10 foundational themes with locus classicus, ~30 major figures, and a phase-based timeline of the Buddha's 45-year mission. Sutta IDs verified against live data; AI clients can fetch a page in one shot instead of running 30+ tool calls.
-- 🤖 **Claude skill** — `skills/tipitaka-research.md` ships a ready-to-install workflow file that activates a multi-step research pattern (clarify → verify coverage → search → drill in → cite) on Claude Desktop / Claude Code.
-- 📮 **Postman Ready** — ships with a Postman collection for testing the API.
+- **Full Tipiṭaka coverage, at parity with SuttaCentral.** All three baskets are indexed, about 444K segments. Sutta carries Pāli plus English from `bilara-data`'s translators (Bhikkhu Sujato for DN/MN/SN/AN and most of the Khuddaka Nikāya, with John Kelly, Bhikkhu Kovilo and others for a few KN books). Vinaya carries Pāli plus Bhikkhu Brahmali's English. Abhidhamma is Pāli only, because upstream `bilara-data` has no English for any Abhidhamma book. `list_structure` reports live counts.
+- **Hybrid search** merges keyword and semantic results through Reciprocal Rank Fusion (RRF). It is the most precise of the search tools and needs no configuration.
+- **Keyword search** with trigram fuzzy matching and cross-language alignment.
+- **Semantic search** by meaning, using vector similarity (pgvector).
+- **Translation comparison** across editions, aligned segment by segment.
+- **Dictionary bridge** with 20,000+ entries (P. A. Payutto, PTS, DPPN).
+- **Sutta fetch and citations.** Get a sutta by ID (`mn1`, `pli-tv-bu-vb-pj1`, `patthana1.1`) and generate a properly formatted academic citation.
+- **Pāli word analyzer** that strips inflectional suffixes to find the root form when a dictionary lookup misses (`bhikkhūnaṁ` → `bhikkhu`).
+- **Cross-reference URLs in every response:** a clickable deep link into the project's own bilingual reader (Pāli + English, with a segment anchor that highlights the cited verse). The reader renders SuttaCentral's `bilara-data` verbatim, so it is the authoritative text, and AI clients surface the link so users can verify the source in one click.
+- **Dual transport:** legacy SSE (`/sse`) and canonical Streamable HTTP (`/mcp`, MCP spec 2025-03-26).
+- **MCP resources:** `tripitaka://structure`, `tripitaka://sutta/{id}`, `tripitaka://word/{w}`, for clients that pin context as resources.
+- **Curated reference pages** at [`/topics/*`](https://mcp.tripitaka-mcp.com/topics/): six markdown pages covering canon structure, getting started and tool selection, places (Mahājanapada, holy sites, cosmology), 10 foundational themes with locus classicus, about 30 major figures, and a phase-based timeline of the Buddha's 45-year mission. Sutta IDs are verified against live data, and an AI client can fetch one page instead of running 30+ tool calls.
+- **Claude skill.** `skills/tipitaka-research.md` is a ready-to-install workflow file that turns on a multi-step research pattern (clarify → verify coverage → search → drill in → cite) on Claude Desktop and Claude Code.
+- **Postman collection** included for testing the API.
 
-## 🏗️ Tech Stack
+## 🏗️ Tech stack
 
 | Technology | Role |
 |---|---|
@@ -44,18 +44,18 @@ Gives AI agents (such as Claude or Cursor) the ability to look up suttas, quote 
 | sentence-transformers | Embeddings for semantic search |
 | Docker Compose | Infrastructure |
 
-## 🚀 Quick Start
+## 🚀 Quick start
 
-### 🌐 No setup — connect to the public Dhamma Dāna server
+### 🌐 No setup: connect to the public Dhamma Dāna server
 
-The maintainers run a free public instance at **[tripitaka-mcp.com](https://tripitaka-mcp.com)**.
+The maintainers run a free public instance at [tripitaka-mcp.com](https://tripitaka-mcp.com).
 
 | Endpoint | Use |
 |---|---|
 | `https://mcp.tripitaka-mcp.com/mcp` | Streamable HTTP (MCP spec 2025-03-26) |
 | `https://mcp.tripitaka-mcp.com/sse` | Legacy SSE (older clients) |
 
-**Connect Claude Desktop in three steps** (no install, no Docker, no GPU — you just need [Node.js](https://nodejs.org/)):
+Connecting Claude Desktop takes three steps. Nothing to install but [Node.js](https://nodejs.org/), and no Docker or GPU.
 
 **1.** Find your absolute `npx` path. Claude Desktop doesn't read your shell profile, so a bare `npx` won't resolve. Open a terminal:
 
@@ -64,7 +64,7 @@ which npx
 # example: /Users/you/.nvm/versions/node/v22.14.0/bin/npx
 ```
 
-**2.** Open `claude_desktop_config.json` (`~/Library/Application Support/Claude/` on macOS, `%APPDATA%\Claude\` on Windows) and add the entry below — substitute `YOUR_NPX_PATH` with the output from step 1, and `YOUR_NODE_BIN_DIR` with that path's parent directory:
+**2.** Open `claude_desktop_config.json` (`~/Library/Application Support/Claude/` on macOS, `%APPDATA%\Claude\` on Windows) and add the entry below. Substitute `YOUR_NPX_PATH` with the output from step 1, and `YOUR_NODE_BIN_DIR` with that path's parent directory:
 
 ```json
 {
@@ -80,7 +80,7 @@ which npx
 
 **3.** Quit Claude Desktop completely (`⌘Q` on macOS, tray → Quit on Windows) and reopen. The 🔌 indicator in the bottom-left should show `tripitaka` with 14 tools available.
 
-> _First connection takes 5–10 seconds_ while `npx` downloads `mcp-remote` on demand — give Claude Desktop a moment after restart before assuming it failed.
+> _The first connection takes 5 to 10 seconds_ while `npx` downloads `mcp-remote` on demand. Give Claude Desktop a moment after the restart before deciding it failed.
 
 Once connected, try asking Claude things like:
 
@@ -91,11 +91,11 @@ Once connected, try asking Claude things like:
 
 Claude will pick the right tool, fetch the canonical Pāli, and surface a clickable link to the project's bilingual reader for verification.
 
-The hosted server is rate-limited (10 req/10s + 60 req/min per IP) and offered for personal study, research, and dhamma practice — see [NOTICE.md](./NOTICE.md) before redistributing or using commercially.
+The hosted server is rate limited (10 req/10s plus 60 req/min per IP) and offered for personal study, research, and dhamma practice. Read [NOTICE.md](./NOTICE.md) before redistributing it or using it commercially.
 
-### 💻 Run it fully offline (`pipx` — local SQLite, no server)
+### 💻 Run it fully offline (`pipx`, local SQLite, no server)
 
-Prefer to keep everything on your own machine — no network calls to the hosted server? Install the local edition. It ships the whole Pāli canon as a single SQLite file (~120 MB) and runs as a local stdio MCP server.
+If you would rather keep everything on your own machine, with no network calls to the hosted server, install the local edition. It carries the whole Pāli canon as a single SQLite file (~120 MB) and runs as a local stdio MCP server.
 
 ```bash
 pipx install tripitaka-mcp     # needs Python 3.10+
@@ -110,7 +110,7 @@ Because the current Python version (3.9.6) does not satisfy Python>=3.10
 ```
 
 pipx is using a different interpreter than you think. It builds its own
-isolated environment on purpose and ignores whatever venv you have active — so
+isolated environment on purpose and ignores whatever venv you have active, so
 an old system Python gets picked even when the shell you typed in has 3.12.
 Tell it which to use:
 
@@ -120,7 +120,7 @@ pipx install --python python3.12 tripitaka-mcp
 
 (Any 3.10 or newer works; `pipx environment` shows what it defaults to.)
 
-Then point Claude Desktop / Cursor at the local command — no `npx`, no `mcp-remote`, no internet:
+Then point Claude Desktop or Cursor at the local command, with no `npx` bridge and no internet:
 
 ```json
 {
@@ -135,9 +135,9 @@ Then point Claude Desktop / Cursor at the local command — no `npx`, no `mcp-re
 
 (If `tripitaka-mcp` isn't on the client's `PATH`, use the absolute path from `which tripitaka-mcp`.)
 
-**Need a URL instead of stdio?** Some tools — scripts, notebooks, anything that
-wants to share one server across several clients — want an HTTP endpoint rather
-than a subprocess:
+**Need a URL instead of stdio?** Scripts, notebooks, and anything that shares
+one server across several clients want an HTTP endpoint rather than a
+subprocess:
 
 ```bash
 tripitaka-mcp serve --http                 # http://127.0.0.1:8765/mcp
@@ -147,27 +147,27 @@ tripitaka-mcp serve --http --port 9000     # or MCP_HOST / MCP_PORT
 It binds `127.0.0.1` unless you say otherwise; the canon is read-only, but
 nothing here asks who is calling, so think before binding a public interface.
 
-**Hosted vs local — what's different**
+**Hosted vs local**
 
 Both serve the same ~444K-segment canon. The differences:
 
 | | Hosted (`mcp.tripitaka-mcp.com`) | Local (`pipx`) |
 |---|---|---|
-| Tools | all 14 | 11 (12 with `TRIPITAKA_MCP_APP=1`) — no `search_semantic` / `search_hybrid` |
-| Concept / semantic search | ✅ vector search (pgvector) | ❌ — use `search_by_keyword` instead |
-| Keyword search | PostgreSQL trigram — fuzzy, typo-tolerant, similarity-ranked | SQLite FTS5 — whole-word / token match; **results and ranking can differ** from hosted |
-| Canon data | always current | a snapshot from when you ran `init` — re-run `tripitaka-mcp init` to refresh |
+| Tools | all 14 | 11, or 12 with `TRIPITAKA_MCP_APP=1`; no `search_semantic` or `search_hybrid` |
+| Concept / semantic search | ✅ vector search (pgvector) | ❌ use `search_by_keyword` instead |
+| Keyword search | PostgreSQL trigram: fuzzy, typo tolerant, similarity ranked | SQLite FTS5: whole-word / token match, so **results and ranking can differ** from hosted |
+| Canon data | always current | a snapshot from when you ran `init`; re-run `tripitaka-mcp init` to refresh |
 | Updates | automatic | `pipx upgrade tripitaka-mcp` for code; re-run `init` for data |
-| Privacy | queries reach the hosted server (nothing logged — see [Privacy Policy](https://tripitaka-mcp.com/privacy/)) | nothing leaves your machine |
+| Privacy | queries reach the hosted server (nothing logged, see the [Privacy Policy](https://tripitaka-mcp.com/privacy/)) | nothing leaves your machine |
 | Internet | required | not needed after `init` |
 | Rate limit | 10 req / 10 s, 60 req / min per IP | none |
 | Setup | zero / one-click | Python 3.10+, pipx, one-time ~120 MB download |
 
-`search_semantic` / `search_hybrid` and the trigram keyword index need PostgreSQL + pgvector + a ~1 GB embedding model — too heavy for a lightweight local install, so they stay hosted-only. In local mode those two tools aren't registered at all: a connected client sees only the 11 available tools, so it never tries to call a tool that can't work.
+`search_semantic`, `search_hybrid`, and the trigram keyword index need PostgreSQL, pgvector, and a ~1 GB embedding model, which is more than a lightweight local install should carry, so they stay hosted-only. In local mode those two tools are never registered: a connected client sees only the 11 it can actually call.
 
-Because the local server is a standard stdio MCP server, it also enables a **fully offline AI stack** — pair it with a local model (e.g. Ollama) and any MCP-capable chat UI, and nothing leaves your machine.
+Because the local server is a standard stdio MCP server, it also gives you a fully offline AI stack. Pair it with a local model such as Ollama and any MCP-capable chat UI, and nothing leaves your machine.
 
-### 🏎️ Fastest local path — use the installer (recommended for non-developers)
+### 🏎️ Fastest local path: the installer (recommended for non-developers)
 
 ```bash
 git clone https://github.com/dhamma-seeker/tripitaka-mcp.git
@@ -175,8 +175,8 @@ cd tripitaka-mcp
 ./scripts/install.sh
 ```
 
-The installer **downloads a prepared database dump from [Hugging Face — dhamma-seeker/tripitaka-mcp-dump](https://huggingface.co/datasets/dhamma-seeker/tripitaka-mcp-dump) and restores it automatically** — cutting setup time from 2–4 hours (loading data + generating embeddings) down to ~5 minutes.
-(If a local dump file already exists, the local copy is used instead.)
+The installer downloads a prepared database dump from Hugging Face ([dhamma-seeker/tripitaka-mcp-dump](https://huggingface.co/datasets/dhamma-seeker/tripitaka-mcp-dump)) and restores it for you, which brings setup down from two to four hours (loading the data, then generating embeddings) to about five minutes.
+(If a dump file is already on disk, the installer uses that copy instead.)
 
 The installer will:
 
@@ -199,7 +199,7 @@ Options:
 
 ### 🔧 Manual setup (for developers)
 
-#### 1. Clone & Setup
+#### 1. Clone & setup
 
 ```bash
 git clone https://github.com/dhamma-seeker/tripitaka-mcp.git
@@ -208,13 +208,13 @@ cp .env.example .env
 # Set POSTGRES_PASSWORD in .env to a random password
 ```
 
-#### 2. Start Database
+#### 2. Start database
 
 ```bash
 docker compose up db -d
 ```
 
-#### 3. Install Dependencies
+#### 3. Install dependencies
 
 ```bash
 python -m venv .venv
@@ -222,7 +222,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### 4. Initialize Database & Load Data
+#### 4. Initialize database & load data
 
 ```bash
 # 1. Seed metadata (pitaka, nikāya)
@@ -241,7 +241,7 @@ python scripts/load_dictionary.py
 python scripts/generate_embeddings.py
 ```
 
-#### 5. Run MCP Server
+#### 5. Run MCP server
 
 ```bash
 python main.py
@@ -249,15 +249,15 @@ python main.py
 
 ### 🧪 Testing with Postman
 
-The project supports Postman testing in SSE mode:
+You can drive the tools from Postman in SSE mode:
 
 1. Run the server with: `MCP_TRANSPORT=sse python main.py`
 2. Import [postman_collection.json](./postman_collection.json) into Postman
 3. Invoke the tools directly
 
-## 🚢 Production Deployment
+## 🚢 Production deployment
 
-To deploy to production without re-loading the data and re-running the embedding model, restoring from a database dump is the recommended path.
+For production, restore from a database dump instead of re-loading the data and re-running the embedding model.
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
@@ -265,19 +265,19 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 The production stack runs 5 services:
 
-- `db` — PostgreSQL + pgvector (internal only, no exposed port)
-- `mcp-server` — FastMCP over legacy SSE, behind `/sse` (readonly DB user, read-only FS, `cap_drop: ALL`)
-- `mcp-server-http` — the same server over Streamable HTTP, behind `/mcp`
-- `reader` — the bilingual reader that every cross-reference URL points at, behind `/read/*`
-- `caddy` — reverse proxy + Let's Encrypt + **rate limit** (10 req/10s and 60 req/1 min per IP)
+- `db`: PostgreSQL + pgvector (internal only, no exposed port)
+- `mcp-server`: FastMCP over legacy SSE, behind `/sse` (readonly DB user, read-only FS, `cap_drop: ALL`)
+- `mcp-server-http`: the same server over Streamable HTTP, behind `/mcp`
+- `reader`: the bilingual reader that every cross-reference URL points at, behind `/read/*`
+- `caddy`: reverse proxy, Let's Encrypt, and the rate limit (10 req/10s and 60 req/1 min per IP)
 
-For an extra hardening layer, front Caddy with **Cloudflare** (DNS proxy + rate-limit rules + DDoS protection on the free tier).
+For another layer of hardening, put Cloudflare in front of Caddy (DNS proxy, rate-limit rules, and DDoS protection on the free tier).
 
-👉 Full details: **[DEPLOYMENT.md](./DEPLOYMENT.md)**
+Full details are in [DEPLOYMENT.md](./DEPLOYMENT.md).
 
 ## 🔧 Connecting to Claude Desktop
 
-The repo ships [`claude_desktop_config.example.json`](./claude_desktop_config.example.json) with **three ready-to-use entries** — copy whichever fits your setup into `claude_desktop_config.json` (`~/Library/Application Support/Claude/` on macOS, `%APPDATA%\Claude\` on Windows), then edit the absolute paths:
+The repo ships [`claude_desktop_config.example.json`](./claude_desktop_config.example.json) with three ready-to-use entries. Copy whichever fits your setup into `claude_desktop_config.json` (`~/Library/Application Support/Claude/` on macOS, `%APPDATA%\Claude\` on Windows), then edit the absolute paths:
 
 | Entry | When to use | Transport |
 |---|---|---|
@@ -285,13 +285,13 @@ The repo ships [`claude_desktop_config.example.json`](./claude_desktop_config.ex
 | `tripitaka-remote` | You self-hosted the server on a VPS and want the modern transport | Streamable HTTP (`/mcp`) |
 | `tripitaka-remote-sse` | Your client doesn't support Streamable HTTP yet | Legacy SSE (`/sse`) |
 
-The remote entries route through [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) — Claude Desktop ↔ npx bridge ↔ remote MCP. The example file has annotated comments explaining each field; remove the `_comment` keys before saving.
+The remote entries route through [`mcp-remote`](https://www.npmjs.com/package/mcp-remote), a bridge from Claude Desktop through npx to the remote MCP server. The example file comments every field; remove the `_comment` keys before saving.
 
-> **Heads-up for nvm users:** `command` and `env.PATH` need absolute node paths — Claude Desktop doesn't read your shell profile. Find the right paths with `which npx` / `which python` while your normal shell is active.
+> **For nvm users:** `command` and `env.PATH` need absolute node paths, because Claude Desktop doesn't read your shell profile. Get them from `which npx` and `which python` while your normal shell is active.
 
 ### Optional: install the research skill
 
-For Claude Desktop / Claude Code users, copying the bundled skill activates the multi-step research workflow automatically:
+On Claude Desktop and Claude Code, copying the bundled skill turns on the multi-step research workflow:
 
 ```bash
 mkdir -p ~/.claude/skills
@@ -301,37 +301,37 @@ cp skills/tipitaka-research.md ~/.claude/skills/
 
 Details in [`skills/README.md`](./skills/README.md).
 
-## 📦 MCP Tools (14 total)
+## 📦 MCP tools (14 total)
 
 | Tool | Description |
 |---|---|
-| `search_hybrid` | **(Recommended for concept search)** Combined keyword + semantic via RRF — best when looking for "discourses about X". |
-| `search_by_keyword` | Trigram keyword search — best for the top few matches of an exact word (`appamāda`, `ānāpānassati`). |
-| `survey_corpus` | **Exhaustive** corpus survey — exact total + per-pitaka breakdown + the matched word-forms, for "how many times / every place X appears" (coverage, not just best matches). `mode=thorough` adds concept-level semantic recall. |
-| `search_semantic` | Pure vector similarity — usually you want `search_hybrid` instead. |
+| `search_hybrid` | Combined keyword + semantic search via RRF. Recommended for concept search, when you are after "discourses about X". |
+| `search_by_keyword` | Trigram keyword search, best for the top few matches of an exact word (`appamāda`, `ānāpānassati`). |
+| `survey_corpus` | Exhaustive corpus survey: exact total, per-pitaka breakdown, and the matched word-forms. For "how many times" or "every place X appears", where you need every occurrence rather than the best matches. `mode=thorough` adds concept-level semantic recall. |
+| `search_semantic` | Pure vector similarity. Usually `search_hybrid` is the better choice. |
 | `verify_quote` | Check a quote against the canon before repeating it. Returns `exact` / `close` / `not_found` with the matching segments, so a line can be attributed to a source instead of to a memory of one. |
 | `get_sutta` | Fetch a sutta by ID (e.g. `mn1`, `dn22`, `dhp1-20`) with cross-reference URLs. Whole sutta by default; for long ones use `mode="outline"` (table of contents, no text), `around="<segment_id>"`+`window` (context around a hit), or `segment_range`/`offset`+`limit` to fetch just a slice. |
-| `open_sutta_viewer` | **Interactive sutta viewer (MCP Apps)** — renders the sutta inline in the chat as Pāli + English side by side, with the cited segment highlighted. The calling model can attach an AI translation of the displayed segments into the user's own language (`translations` param) as a clearly-badged third row — the canon itself stays Pāli + English. Requires an MCP Apps-capable host (Claude, Claude Desktop, VS Code Copilot, …); other hosts get a graceful text fallback. |
+| `open_sutta_viewer` | Interactive sutta viewer (MCP Apps). Renders the sutta inline in the chat as Pāli + English side by side, with the cited segment highlighted. The calling model can attach an AI translation of the displayed segments into the user's own language (`translations` param) as a clearly badged third row; the canon itself stays Pāli + English. Needs an MCP Apps-capable host (Claude, Claude Desktop, VS Code Copilot, and others); on other hosts it falls back to text. |
 | `get_reference` | Generate a properly formatted academic citation with all source URLs. |
 | `compare_translations` | Compare renderings of a single segment across editions. |
 | `list_structure` | Show the Tipiṭaka structure with segment-count coverage per nikāya. |
 | `list_editions` | List any additional translation editions loaded beyond the bundled Pāli + English. The public server currently carries none, so it answers plainly that there are no extra editions. |
 | `get_word_definition` | Pāli dictionary lookup (PTS, DPPN, and the Payutto Thai dictionary). |
-| `define_from_suttas` | Find how the suttas/Vinaya **define a term in their own words** — canonical formulas like "Katamañca X? ... ayaṁ vuccati X", "X adhivacana", Vinaya "X nāma". Complements `get_word_definition` with primary-source definitions rather than dictionary glosses. |
+| `define_from_suttas` | Find how the suttas and Vinaya define a term in their own words: canonical formulas like "Katamañca X? ... ayaṁ vuccati X", "X adhivacana", and the Vinaya's "X nāma". Gives primary-source definitions where `get_word_definition` gives dictionary glosses. |
 | `parse_pali_word` | Strip Pāli suffixes to recover the root form when `get_word_definition` misses (`bhikkhūnaṁ` → `bhikkhu`). |
 
 ### ⚠️ Note on `search_semantic`
 
-The vector index is built only on `text_pali` — `bilara-data` carries Thai for 6 files in all, and the public server loads no Thai edition — using a multilingual MiniLM model that is **not specifically trained on Pāli**. As a result:
+The vector index is built only on `text_pali`, using a multilingual MiniLM model that was not trained specifically on Pāli. (`bilara-data` carries Thai for 6 files in all, and the public server loads no Thai edition.) So:
 
-- **Pāli / English queries** → accurate (good cross-lingual alignment)
-- **Thai queries** → loose matches, not recommended
-- For exact keywords like `appamāda`, `search_by_keyword` is more precise
-- For general-purpose search, `search_hybrid` (keyword + semantic) tolerates this limitation best
+- Pāli and English queries come back accurate, with good cross-lingual alignment.
+- Thai queries return loose matches and aren't recommended.
+- For an exact keyword like `appamāda`, `search_by_keyword` is more precise.
+- For general-purpose search, `search_hybrid` (keyword + semantic) tolerates the limitation best.
 
-Upgrading to a Pāli-trained embedding model (e.g. bge-m3) plus embedding the Thai edition is on the roadmap.
+Moving to a Pāli-trained embedding model such as bge-m3, and embedding the Thai edition, are both on the roadmap.
 
-## 📁 Project Structure
+## 📁 Project structure
 
 ```text
 tripitaka-mcp/
@@ -400,10 +400,10 @@ tripitaka-mcp/
 └── requirements.txt
 ```
 
-## 📜 Data Sources & License
+## 📜 Data sources & license
 
-This project aggregates data from multiple sources under different licenses.
-**Please read [NOTICE.md](./NOTICE.md) in full before redistributing.**
+This project aggregates data from several sources under different licenses.
+Please read [NOTICE.md](./NOTICE.md) in full before redistributing.
 
 | Source | License | Note |
 | --- | --- | --- |
@@ -411,18 +411,18 @@ This project aggregates data from multiple sources under different licenses.
 | [SuttaCentral bilara-data](https://github.com/suttacentral/bilara-data) | **CC0** | Public domain |
 | Thai translations (Dhīranando, Jayasāro) | **CC0** | Via SuttaCentral |
 | [Dictionary of Buddhism](https://www.watnyanaves.net) by Somdet Phra Buddhaghosacariya (P. A. Payutto) | **Dhamma Dāna** | ⚠️ Non-commercial use only |
-| PTS / DPPN / Dhammika Dictionaries | Public Domain / CC | — |
+| PTS / DPPN / Dhammika Dictionaries | Public Domain / CC | |
 
 ### ⚠️ If you plan to fork or redistribute
 
-- ✅ Use in **free / dhamma-dāna / educational** projects — allowed
-- ✅ Run on your own machine / personal use — allowed
-- ❌ **Do not use in any paid product or service** (because of the Payutto dictionary)
-- ❌ **Do not modify the dictionary content**
+- ✅ Use in free, dhamma-dāna, or educational projects
+- ✅ Run it on your own machine, for personal use
+- ❌ Don't use it in any paid product or service, because of the Payutto dictionary
+- ❌ Don't modify the dictionary content
 
 For commercial use: remove the dictionary component, or contact Wat Nyanavesakavan for permission.
 
-### 🙏 Credits & Attribution
+### 🙏 Credits & attribution
 
 See [CREDITS.md](./CREDITS.md) for contributor details and [NOTICE.md](./NOTICE.md) for license terms.
 
@@ -434,4 +434,6 @@ See [CREDITS.md](./CREDITS.md) for contributor details and [NOTICE.md](./NOTICE.
 
 ---
 
-**Sādhu 🙏** — May the sharing of this Dhamma bring benefit and happiness to all beings.
+**Sādhu 🙏**
+
+May the sharing of this Dhamma bring benefit and happiness to all beings.
