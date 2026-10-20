@@ -208,9 +208,27 @@ docker image ls tripitaka-mcp
 # tripitaka-mcp   d594198   0f9e8d7c6b5a   9.14GB   <- previous deploy
 ```
 
-The `SIZE` column shows the whole image, not what each version adds. Two
-versions built from the same base share every layer the commit did not change,
-so a second version only costs the layers that differ.
+The `SIZE` column shows the whole image, not what each version adds. Versions
+share every layer the commit did not change, so a second version costs only the
+layers that differ. Measured on the production image:
+
+| layer | size | shared between versions |
+|---|---|---|
+| `COPY /install /usr/local` (pip install) | 5.49 GB | yes, while `requirements.txt` is unchanged |
+| base `python:3.12-slim` layers | 134 MB | yes |
+| `COPY . .` (the source tree) | size of the build context | no, this is the per-commit layer |
+
+The build context is the checkout minus what `.dockerignore` excludes, which is
+16 MB on the server today. So an ordinary deploy adds tens of megabytes, and
+keeping 3 versions costs a few tens of megabytes over keeping one.
+
+A deploy that changes `requirements.txt` is the exception. The 5.49 GB layer is
+rebuilt, the previous version keeps its own copy, and that one deploy costs
+about 5.5 GB. Lower `TRIPITAKA_KEEP_VERSIONS` before a run of dependency
+changes if disk is tight.
+
+Image versions are not what fills the disk. The buildkit cache is far larger
+than every version put together, and it is pruned on its own schedule.
 
 The version running is pinned in `.env` as `APP_VERSION`, and every deploy
 appends a line to `.deploy-history`. Both files are gitignored and exist on the
