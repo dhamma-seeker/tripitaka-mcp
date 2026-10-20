@@ -197,6 +197,27 @@ def _prose(answer: str) -> str:
     return _BARE_URL_RE.sub(" ", re.sub(r"\]\(\s*<?[^)]*\)", "] ", answer))
 
 
+def _compact_ids(text: str) -> str:
+    """ย่อ "SN 42.12" ให้เป็น "sn42.12" ก่อนตรวจ must_cite / must_not_say
+
+    เดิม must_cite ตรวจ substring ตรงๆ จึงผ่านได้เพราะ **URL** ของลิงก์ reader
+    มี id ติดกันอยู่ (`/read/sn42.12`) ไม่ใช่เพราะโมเดลอ้างสูตรในเนื้อคำตอบ
+    กลับกัน โมเดลที่เขียน "SN 42.12" ในเนื้อความแต่ไม่แนบลิงก์กลับตก
+    = เช็คนี้วัดการแนบลิงก์ ไม่ได้วัดการอ้างอิง ซึ่งกลับหัวกับสิ่งที่ตั้งใจวัด
+    วัดจาก A1 2026-10-20: รอบที่ตก named มี sn42.12 แต่ must_cite บอกไม่ได้อ้าง
+
+    กติกาการเชื่อมเหมือน `_named_suttas` ทุกประการ — ถ้ามีช่องว่างคั่น ตัวย่อ
+    ต้องเป็นชุดคัมภีร์ที่มีจริงและขึ้นต้นด้วยตัวใหญ่ กัน "an 8-fold path"
+    ไม่ให้กลายเป็น an8
+    """
+    def join(m: "re.Match[str]") -> str:
+        pre, sep, num = m.group(1), m.group(2), m.group(3)
+        if sep and (pre.lower() not in SUTTA_COLLECTIONS or not pre[0].isupper()):
+            return m.group(0)
+        return f"{pre}{num}"
+    return _SUTTA_RE.sub(join, text)
+
+
 def _named_suttas(answer: str) -> list[str]:
     """ชื่อสูตรที่โมเดลเอ่ยในเนื้อคำตอบ → id ตัวเล็กติดกัน เรียงแล้วไม่ซ้ำ"""
     found = set()
@@ -294,7 +315,7 @@ def check_turn(expect, calls, answer):
             if got != want:
                 problems.append(f"{tool}.{key} = {got!r} ควรเป็น {want!r}")
 
-    low = answer.lower()
+    low = _compact_ids(answer).lower()
     for s in expect.get("must_cite", []):
         if s.lower() not in low:
             problems.append(f"คำตอบไม่ได้อ้าง {s!r}")
