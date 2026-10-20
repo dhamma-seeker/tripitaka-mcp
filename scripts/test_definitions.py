@@ -248,14 +248,42 @@ def run_invariants() -> int:
     return failed
 
 
+# ชั้นคัมภีร์ที่ `source_layer` เป็นได้ (ดู `_SOURCE_LAYER` ใน sutta_definitions.py)
+# ใช้สองอย่าง: ตรวจว่า snapshot เป็นรูปแบบใหม่หรือเก่า และกันพิมพ์ผิดตอนแก้ไฟล์ด้วยมือ
+LAYERS = frozenset({"four-nikayas", "early-khuddaka", "vinaya", "later-texts"})
+
+
 def snapshot_of() -> dict[str, list[str]]:
+    """`segment_id|kind|source_layer[|ctx]` ต่อหนึ่งแถว
+
+    **`source_layer` อยู่ใน snapshot ตั้งแต่ 2026-10-19** ก่อนหน้านี้ปินแค่ segment_id
+    กับ kind ป้ายชั้นคัมภีร์จึงเลื่อนได้เงียบๆ โดยเทสทั้งชุดไม่รู้ ทั้งที่มันเป็น field ที่
+    ออกไปถึงผู้ใช้ทุกแถว และเป็นสิ่งที่บอกว่านิยามนี้มาจากพระโอษฐ์ในสี่นิกาย หรือจาก
+    คัมภีร์วิเคราะห์ชั้นหลัง ซึ่งมีน้ำหนักต่างกันมากเวลายกไปอ้าง (AN 2.24 · AN 4.3)
+    """
     out = {}
     for term in TERMS:
         out[term] = [
-            f"{r['segment_id']}|{r['kind']}" + ("|ctx" if r.get("context") else "")
+            f"{r['segment_id']}|{r['kind']}|{r.get('source_layer') or '?'}"
+            + ("|ctx" if r.get("context") else "")
             for r in rows(term)
         ]
     return out
+
+
+def _old_format(saved: dict[str, list[str]]) -> bool:
+    """snapshot รูปแบบก่อน 2026-10-19 ที่ยังไม่มีชั้นคัมภีร์"""
+    for lines in saved.values():
+        for line in lines:
+            parts = line.split("|")
+            if len(parts) < 3 or parts[2] not in LAYERS:
+                return True
+    return False
+
+
+def _layer_of(line: str) -> str | None:
+    parts = line.split("|")
+    return parts[2] if len(parts) >= 3 else None
 
 
 def run_snapshot(update: bool) -> int:
@@ -268,6 +296,10 @@ def run_snapshot(update: bool) -> int:
         return 0
     saved = json.loads(SNAPSHOT_PATH.read_text(encoding="utf-8"))
     print("── snapshot")
+    if _old_format(saved):
+        print("  ❌ snapshot เป็นรูปแบบเก่า (ยังไม่มี source_layer)")
+        print("     ทบทวนแล้วรัน --update เพื่อรับรูปแบบใหม่ `segment_id|kind|source_layer[|ctx]`")
+        return 1
     failed = 0
     for term in TERMS:
         want, got = saved.get(term, []), current[term]
@@ -275,11 +307,21 @@ def run_snapshot(update: bool) -> int:
             continue
         failed += 1
         print(f"  ❌ {term}")
+        # แถวเดิมที่ย้ายชั้นคัมภีร์ รายงานแยกจากแถวที่หาย/เพิ่ม เพราะคนละเรื่องกัน
+        by_seg = {line.split("|")[0]: line for line in want}
+        moved = set()
+        for line in got:
+            seg = line.split("|")[0]
+            old_line = by_seg.get(seg)
+            if old_line and old_line != line and _layer_of(old_line) != _layer_of(line):
+                moved.add(seg)
+                print(f"       ชั้นคัมภีร์เปลี่ยน: {seg}"
+                      f"  {_layer_of(old_line)} → {_layer_of(line)}")
         for line in want:
-            if line not in got:
+            if line not in got and line.split("|")[0] not in moved:
                 print(f"       หาย: {line}")
         for line in got:
-            if line not in want:
+            if line not in want and line.split("|")[0] not in moved:
                 print(f"       เพิ่ม: {line}")
     if not failed:
         print(f"  ✅ ตรงกับ snapshot ทั้ง {len(TERMS)} คำ")
