@@ -20,7 +20,7 @@ Gives AI agents (such as Claude or Cursor) the ability to look up suttas, quote 
 
 ## ✨ Features
 
-- 📚 **Full Tipiṭaka coverage at parity with SuttaCentral** — all three baskets indexed (~444K segments): Sutta (Pāli + Sujato English), Vinaya (Pāli + Brahmali English), and Abhidhamma (Pāli only — no English in upstream `bilara-data` for any Abhidhamma book). Live counts via `list_structure`.
+- 📚 **Full Tipiṭaka coverage at parity with SuttaCentral** — all three baskets indexed (~444K segments): Sutta (Pāli + English from `bilara-data`'s translators — Bhikkhu Sujato for DN/MN/SN/AN and most of the Khuddaka Nikāya, with John Kelly, Bhikkhu Kovilo and others for a few KN books), Vinaya (Pāli + Bhikkhu Brahmali's English), and Abhidhamma (Pāli only — no English in upstream `bilara-data` for any Abhidhamma book). Live counts via `list_structure`.
 - ⚖️ **Hybrid Search** — highest precision by combining keyword and semantic search through Reciprocal Rank Fusion (RRF). Ready to use.
 - 🔍 **Keyword Search** — trigram fuzzy matching with cross-language alignment.
 - 🧠 **Semantic Search** — meaning-based search via vector similarity (pgvector).
@@ -78,7 +78,7 @@ which npx
 }
 ```
 
-**3.** Quit Claude Desktop completely (`⌘Q` on macOS, tray → Quit on Windows) and reopen. The 🔌 indicator in the bottom-left should show `tripitaka` with 12 tools available.
+**3.** Quit Claude Desktop completely (`⌘Q` on macOS, tray → Quit on Windows) and reopen. The 🔌 indicator in the bottom-left should show `tripitaka` with 14 tools available.
 
 > _First connection takes 5–10 seconds_ while `npx` downloads `mcp-remote` on demand — give Claude Desktop a moment after restart before assuming it failed.
 
@@ -153,7 +153,7 @@ Both serve the same ~444K-segment canon. The differences:
 
 | | Hosted (`mcp.tripitaka-mcp.com`) | Local (`pipx`) |
 |---|---|---|
-| Tools | all 12 | 9 (10 with `TRIPITAKA_MCP_APP=1`) — no `search_semantic` / `search_hybrid` |
+| Tools | all 14 | 11 (12 with `TRIPITAKA_MCP_APP=1`) — no `search_semantic` / `search_hybrid` |
 | Concept / semantic search | ✅ vector search (pgvector) | ❌ — use `search_by_keyword` instead |
 | Keyword search | PostgreSQL trigram — fuzzy, typo-tolerant, similarity-ranked | SQLite FTS5 — whole-word / token match; **results and ranking can differ** from hosted |
 | Canon data | always current | a snapshot from when you ran `init` — re-run `tripitaka-mcp init` to refresh |
@@ -163,7 +163,7 @@ Both serve the same ~444K-segment canon. The differences:
 | Rate limit | 10 req / 10 s, 60 req / min per IP | none |
 | Setup | zero / one-click | Python 3.10+, pipx, one-time ~120 MB download |
 
-`search_semantic` / `search_hybrid` and the trigram keyword index need PostgreSQL + pgvector + a ~1 GB embedding model — too heavy for a lightweight local install, so they stay hosted-only. In local mode those two tools aren't registered at all: a connected client sees only the 9 available tools, so it never tries to call a tool that can't work.
+`search_semantic` / `search_hybrid` and the trigram keyword index need PostgreSQL + pgvector + a ~1 GB embedding model — too heavy for a lightweight local install, so they stay hosted-only. In local mode those two tools aren't registered at all: a connected client sees only the 11 available tools, so it never tries to call a tool that can't work.
 
 Because the local server is a standard stdio MCP server, it also enables a **fully offline AI stack** — pair it with a local model (e.g. Ollama) and any MCP-capable chat UI, and nothing leaves your machine.
 
@@ -263,10 +263,12 @@ To deploy to production without re-loading the data and re-running the embedding
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-The production stack runs 3 services:
+The production stack runs 5 services:
 
 - `db` — PostgreSQL + pgvector (internal only, no exposed port)
-- `mcp-server` — FastMCP (runs as a readonly user, read-only FS, `cap_drop: ALL`)
+- `mcp-server` — FastMCP over legacy SSE, behind `/sse` (readonly DB user, read-only FS, `cap_drop: ALL`)
+- `mcp-server-http` — the same server over Streamable HTTP, behind `/mcp`
+- `reader` — the bilingual reader that every cross-reference URL points at, behind `/read/*`
 - `caddy` — reverse proxy + Let's Encrypt + **rate limit** (10 req/10s and 60 req/1 min per IP)
 
 For an extra hardening layer, front Caddy with **Cloudflare** (DNS proxy + rate-limit rules + DDoS protection on the free tier).
@@ -299,7 +301,7 @@ cp skills/tipitaka-research.md ~/.claude/skills/
 
 Details in [`skills/README.md`](./skills/README.md).
 
-## 📦 MCP Tools (13 total)
+## 📦 MCP Tools (14 total)
 
 | Tool | Description |
 |---|---|
@@ -307,19 +309,20 @@ Details in [`skills/README.md`](./skills/README.md).
 | `search_by_keyword` | Trigram keyword search — best for the top few matches of an exact word (`appamāda`, `ānāpānassati`). |
 | `survey_corpus` | **Exhaustive** corpus survey — exact total + per-pitaka breakdown + the matched word-forms, for "how many times / every place X appears" (coverage, not just best matches). `mode=thorough` adds concept-level semantic recall. |
 | `search_semantic` | Pure vector similarity — usually you want `search_hybrid` instead. |
+| `verify_quote` | Check a quote against the canon before repeating it. Returns `exact` / `close` / `not_found` with the matching segments, so a line can be attributed to a source instead of to a memory of one. |
 | `get_sutta` | Fetch a sutta by ID (e.g. `mn1`, `dn22`, `dhp1-20`) with cross-reference URLs. Whole sutta by default; for long ones use `mode="outline"` (table of contents, no text), `around="<segment_id>"`+`window` (context around a hit), or `segment_range`/`offset`+`limit` to fetch just a slice. |
 | `open_sutta_viewer` | **Interactive sutta viewer (MCP Apps)** — renders the sutta inline in the chat as Pāli + English side by side, with the cited segment highlighted. The calling model can attach an AI translation of the displayed segments into the user's own language (`translations` param) as a clearly-badged third row — the canon itself stays Pāli + English. Requires an MCP Apps-capable host (Claude, Claude Desktop, VS Code Copilot, …); other hosts get a graceful text fallback. |
 | `get_reference` | Generate a properly formatted academic citation with all source URLs. |
 | `compare_translations` | Compare renderings of a single segment across editions. |
 | `list_structure` | Show the Tipiṭaka structure with segment-count coverage per nikāya. |
-| `list_editions` | List Thai/English translation editions currently loaded. |
+| `list_editions` | List any additional translation editions loaded beyond the bundled Pāli + English. The public server currently carries none, so it answers plainly that there are no extra editions. |
 | `get_word_definition` | Pāli dictionary lookup (PTS, DPPN, and the Payutto Thai dictionary). |
 | `define_from_suttas` | Find how the suttas/Vinaya **define a term in their own words** — canonical formulas like "Katamañca X? ... ayaṁ vuccati X", "X adhivacana", Vinaya "X nāma". Complements `get_word_definition` with primary-source definitions rather than dictionary glosses. |
 | `parse_pali_word` | Strip Pāli suffixes to recover the root form when `get_word_definition` misses (`bhikkhūnaṁ` → `bhikkhu`). |
 
 ### ⚠️ Note on `search_semantic`
 
-The vector index is built only on `text_pali` (SuttaCentral's bilara-data does not yet include Thai translations) using a multilingual MiniLM model that is **not specifically trained on Pāli**. As a result:
+The vector index is built only on `text_pali` — `bilara-data` carries Thai for 6 files in all, and the public server loads no Thai edition — using a multilingual MiniLM model that is **not specifically trained on Pāli**. As a result:
 
 - **Pāli / English queries** → accurate (good cross-lingual alignment)
 - **Thai queries** → loose matches, not recommended
@@ -332,7 +335,12 @@ Upgrading to a Pāli-trained embedding model (e.g. bge-m3) plus embedding the Th
 
 ```text
 tripitaka-mcp/
-├── main.py                       # Main MCP Server (12 tools + 3 resources)
+├── main.py                       # Main MCP Server (14 tools, 1 resource + 2 resource templates)
+├── cli.py                        # `tripitaka-mcp` CLI (init / serve) for the pipx edition
+├── sutta_verify.py               # Quote matching behind `verify_quote`
+├── sutta_definitions.py          # Canonical definition formulas behind `define_from_suttas`
+├── sutta_titles.py               # Sutta title resolution
+├── mcp_app.py                    # MCP Apps registration (env-gated, `TRIPITAKA_MCP_APP`)
 ├── db/
 │   ├── connection.py             # Database connection pool
 │   └── schema.py                 # Schema (supports translation table)
@@ -344,7 +352,7 @@ tripitaka-mcp/
 │   ├── backup.sh                     # pg_dump → S3-compatible store
 │   ├── dump_and_publish.sh           # Verify embeddings → pg_dump → upload to HuggingFace
 │   ├── seed_metadata.py              # Seed pitaka/nikāya metadata
-│   ├── data_loader.py                # Load Sutta Piṭaka (Pāli + Sujato English)
+│   ├── data_loader.py                # Load Sutta Piṭaka (Pāli + bilara EN, per-book translator)
 │   ├── load_vinaya.py                # Vinaya loader (Vibhaṅga + Pātimokkha + Khandhaka + Parivāra, Brahmali EN)
 │   ├── load_abhidhamma.py            # Abhidhamma loader (7 books, Pāli — bilara has no EN)
 │   ├── load_thai_cc0.py              # Thai translation loader
@@ -354,14 +362,27 @@ tripitaka-mcp/
 │   ├── run_embedding_with_retry.sh   # Resilient wrapper around embedding generation (retries on DB drop)
 │   ├── check_embedding_progress.py   # Live progress snapshot (or --watch mode) for the embedding job
 │   ├── smoke_test.sh                 # Endpoint smoke test (TLS + /sse + /mcp + /health)
-│   └── test_full_sutta.py            # Full-content smoke test (22 size-tiered suttas across all 3 piṭakas)
+│   ├── test_full_sutta.py            # Full-content smoke test (22 size-tiered suttas, exact pinned counts)
+│   ├── test_corpus_parity.py         # Check the corpus against the bilara-data clone it claims parity with
+│   ├── test_definitions.py           # `define_from_suttas` regression + snapshot + backend parity
+│   ├── test_verify_quote.py          # `verify_quote` regression, both backends
+│   ├── test_survey_counts.py         # `survey_corpus` count drift
+│   ├── test_pagination.py            # Slice / window / offset behaviour
+│   └── test_mcp_prompts.py           # Prompt-level test — a real model picks the tools, a judge reads the answer
+├── reader/                       # Bilingual reader served at /read/* (FastAPI)
+│   ├── app.py                    # Routes: /read/, /read/{sutta_id}, search, browse
+│   ├── queries.py                # Read-side queries
+│   ├── featured.py               # Landing-page sutta cards
+│   └── sutta_id_decoder.py       # Turn a sutta id into a human-readable location
+├── site/                         # Static landing page served at the apex domain
 ├── topics/                       # Static markdown pages served at /topics/*
 │   ├── README.md                 # Index of available topic pages
 │   ├── tipitaka-overview.md      # Canon structure + coverage
 │   ├── getting-started.md        # Connection paths, tool selection, prompt patterns
 │   ├── places.md                 # Geography of the suttas (Mahājanapada, holy sites, cosmology)
 │   ├── themes.md                 # 10 foundational teachings + locus classicus
-│   └── people.md                 # ~30 major figures (chief disciples, lay supporters, kings)
+│   ├── people.md                 # ~30 major figures (chief disciples, lay supporters, kings)
+│   └── timeline.md               # Phase-based timeline of the 45-year teaching career
 ├── skills/                       # Portable Claude skills for AI clients
 │   ├── README.md                 # How to install
 │   └── tipitaka-research.md      # Multi-step research workflow
@@ -374,7 +395,7 @@ tripitaka-mcp/
 │   └── CAPACITY.md               # Capacity planning per VPS spec
 ├── claude_desktop_config.example.json
 ├── docker-compose.yml            # Dev (single mcp-server)
-├── docker-compose.prod.yml       # Prod (db + 2 mcp-server + caddy)
+├── docker-compose.prod.yml       # Prod (db + 2 mcp-server + reader + caddy)
 ├── Dockerfile
 └── requirements.txt
 ```
