@@ -69,6 +69,27 @@ CASES = [
 ]
 
 
+# เคสที่ **ควรผ่านแต่วันนี้ยังไม่ผ่าน** — รายงานออกมาให้เห็นทุกครั้ง แต่ *ไม่นับเข้า exit code*
+# (Decision 2026-10-18: ไม่ปล่อยให้ Test Gate แดงค้าง เพราะของที่แดงนานๆ คนจะชินแล้วมองข้าม
+#  ซึ่งอันตรายกว่าไม่มีเทสเลย) — **ลบรายการออกจากลิสต์นี้แล้วย้ายขึ้นไปใน CASES ทันทีที่เหตุถูกแก้**
+# ถ้ารายการไหนกลับมาผ่านเองโดยธงยังอยู่ สคริปต์จะส่งเสียงบอกให้เก็บธง
+# (ข้อความ, verdict ที่ควรได้, segment ที่ควรเป็นอันดับหนึ่ง | None, ทำไมถึงคุม, รออะไรอยู่)
+KNOWN_FAIL = [
+    (
+        "Hetuyā tīṇi, ārammaṇe pañca, adhipatiyā ekaṁ …pe… avigate pañca.",
+        "exact", "patthana9.6:12.1",
+        "ยกข้อความของ patthana9.6:12.1 มาเป๊ะทุกตัวอักษร แต่เครื่องมือตอบ close แล้วชี้ไป"
+        " patthana3.10:40.1 ซึ่งเป็นคนละบรรทัดและตัวเลขไม่เหมือนกัน (pañca แทน tīṇi กับ ekaṁ)"
+        " = ปฏิเสธบรรทัดที่มีอยู่จริง ซึ่งเป็นความผิดด้านที่แพงกว่าของเครื่องมือนี้"
+        " (AN 2.23 กล่าวตู่สองแบบ — ใส่คำที่ไม่ได้ตรัส กับปฏิเสธคำที่ตรัส)",
+        "C3 — `_CANDIDATE_CAP = 400` ใน sutta_verify.py ดึง candidate ด้วย `ORDER BY seg.id`"
+        " วลีนี้มี candidate 756 แถว และ seg.id ของอภิธรรมสูงสุดในคลังเพราะโหลดท้ายสุด"
+        " แถวที่ใช่จึงถูกตัดทิ้งตั้งแต่ก่อนให้คะแนน · คอมเมนต์ใน sutta_verify.py เองยอมรับไว้แล้ว"
+        " ว่าผลแบบนี้อาจเกิดจากการตัดแถว ไม่ใช่เพราะข้อความไม่มีจริง",
+    ),
+]
+
+
 def rows(term: str):
     from db.backend import get_backend
 
@@ -85,20 +106,46 @@ def rows(term: str):
         backend.release(conn)
 
 
-def run() -> int:
-    failed = 0
-    for text, want_verdict, want_seg, why in CASES:
+_PENDING = [0]  # known-fail ที่ยังไม่ผ่าน — ใช้ให้บรรทัดสรุปพูดตรงกับความจริง
+
+
+def run_cases(cases, *, known_fail: bool = False) -> tuple[int, int]:
+    """รันชุดเคส คืน (จำนวนที่ไม่ผ่าน, จำนวนที่ผ่านทั้งที่ขึ้นบัญชี known-fail ไว้)"""
+    failed = surprises = 0
+    for case in cases:
+        text, want_verdict, want_seg, why = case[:4]
         r = rows(text)
         got = r["verdict"]
         top = r["matches"][0]["segment_id"] if r["matches"] else None
         ok = got == want_verdict and (want_seg is None or top == want_seg)
-        print(f"  {'✅' if ok else '❌'} {want_verdict:<9} {text[:46]}")
-        if not ok:
+        mark = ("🎉" if ok else "⏳") if known_fail else ("✅" if ok else "❌")
+        print(f"  {mark} {want_verdict:<9} {text[:46]}")
+        if ok and known_fail:
+            surprises += 1
+            print("       🎉 known-fail ข้อนี้ผ่านแล้ว — ลบออกจาก KNOWN_FAIL"
+                  " แล้วย้ายขึ้นไปใน CASES")
+            continue
+        if ok:
+            continue
+        if known_fail:
+            _PENDING[0] += 1
+            print(f"       ยังไม่ผ่าน ไม่นับเข้า exit code · รอ: {case[4]}")
+        else:
             failed += 1
-            print(f"       why: {why}")
-            print(f"       got: verdict={got} top={top}")
-            for m in r["matches"]:
-                print(f"            {m['similarity']:.3f} {m['segment_id']} {(m['text'] or '')[:50]}")
+        print(f"       why: {why}")
+        print(f"       got: verdict={got} top={top}")
+        for m in r["matches"]:
+            print(f"            {m['similarity']:.3f} {m['segment_id']} {(m['text'] or '')[:50]}")
+    return failed, surprises
+
+
+def run() -> int:
+    failed, _ = run_cases(CASES)
+    if KNOWN_FAIL:
+        print("  ── known-fail (รายงานอย่างเดียว ไม่นับเข้า exit code)")
+        _, surprises = run_cases(KNOWN_FAIL, known_fail=True)
+        if surprises:
+            print(f"  🎉 known-fail ที่ผ่านแล้ว {surprises} ข้อ — เก็บธงออกได้")
     return failed
 
 
@@ -121,7 +168,9 @@ def main() -> int:
     if failed:
         print(f"❌ fail {failed} ข้อ")
         return 1
-    print("✅ ผ่านทั้งหมด")
+    pending = _PENDING[0]
+    print("✅ เคสบังคับผ่านทั้งหมด"
+          + (f" · known-fail ค้าง {pending} ข้อ (ดูรายละเอียดด้านบน)" if pending else ""))
     return 0
 
 
