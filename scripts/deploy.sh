@@ -11,7 +11,11 @@
 # 4. ดาวน์โหลด + restore dump จาก HF (ถ้ายัง)
 # 5. ตั้ง readonly user
 # 6. build + up -d docker-compose.prod.yml
-# 7. รอ healthcheck + ทดสอบ /health จาก external
+# 7. tag image ตาม git short sha + บันทึก .deploy-history + ลบเวอร์ชันที่เกินโควตา
+# 8. รอ healthcheck + ทดสอบ /health จาก external
+#
+# ทุก build ได้ tag สองชื่อชี้ image เดียวกัน: tripitaka-mcp:<git-short-sha> กับ :latest
+# เวอร์ชันก่อนหน้าจึงยังอยู่ให้ ./scripts/rollback.sh สลับกลับได้โดยไม่ต้อง build ใหม่
 #
 # Usage:
 #   ./scripts/deploy.sh [--domain mcp.example.org] [--dump-url URL] [--force-restore]
@@ -51,6 +55,71 @@ load_env() {
     printf '%s' "${raw}"
 }
 
+# --- image versioning -------------------------------------------------------
+# Repos ที่สคริปต์นี้ build เอง (db ใช้ image จาก registry — ไม่เกี่ยว)
+IMAGE_REPOS=(tripitaka-mcp tripitaka-caddy)
+# ประวัติ deploy บน droplet (gitignored) — rollback.sh อ่านไฟล์นี้หาเวอร์ชันก่อนหน้า
+HISTORY_FILE="${PROJECT_ROOT}/.deploy-history"
+# เก็บ image ย้อนหลังกี่เวอร์ชัน (นับรวมเวอร์ชันที่รันอยู่) — ดู DEPLOYMENT.md
+KEEP_VERSIONS="${TRIPITAKA_KEEP_VERSIONS:-3}"
+
+# เขียน key=value ลง .env โดยคง inode + chmod 600 เดิมไว้ (เขียนทับเนื้อใน ไม่ใช่ mv ทับ)
+# compose อ่าน .env เอง → `docker compose up -d` เปล่าๆ จึงยังได้เวอร์ชันที่ pin ไว้
+upsert_env() {
+    local key="$1" value="$2" tmp
+    tmp="$(mktemp "${PROJECT_ROOT}/.env.tmp.XXXXXX")"
+    chmod 600 "${tmp}"
+    awk -F= -v k="${key}" -v v="${value}" '
+        $1 == k { if (!done) { print k "=" v; done = 1 } next }
+        { print }
+        END { if (!done) print k "=" v }
+    ' .env > "${tmp}"
+    cat "${tmp}" > .env
+    rm -f "${tmp}"
+}
+
+# บันทึก 1 บรรทัดต่อ 1 deploy: เวลา UTC / เวอร์ชัน / branch / การกระทำ
+record_deploy() {
+    local version="$1" action="$2" branch
+    branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+    printf '%s\t%s\t%s\t%s\n' \
+        "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${version}" "${branch}" "${action}" >> "${HISTORY_FILE}"
+}
+
+# เวอร์ชันที่ห้ามลบ = เวอร์ชันที่กำลัง deploy + KEEP_VERSIONS ตัวล่าสุดใน history
+versions_to_keep() {
+    {
+        printf '%s\n' "${APP_VERSION}"
+        awk -F'\t' 'NF >= 2 { print $2 }' "${HISTORY_FILE}" 2>/dev/null \
+            | awk '{ line[NR] = $0 } END { for (i = NR; i >= 1; i--) print line[i] }' \
+            | awk '!seen[$0]++' \
+            | head -n "${KEEP_VERSIONS}"
+    } | awk 'NF && !seen[$0]++'
+}
+
+# ลบ tag เวอร์ชันที่เก่ากว่าที่ตั้งใจเก็บ (ไม่แตะ :latest และไม่แตะ repo อื่น)
+prune_old_versions() {
+    local keep tag repo removed=0
+    keep="$(versions_to_keep)"
+    for repo in "${IMAGE_REPOS[@]}"; do
+        while read -r tag; do
+            [[ -z "${tag}" || "${tag}" == "latest" || "${tag}" == "<none>" ]] && continue
+            grep -qxF "${tag}" <<<"${keep}" && continue
+            if docker image rm "${repo}:${tag}" >/dev/null 2>&1; then
+                echo "   ลบ ${repo}:${tag}"
+                removed=$((removed + 1))
+            else
+                warn "ลบ ${repo}:${tag} ไม่ได้ (อาจมี container ใช้อยู่) — ข้าม"
+            fi
+        done < <(docker image ls "${repo}" --format '{{.Tag}}')
+    done
+    if [[ ${removed} -gt 0 ]]; then
+        ok "ลบ image เก่า ${removed} tag (เก็บไว้ ${KEEP_VERSIONS} เวอร์ชัน)"
+    else
+        ok "ไม่มี image เก่าต้องลบ (เก็บไว้ ${KEEP_VERSIONS} เวอร์ชัน)"
+    fi
+}
+
 # --- parse args --------------------------------------------------------------
 DOMAIN=""
 DUMP_URL=""
@@ -82,6 +151,25 @@ command -v docker >/dev/null 2>&1 || die "docker ไม่พบ (cloud-init เ
 docker compose version >/dev/null 2>&1 || die "docker compose plugin ไม่พบ"
 docker info >/dev/null 2>&1 || die "docker daemon ไม่ทำงาน"
 ok "environment พร้อม"
+
+# --- 1b. version tag ---------------------------------------------------------
+# ทุก build ต้องได้ tag ที่ผูกกับ commit ไม่ใช่ทับ `latest` ทิ้งทุกครั้ง
+# เวอร์ชันก่อนหน้าจึงยังอยู่ให้ rollback สลับกลับได้ (scripts/rollback.sh)
+log "หาเวอร์ชันสำหรับ build นี้..."
+if [[ -n "${APP_VERSION:-}" ]]; then
+    ok "APP_VERSION มาจาก environment: ${APP_VERSION}"
+else
+    git rev-parse --git-dir >/dev/null 2>&1 \
+        || die "ไม่ใช่ git repo — ตั้ง APP_VERSION=<tag> เองก่อนรัน deploy.sh"
+    APP_VERSION="$(git rev-parse --short HEAD)"
+    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+        APP_VERSION="${APP_VERSION}-dirty"
+        warn "working tree ไม่สะอาด → tag ${APP_VERSION}"
+        warn "tag ที่ลงท้าย -dirty ถูกทับได้ด้วย build ถัดไปจาก commit เดียวกัน อย่าใช้เป็นจุด rollback"
+    fi
+    ok "APP_VERSION=${APP_VERSION}  (branch $(git rev-parse --abbrev-ref HEAD))"
+fi
+export APP_VERSION
 
 # --- 2. .env ---------------------------------------------------------------
 if [[ -f .env ]]; then
@@ -190,6 +278,24 @@ ok "diacritic-insensitive search พร้อม (f_unaccent + 2 GIN indexes)"
 log "start mcp-server + caddy..."
 docker compose -f docker-compose.prod.yml up -d --build
 
+# --- 7b. tag latest + บันทึกเวอร์ชัน + เก็บย้อนหลังเท่าที่ตั้งใจ --------------
+# `docker tag` ชี้ชื่อที่สองมาที่ image เดิม ไม่ได้ copy layer → ไม่กินดิสก์เพิ่ม
+log "ตั้ง tag latest + บันทึกเวอร์ชัน..."
+for repo in "${IMAGE_REPOS[@]}"; do
+    if docker image inspect "${repo}:${APP_VERSION}" >/dev/null 2>&1; then
+        docker tag "${repo}:${APP_VERSION}" "${repo}:latest"
+        ok "${repo}:${APP_VERSION}  (+ :latest)"
+    else
+        warn "ไม่พบ ${repo}:${APP_VERSION} — ข้าม tag latest"
+    fi
+done
+
+# pin เวอร์ชันลง .env เพื่อให้ `docker compose up -d` เปล่าๆ ได้ image ตัวเดียวกัน
+upsert_env APP_VERSION "${APP_VERSION}"
+record_deploy "${APP_VERSION}" deploy
+ok "บันทึกลง .deploy-history แล้ว"
+prune_old_versions
+
 # --- 8. health check -------------------------------------------------------
 log "รอ mcp-server healthy (อาจใช้เวลาสักครู่ embedding model โหลด)..."
 for i in {1..60}; do
@@ -218,5 +324,7 @@ echo "  Health:    https://${TRIPITAKA_DOMAIN}/health"
 echo "  Logs:      docker compose -f docker-compose.prod.yml logs -f"
 echo "  Restart:   docker compose -f docker-compose.prod.yml restart"
 echo "  Update:    git pull && ./scripts/deploy.sh"
+echo "  Version:   ${APP_VERSION}  (pin ไว้ใน .env, ประวัติใน .deploy-history)"
+echo "  Rollback:  ./scripts/rollback.sh          # ย้อน image ไปเวอร์ชันก่อนหน้า ไม่ build ใหม่"
 echo
 echo "สาธุ 🙏"
