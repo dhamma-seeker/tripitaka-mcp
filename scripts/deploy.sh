@@ -10,7 +10,7 @@
 # 3. prompt ให้ใส่ TRIPITAKA_DOMAIN
 # 4. ดาวน์โหลด + restore dump จาก HF (ถ้ายัง)
 # 5. ตั้ง readonly user
-# 6. build + up -d docker-compose.prod.yml
+# 6. build + up -d เฉพาะ service ของแอป (ไม่แตะ caddy/db — ดู --with-caddy)
 # 7. tag image ตาม git short sha + บันทึก .deploy-history + ลบเวอร์ชันที่เกินโควตา
 # 8. รอ healthcheck + ทดสอบ /health จาก external
 #
@@ -19,9 +19,17 @@
 #
 # Usage:
 #   ./scripts/deploy.sh [--domain mcp.example.org] [--dump-url URL] [--force-restore]
+#                       [--with-caddy]
 #
 # --force-restore: drop existing segment data and restore from dump
 #                  (use when refreshing prod with a new dump from HF)
+# --with-caddy:    rebuild/recreate caddy ด้วย — **ทุกบริการขาดราว 10-15 วินาที**
+#                  เพราะ caddy ถือ port 80/443 · ใช้เฉพาะรอบที่แก้ infra/Caddyfile
+#                  หรือ Dockerfile.caddy จริงๆ
+#
+# ค่าเริ่มต้นแตะแค่ mcp-server · mcp-server-http · reader ตาม Hard Rule ที่ห้าม deploy
+# แตะ caddy/db · ยกเว้นเครื่องใหม่ที่ยังไม่เคยมีคอนเทนเนอร์ caddy สคริปต์จะสตาร์ตให้เอง
+# ไม่งั้นเครื่องใหม่จะไม่มี reverse proxy ขึ้นเลย
 
 set -euo pipefail
 
@@ -124,6 +132,7 @@ prune_old_versions() {
 DOMAIN=""
 DUMP_URL=""
 FORCE_RESTORE=0
+WITH_CADDY=0
 HF_REPO="dhamma-seeker/tripitaka-mcp-dump"
 HF_FILE="tripitaka_production_data.dump"
 DEFAULT_DUMP_URL="https://huggingface.co/datasets/${HF_REPO}/resolve/main/${HF_FILE}"
@@ -133,6 +142,7 @@ while [[ $# -gt 0 ]]; do
         --domain) DOMAIN="${2:-}"; shift 2 ;;
         --dump-url) DUMP_URL="${2:-}"; shift 2 ;;
         --force-restore) FORCE_RESTORE=1; shift ;;
+        --with-caddy) WITH_CADDY=1; shift ;;
         -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) die "unknown arg: $1" ;;
     esac
@@ -274,9 +284,21 @@ log "ตั้งค่า unaccent + functional GIN indexes..."
 docker exec -i tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" < scripts/setup_unaccent.sql >/dev/null
 ok "diacritic-insensitive search พร้อม (f_unaccent + 2 GIN indexes)"
 
-# --- 7. start full stack ---------------------------------------------------
-log "start mcp-server + caddy..."
-docker compose -f docker-compose.prod.yml up -d --build
+# --- 7. start app services --------------------------------------------------
+# Hard Rule: deploy ปกติห้ามแตะ caddy/db · caddy ถือ 80/443 การ recreate = ทุกบริการ
+# ขาดราว 10-15 วินาที ส่วน db ไม่มีเหตุให้ recreate เพราะโค้ดที่ deploy ไม่ได้อยู่ในนั้น
+# ข้อยกเว้นเดียว: เครื่องที่ยังไม่มีคอนเทนเนอร์ caddy เลย = ติดตั้งครั้งแรก ต้องสตาร์ตให้
+DEPLOY_SERVICES=(mcp-server mcp-server-http reader)
+if [[ "${WITH_CADDY}" -eq 1 ]]; then
+    DEPLOY_SERVICES+=(caddy)
+    warn "--with-caddy: caddy จะถูก recreate — ทุกบริการขาดราว 10-15 วินาที"
+elif ! docker compose -f docker-compose.prod.yml ps -q caddy 2>/dev/null | grep -q .; then
+    DEPLOY_SERVICES+=(caddy)
+    log "ยังไม่มีคอนเทนเนอร์ caddy (ติดตั้งครั้งแรก) — จะสตาร์ตให้ด้วย"
+fi
+
+log "build + start: ${DEPLOY_SERVICES[*]}"
+docker compose -f docker-compose.prod.yml up -d --build "${DEPLOY_SERVICES[@]}"
 
 # --- 7b. tag latest + บันทึกเวอร์ชัน + เก็บย้อนหลังเท่าที่ตั้งใจ --------------
 # `docker tag` ชี้ชื่อที่สองมาที่ image เดิม ไม่ได้ copy layer → ไม่กินดิสก์เพิ่ม
