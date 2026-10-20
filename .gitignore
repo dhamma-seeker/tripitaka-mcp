@@ -18,6 +18,9 @@ env/
 # Docker
 postgres_data/
 
+# ประวัติ deploy (สร้างบน droplet โดย deploy.sh / rollback.sh)
+.deploy-history
+
 # IDE
 .idea/
 .vscode/

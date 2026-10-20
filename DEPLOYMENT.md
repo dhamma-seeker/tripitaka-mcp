@@ -194,14 +194,85 @@ git pull
 ./scripts/deploy.sh                  # reuses existing .env
 ```
 
+### Image versions
+
+`deploy.sh` tags each build with the git short sha of the commit it built, and
+points `latest` at that same image. A tag is a second name for an image, not a
+copy, so the extra name costs no disk.
+
+```bash
+docker image ls tripitaka-mcp
+# REPOSITORY      TAG       IMAGE ID       SIZE
+# tripitaka-mcp   8ec1a0d   1a2b3c4d5e6f   9.14GB   <- latest points here too
+# tripitaka-mcp   latest    1a2b3c4d5e6f   9.14GB
+# tripitaka-mcp   d594198   0f9e8d7c6b5a   9.14GB   <- previous deploy
+```
+
+The `SIZE` column shows the whole image, not what each version adds. Versions
+share every layer the commit did not change, so a second version costs only the
+layers that differ. Measured on the production image:
+
+| layer | size | shared between versions |
+|---|---|---|
+| `COPY /install /usr/local` (pip install) | 5.49 GB | yes, while `requirements.txt` is unchanged |
+| base `python:3.12-slim` layers | 134 MB | yes |
+| `COPY . .` (the source tree) | size of the build context | no, this is the per-commit layer |
+
+The build context is the checkout minus what `.dockerignore` excludes, which is
+16 MB on the server today. So an ordinary deploy adds tens of megabytes, and
+keeping 3 versions costs a few tens of megabytes over keeping one.
+
+A deploy that changes `requirements.txt` is the exception. The 5.49 GB layer is
+rebuilt, the previous version keeps its own copy, and that one deploy costs
+about 5.5 GB. Lower `TRIPITAKA_KEEP_VERSIONS` before a run of dependency
+changes if disk is tight.
+
+Image versions are not what fills the disk. The buildkit cache is far larger
+than every version put together, and it is pruned on its own schedule.
+
+The version running is pinned in `.env` as `APP_VERSION`, and every deploy
+appends a line to `.deploy-history`. Both files are gitignored and exist on the
+server only. Compose reads `.env` by itself, so `docker compose up -d` with
+nothing set in the environment starts the pinned version rather than whatever
+`latest` happens to point at.
+
+`deploy.sh` keeps the 3 most recent versions and removes older tags after a
+successful build. Set `TRIPITAKA_KEEP_VERSIONS` in `.env` to keep more or fewer.
+
 ### Rollback
+
+Swap back to an earlier version's image. Nothing is rebuilt, so this costs a
+container restart rather than the several minutes a rebuild takes.
 
 ```bash
 cd /opt/tripitaka
-git log --oneline -10
-git checkout <commit-sha>
-./scripts/deploy.sh
+./scripts/rollback.sh --list       # versions whose images are still on disk
+./scripts/rollback.sh              # back to the previous version
+./scripts/rollback.sh 8ec1a0d      # back to a named version
+./scripts/rollback.sh --dry-run    # print what it would do, change nothing
 ```
+
+It pins `APP_VERSION` in `.env`, moves the `latest` tag, and recreates
+mcp-server, mcp-server-http, reader and caddy with `--no-build`. Caddy holds
+ports 80 and 443, so every service is unreachable for 10 to 15 seconds while it
+restarts.
+
+Only the code inside the image goes back. `infra/Caddyfile`, `site/` and
+`topics/` are bind mounts and still come from the checkout, so when the breakage
+is in one of those, revert the commit instead:
+
+```bash
+# on your laptop
+git revert <commit> && git push origin main
+
+# on the server
+git pull origin main && ./scripts/deploy.sh
+```
+
+Revert is also the way back when the version you want was already removed by
+retention, or when the server has no `.deploy-history` yet because it has not
+been deployed with the version-tagging `deploy.sh`. `rollback.sh` names the case
+it hit and exits instead of failing halfway.
 
 ### Restore from backup
 
