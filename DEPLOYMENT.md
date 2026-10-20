@@ -194,6 +194,36 @@ git pull
 ./scripts/deploy.sh                  # reuses existing .env
 ```
 
+### What a deploy restarts
+
+A routine deploy rebuilds and recreates the application services only:
+
+| Service | Touched by a routine deploy | Why |
+| --- | --- | --- |
+| `mcp-server` | yes | carries the code being deployed |
+| `mcp-server-http` | yes | same image, modern transport |
+| `reader` | yes | same image, serves `/read/*` |
+| `db` | no | the code being deployed is not in it; data lives in a volume |
+| `caddy` | no | it holds ports 80 and 443, so recreating it drops **every** service for 10 to 15 seconds |
+
+Pass `--with-caddy` on the rounds where you actually changed `infra/Caddyfile` or
+`infra/Dockerfile.caddy`, and accept that short outage. On a machine that has no
+caddy container yet, the first deploy starts it without the flag, otherwise a new
+install would come up with no reverse proxy.
+
+Caddy serves `site/` and `topics/` through bind mounts, which attach to a
+directory by inode. If a checkout replaces either directory rather than editing
+the files in place, a running caddy keeps the old, now empty one and serves 404s
+with nothing in its log. Compare them after a pull that touched those paths:
+
+```bash
+stat -c '%i %n' site topics
+docker compose -f docker-compose.prod.yml exec caddy stat -c '%i %n' /var/www/site /var/www/topics
+```
+
+Different numbers mean caddy needs recreating:
+`docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps caddy`
+
 ### Image versions
 
 `deploy.sh` tags each build with the git short sha of the commit it built, and
