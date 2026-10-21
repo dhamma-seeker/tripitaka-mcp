@@ -23,7 +23,10 @@ classifiers = [
 
 # Core dependencies — เบา: local install ไม่ลาก psycopg2 / torch / fastapi
 dependencies = [
-    "fastmcp>=2.0.0",
+    # 4.1.1 = เวอร์ชันที่ prod รันและผ่าน Test Gate · เปิดรับ patch ใน 4.1.x
+    # แต่กัน 4.2 ขึ้นไปไว้ เพราะ fastmcp เปลี่ยนวิธีตัด docstring ระหว่าง major
+    # (ผู้ติดตั้งผ่าน pipx ต้องได้ tool surface แบบเดียวกับที่เราทดสอบ)
+    "fastmcp>=4.1.1,<4.2",
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
     "platformdirs>=4.0.0",
