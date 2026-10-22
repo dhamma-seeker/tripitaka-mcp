@@ -227,14 +227,21 @@ for candidate in tripitaka_production_data.dump ./data/tripitaka.dump; do
         break
     fi
 done
-if [[ -z "${DUMP_PATH}" ]]; then
+# ไม่โหลดตรงนี้ — เครื่องที่ DB มีข้อมูลอยู่แล้วจะข้าม restore ในขั้น 5 เสมอ
+# การโหลด ~800 MB ทุกรอบ deploy จึงเป็นการจ่ายค่าของที่ไม่ได้ใช้ และเอาไฟล์ที่
+# DEPLOYMENT.md แนะนำให้ลบหลัง restore กลับมาวางไว้ใหม่ทุกครั้ง
+# โหลดเมื่อจะ restore จริงเท่านั้น (ดู fetch_dump ที่ขั้น 5 เรียก)
+[[ -z "${DUMP_PATH}" ]] && log "ไม่มี dump ในเครื่อง — จะโหลดก็ต่อเมื่อต้อง restore จริง"
+
+fetch_dump() {
+    [[ -n "${DUMP_PATH}" ]] && return 0
     DUMP_PATH="./tripitaka_production_data.dump"
     log "ดาวน์โหลด dump จาก HF: ${DUMP_URL}"
     curl -fL --progress-bar --retry 3 --retry-delay 5 -o "${DUMP_PATH}.tmp" "${DUMP_URL}" \
         || die "ดาวน์โหลดล้มเหลว"
     mv "${DUMP_PATH}.tmp" "${DUMP_PATH}"
     ok "ดาวน์โหลดสำเร็จ ($(du -h "${DUMP_PATH}" | cut -f1))"
-fi
+}
 
 # --- 4. boot DB ก่อน (ต้อง restore + setup_readonly ก่อนเริ่ม mcp-server) ---
 log "build + start DB..."
@@ -255,6 +262,9 @@ if [[ "${EXISTING}" -gt 0 && "${FORCE_RESTORE}" -eq 0 ]]; then
     COUNT=$(docker exec tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Atc "SELECT COUNT(*) FROM segment" 2>/dev/null || echo "0")
     warn "DB มี segment อยู่แล้ว ${COUNT} rows — ข้าม restore (ใช้ --force-restore เพื่อ drop+reload)"
 else
+    # เอา dump มาให้อยู่ในมือก่อน แล้วค่อยแตะข้อมูลเดิม ถ้าโหลดล้มหลัง drop
+    # ฐานจะว่างโดยไม่มีอะไรมาแทน
+    fetch_dump
     if [[ "${EXISTING}" -gt 0 ]]; then
         OLD_COUNT=$(docker exec tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Atc "SELECT COUNT(*) FROM segment" 2>/dev/null || echo "0")
         warn "--force-restore: DB มี ${OLD_COUNT} segments — drop schema แล้ว reload"
