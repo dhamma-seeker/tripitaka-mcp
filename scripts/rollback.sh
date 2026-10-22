@@ -44,10 +44,14 @@ die()  { echo "${C_RED}✗${C_RESET} $*" >&2; exit 1; }
 # --- config ------------------------------------------------------------------
 COMPOSE_FILE="${TRIPITAKA_COMPOSE_FILE:-docker-compose.prod.yml}"
 HISTORY_FILE="${PROJECT_ROOT}/.deploy-history"
-# repos ที่ deploy.sh build เอง — ต้องมี tag ของเวอร์ชันเป้าหมายครบทุกตัวถึงจะย้อนได้
-IMAGE_REPOS=(tripitaka-mcp tripitaka-caddy)
-# service ที่ใช้ image เหล่านั้น (db ใช้ image จาก registry — ไม่แตะ ข้อมูลอยู่ใน volume)
-VERSIONED_SERVICES=(mcp-server mcp-server-http reader caddy)
+# image ของแอป — ต้องมีเสมอถึงจะย้อนได้ เพราะโค้ดที่ deploy อยู่ในตัวนี้
+APP_IMAGE_REPO=tripitaka-mcp
+# image ที่ deploy ปกติไม่ได้ build ใหม่ (deploy.sh แตะ caddy เฉพาะ --with-caddy)
+# เวอร์ชันหนึ่งจึงมี tag ของ caddy หรือไม่มีก็ได้ ถ้าไม่มีแปลว่ารอบนั้นไม่ได้เปลี่ยน caddy
+# การย้อนก็ไม่ต้องแตะมันด้วย ซึ่งแปลว่าไม่มี downtime
+OPTIONAL_IMAGE_REPOS=(tripitaka-caddy)
+# service ของแอปที่ย้อนเสมอ (db ใช้ image จาก registry — ไม่แตะ ข้อมูลอยู่ใน volume)
+BASE_SERVICES=(mcp-server mcp-server-http reader)
 
 # --- helpers -----------------------------------------------------------------
 # อ่าน key เดียวจาก .env โดยไม่ source ทั้งไฟล์ (ค่าที่มีช่องว่างจะพัง)
@@ -81,12 +85,25 @@ record_deploy() {
         "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${version}" "${branch}" "${action}" >> "${HISTORY_FILE}"
 }
 
-# image ของเวอร์ชันนี้อยู่ครบทุก repo ไหม
+# ย้อนไปเวอร์ชันนี้ได้ไหม = มี image ของแอปอยู่ไหม
 version_is_available() {
+    docker image inspect "${APP_IMAGE_REPO}:$1" >/dev/null 2>&1
+}
+
+# repo ที่มี tag ของเวอร์ชันนี้จริง (แอปเสมอ + ตัวเสริมเท่าที่มี)
+repos_for_version() {
     local version="$1" repo
-    for repo in "${IMAGE_REPOS[@]}"; do
-        docker image inspect "${repo}:${version}" >/dev/null 2>&1 || return 1
+    printf '%s\n' "${APP_IMAGE_REPO}"
+    for repo in "${OPTIONAL_IMAGE_REPOS[@]}"; do
+        docker image inspect "${repo}:${version}" >/dev/null 2>&1 && printf '%s\n' "${repo}"
     done
+}
+
+# service ที่ต้อง recreate สำหรับเวอร์ชันนี้
+services_for_version() {
+    local version="$1"
+    printf '%s\n' "${BASE_SERVICES[@]}"
+    docker image inspect "tripitaka-caddy:${version}" >/dev/null 2>&1 && printf 'caddy\n'
     return 0
 }
 
@@ -140,7 +157,7 @@ if [[ ${LIST_ONLY} -eq 1 ]]; then
             if version_is_available "${v}"; then
                 echo "    ${C_GREEN}✓${C_RESET} ${v}  (image ครบ ย้อนได้)${mark}"
             else
-                echo "    ${C_RED}✗${C_RESET} ${v}  (image ถูกลบไปแล้ว ย้อนไม่ได้)${mark}"
+                echo "    ${C_RED}✗${C_RESET} ${v}  (ไม่มี ${APP_IMAGE_REPO}:${v} แล้ว ย้อนไม่ได้)${mark}"
             fi
         done < <(history_versions)
     fi
@@ -201,13 +218,22 @@ if [[ "${HEAD_SHA}" != "${TARGET}" ]]; then
 fi
 
 if [[ ${DRY_RUN} -eq 1 ]]; then
+    DRY_REPOS=()
+    while IFS= read -r _r; do [[ -n "${_r}" ]] && DRY_REPOS+=("${_r}"); done < <(repos_for_version "${TARGET}")
+    DRY_SERVICES=()
+    while IFS= read -r _s; do [[ -n "${_s}" ]] && DRY_SERVICES+=("${_s}"); done < <(services_for_version "${TARGET}")
     echo "${C_BOLD}--dry-run — จะทำแบบนี้ (ยังไม่ทำ):${C_RESET}"
     echo "  1. เขียน APP_VERSION=${TARGET} ลง .env"
     echo "  2. ย้าย tag latest:"
-    for repo in "${IMAGE_REPOS[@]}"; do
+    for repo in "${DRY_REPOS[@]}"; do
         echo "       docker tag ${repo}:${TARGET} ${repo}:latest"
     done
-    echo "  3. docker compose -f ${COMPOSE_FILE} up -d --no-build ${VERSIONED_SERVICES[*]}"
+    echo "  3. docker compose -f ${COMPOSE_FILE} up -d --no-build ${DRY_SERVICES[*]}"
+    if printf '%s\n' "${DRY_SERVICES[@]}" | grep -qx caddy; then
+        echo "     (รวม caddy → ทุกบริการขาดราว 10-15 วินาที)"
+    else
+        echo "     (ไม่แตะ caddy → ไม่มีช่วงขาด)"
+    fi
     echo "  4. บันทึก rollback ลง .deploy-history"
     echo
     exit 0
@@ -219,14 +245,23 @@ upsert_env APP_VERSION "${TARGET}"
 ok ".env pin แล้ว (compose อ่านเอง → up -d เปล่าๆ ก็ได้เวอร์ชันนี้)"
 
 log "ย้าย tag latest มาที่ ${TARGET}..."
-for repo in "${IMAGE_REPOS[@]}"; do
+ROLLBACK_REPOS=()
+while IFS= read -r _r; do [[ -n "${_r}" ]] && ROLLBACK_REPOS+=("${_r}"); done < <(repos_for_version "${TARGET}")
+for repo in "${ROLLBACK_REPOS[@]}"; do
     docker tag "${repo}:${TARGET}" "${repo}:latest"
     ok "${repo}:latest → ${TARGET}"
 done
 
+VERSIONED_SERVICES=()
+while IFS= read -r _s; do [[ -n "${_s}" ]] && VERSIONED_SERVICES+=("${_s}"); done < <(services_for_version "${TARGET}")
 log "recreate service: ${VERSIONED_SERVICES[*]}"
-warn "caddy ถือ port 80/443 — ช่วงนี้ทุกบริการขาดราว 10-15 วินาที"
+if printf '%s\n' "${VERSIONED_SERVICES[@]}" | grep -qx caddy; then
+    warn "caddy ถือ port 80/443 — ช่วงนี้ทุกบริการขาดราว 10-15 วินาที"
+else
+    log "ไม่แตะ caddy (เวอร์ชันนี้ไม่ได้เปลี่ยน caddy) — ไม่มีช่วงขาด"
 # --no-build = ถ้า image หาย ให้ fail ไปเลย ดีกว่าแอบ build ใหม่เงียบๆ
+fi
+
 docker compose -f "${COMPOSE_FILE}" up -d --no-build "${VERSIONED_SERVICES[@]}"
 
 record_deploy "${TARGET}" "rollback-from-${CURRENT}"
