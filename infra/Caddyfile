@@ -271,16 +271,52 @@
 
     # --- canonical Streamable HTTP transport (MCP spec 2025-03-26) ----------
     # FastMCP serve: /mcp (POST + GET, response อาจ stream SSE)
+    #
+    # CORS: web apps that call /mcp straight from the browser (HelpMePud on
+    # dhamma-seeker.github.io) need it; desktop and hosted connectors send no
+    # Origin and never preflight, so this changes nothing for them. Allowlist
+    # rather than `*`, read from MCP_CORS_ORIGINS (space-separated, exact
+    # scheme://host[:port], no trailing slash). The `vars` matcher compares
+    # whole strings, so a look-alike such as https://dhamma-seeker.github.io.evil
+    # does not match. A disallowed origin gets the same response minus the
+    # Access-Control-* headers, which the browser treats as a refusal.
+    #
+    # Nesting `header` inside this handle is fine here, unlike the X-Frame-Options
+    # case on the apex: none of these names are set at site level, so there is
+    # nothing to override. FastMCP sets no Access-Control-* itself; if CORS is
+    # ever added in the app, remove it here, since a duplicated
+    # Access-Control-Allow-Origin makes the browser reject the response.
     @mcp path /mcp /mcp/*
     handle @mcp {
-        reverse_proxy mcp-server-http:8080 {
-            flush_interval -1
-            transport http {
-                read_timeout 5m
-                write_timeout 5m
+        @cors_origin vars {http.request.header.Origin} {$MCP_CORS_ORIGINS:https://dhamma-seeker.github.io http://localhost:8080}
+        header +Vary Origin
+        header @cors_origin {
+            Access-Control-Allow-Origin {http.request.header.Origin}
+            # The client reads Mcp-Session-Id from the initialize response.
+            Access-Control-Expose-Headers Mcp-Session-Id
+        }
+
+        # Preflight: answered here because the app returns 405 for OPTIONS.
+        @preflight method OPTIONS
+        handle @preflight {
+            header @cors_origin {
+                Access-Control-Allow-Methods "GET, POST, DELETE, OPTIONS"
+                Access-Control-Allow-Headers "Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Last-Event-ID"
+                Access-Control-Max-Age 86400
             }
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
+            respond 204
+        }
+
+        handle {
+            reverse_proxy mcp-server-http:8080 {
+                flush_interval -1
+                transport http {
+                    read_timeout 5m
+                    write_timeout 5m
+                }
+                header_up X-Real-IP {remote_host}
+                header_up X-Forwarded-For {remote_host}
+            }
         }
     }
 

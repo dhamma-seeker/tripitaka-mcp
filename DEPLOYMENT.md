@@ -224,6 +224,24 @@ docker compose -f docker-compose.prod.yml exec caddy stat -c '%i %n' /var/www/si
 Different numbers mean caddy needs recreating:
 `docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps caddy`
 
+### Allow a browser app to call `/mcp` (CORS)
+
+Browser apps need CORS to call `/mcp`; desktop and hosted MCP clients don't.
+The allowlist is `MCP_CORS_ORIGINS` in `.env`, space-separated, each entry an
+exact `scheme://host[:port]` with no trailing slash (`https://example.github.io`,
+not `https://example.github.io/app/`). Unset, it falls back to the default in
+`docker-compose.prod.yml`. Caddy reads it at start, so recreate caddy after a
+change, which drops every service for 10 to 15 seconds:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps caddy
+curl -si -X OPTIONS https://$TRIPITAKA_DOMAIN/mcp \
+  -H 'Origin: https://example.github.io' -H 'Access-Control-Request-Method: POST' \
+  | grep -i '^access-control'
+```
+
+No `access-control-*` lines in the output means the origin did not match.
+
 ### Image versions
 
 `deploy.sh` tags each build with the git short sha of the commit it built, and

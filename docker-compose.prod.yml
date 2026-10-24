@@ -233,6 +233,9 @@ services:
       # Optional: email ของบัญชี glama.ai สำหรับ claim connector listing
       # (serve ที่ /.well-known/glama.json) — เว้นว่างได้ถ้าไม่ได้ลง Glama
       GLAMA_MAINTAINER_EMAIL: ${GLAMA_MAINTAINER_EMAIL:-}
+      # Browser origins allowed to call /mcp (CORS), space-separated.
+      # See the @mcp block in infra/Caddyfile.
+      MCP_CORS_ORIGINS: ${MCP_CORS_ORIGINS:-https://dhamma-seeker.github.io http://localhost:8080}
     volumes:
       - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./topics:/var/www/topics:ro
