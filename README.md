@@ -91,7 +91,7 @@ Once connected, try asking Claude things like:
 
 Claude will pick the right tool, fetch the canonical Pāli, and surface a clickable link to the project's bilingual reader for verification.
 
-The hosted server is rate limited (10 req/10s plus 60 req/min per IP) and offered for personal study, research, and dhamma practice. Read [NOTICE.md](./NOTICE.md) before redistributing it or using it commercially.
+The hosted server is a small free service offered for personal study, research, and dhamma practice. Keep your request rate reasonable; bursts may be throttled at the edge. Read [NOTICE.md](./NOTICE.md) before redistributing it or using it commercially.
 
 ### 💻 Run it fully offline (`pipx`, local SQLite, no server)
 
@@ -160,7 +160,7 @@ Both serve the same ~444K-segment canon. The differences:
 | Updates | automatic | `pipx upgrade tripitaka-mcp` for code; re-run `init` for data |
 | Privacy | queries reach the hosted server (nothing logged, see the [Privacy Policy](https://tripitaka-mcp.com/privacy/)) | nothing leaves your machine |
 | Internet | required | not needed after `init` |
-| Rate limit | 10 req / 10 s, 60 req / min per IP | none |
+| Rate limit | bursts may be throttled at the edge | none |
 | Setup | zero / one-click | Python 3.10+, pipx, one-time ~120 MB download |
 
 `search_semantic`, `search_hybrid`, and the trigram keyword index need PostgreSQL, pgvector, and a ~1 GB embedding model, which is more than a lightweight local install should carry, so they stay hosted-only. In local mode those two tools are never registered: a connected client sees only the 11 it can actually call.
@@ -269,7 +269,8 @@ The production stack runs 5 services:
 - `mcp-server`: FastMCP over legacy SSE, behind `/sse` (readonly DB user, read-only FS, `cap_drop: ALL`)
 - `mcp-server-http`: the same server over Streamable HTTP, behind `/mcp`
 - `reader`: the bilingual reader that every cross-reference URL points at, behind `/read/*`
-- `caddy`: reverse proxy, Let's Encrypt, and the rate limit (10 req/10s and 60 req/1 min per IP)
+- `caddy`: reverse proxy and Let's Encrypt. Its `rate_limit` block for the MCP site is declared but
+  does not run as written, which [DEPLOYMENT.md](./DEPLOYMENT.md) explains
 
 For another layer of hardening, put Cloudflare in front of Caddy (DNS proxy, rate-limit rules, and DDoS protection on the free tier).
 
@@ -387,7 +388,7 @@ tripitaka-mcp/
 │   ├── README.md                 # How to install
 │   └── tipitaka-research.md      # Multi-step research workflow
 ├── infra/                        # Reverse proxy + deploy config
-│   ├── Caddyfile                 # Caddy: TLS, rate limit, /topics, /sse, /mcp
+│   ├── Caddyfile                 # Caddy: TLS, CORS for /mcp, /topics, /sse, /mcp
 │   ├── Dockerfile.caddy          # Caddy + caddy-ratelimit plugin
 │   ├── cloud-init.yml            # VPS bootstrap
 │   └── *.tf                      # Terraform (provider-agnostic)

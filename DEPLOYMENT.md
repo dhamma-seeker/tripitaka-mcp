@@ -83,9 +83,29 @@ All checks should pass:
 - ✓ /health → ok
 - ✓ security headers (HSTS, X-Content-Type-Options, etc.)
 - ✓ Server header hidden
-- ✓ rate limit works (returns 429 on burst)
+- ⚠ rate limit: declared in the Caddyfile, but inert as written (see **Rate limit** below)
 - ✓ /mcp → POST endpoint (Streamable HTTP, MCP spec 2025-03-26)
 - ✓ /sse → text/event-stream (legacy transport)
+
+### Rate limit
+
+The MCP site block declares `rate_limit` with two zones, 10 requests per 10
+seconds and 60 per minute per IP. It never runs.
+
+Caddy sorts a bare `rate_limit` after every `handle` in the same site, and a
+`handle` that matches is terminal, so the request is answered and the limiter is
+never reached. `order rate_limit before reverse_proxy` does not rescue it either,
+because the `reverse_proxy` it names sits inside a `handle` rather than at the top
+level. Reading the adapted JSON shows the limiter as the last route in the list.
+
+To make it take effect, move the `rate_limit` block inside the `handle` that
+serves the path you want to protect, next to the proxy it guards. The apex site
+already does this for the embed path and can be copied.
+
+Pick the numbers from traffic you have measured rather than from this file. A
+limit set too low blocks the clients you meant to serve, and MCP clients open a
+stream and then send several calls on it, so a per-IP count behaves differently
+from an ordinary web request count.
 
 ### 5. Test real MCP tools
 
