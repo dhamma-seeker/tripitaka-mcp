@@ -176,6 +176,28 @@
     }
 }
 
+# =============================================================================
+# www — redirect ไป apex
+# =============================================================================
+# เดิมไม่มีบล็อกนี้เลย Caddy รู้จักแค่ apex กับ mcp ส่วน Cloudflare proxy www
+# มาที่ origin อยู่ดี พอไม่มี site ไหนตรงชื่อ Caddy จึงไม่มี cert ให้ และจับมือ
+# TLS ไม่สำเร็จ ปลายทางที่ผู้ใช้เห็นคือ 525
+#
+# ที่ต้องแก้ตอนนี้เพราะขั้นต่อไปของ HSTS คือ preload ซึ่งถอนออกยากมาก
+# ถ้า preload ตอน www ยังพัง www จะเข้าไม่ได้ถาวร และเป็นรูปที่คนพิมพ์มากที่สุด
+#
+# redir ไม่ใช่ reverse_proxy เพราะ canonical domain มีตัวเดียวคือ apex (D2)
+# ถ้า TRIPITAKA_APEX_DOMAIN เว้นว่าง → www.localhost ซึ่ง Caddy ข้าม ACME ให้เอง
+
+www.{$TRIPITAKA_APEX_DOMAIN:localhost} {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        -Server
+    }
+
+    redir https://{$TRIPITAKA_APEX_DOMAIN:localhost}{uri} permanent
+}
+
 {$TRIPITAKA_DOMAIN} {
     encode zstd gzip
 
