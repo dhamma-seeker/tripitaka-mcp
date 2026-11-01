@@ -57,6 +57,8 @@ docker ps --format '{{.Names}}' | grep -q '^tripitaka-db$' || die "container tri
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 DUMP_FILE="/tmp/tripitaka-${TS}.dump"
 OBJECT_KEY="daily/tripitaka-${TS}.dump"
+# ลบ dump ทิ้งเสมอ รวมถึงตอน die กลางทาง · ไฟล์ละ ~800 MB ค้างใน /tmp ทุกครั้งที่ล้มไม่ได้
+trap 'rm -f "${DUMP_FILE}"' EXIT
 
 log "pg_dump → ${DUMP_FILE}"
 docker exec -i tripitaka-db pg_dump -U "${POSTGRES_USER}" -Fc "${POSTGRES_DB}" > "${DUMP_FILE}" \
@@ -68,6 +70,10 @@ log "dump size: ${SIZE}"
 export AWS_ACCESS_KEY_ID="${DO_SPACES_KEY}"
 export AWS_SECRET_ACCESS_KEY="${DO_SPACES_SECRET}"
 export AWS_DEFAULT_REGION="${DO_SPACES_REGION}"
+# aws CLI v2 รุ่นใหม่ส่ง checksum แบบ aws-chunked ทุก request · OCI Object Storage ตอบ
+# "AWS chunked encoding not supported" ส่วน DO Spaces รับได้ · when_required ใช้ได้ทั้งคู่
+export AWS_REQUEST_CHECKSUM_CALCULATION="${AWS_REQUEST_CHECKSUM_CALCULATION:-when_required}"
+export AWS_RESPONSE_CHECKSUM_VALIDATION="${AWS_RESPONSE_CHECKSUM_VALIDATION:-when_required}"
 
 log "upload → s3://${DO_SPACES_BUCKET}/${OBJECT_KEY}"
 aws --endpoint-url "${DO_SPACES_ENDPOINT}" s3 cp \

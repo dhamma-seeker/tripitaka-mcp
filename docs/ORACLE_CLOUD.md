@@ -233,6 +233,12 @@ which is an S3-style access key and secret. The `DO_SPACES_*` variables in
 
 The namespace is on the bucket's details page and under Tenancy details.
 
+Recent AWS CLI v2 releases send uploads with aws-chunked checksums, which OCI
+rejects with "AWS chunked encoding not supported". `backup.sh` sets
+`AWS_REQUEST_CHECKSUM_CALCULATION` and `AWS_RESPONSE_CHECKSUM_VALIDATION` to
+`when_required`, which OCI and DO Spaces both accept. Run any manual `aws`
+command against OCI with the same two variables.
+
 ## 8. Retire the old server
 
 Leave the old server running for about a week in case you need to switch DNS
