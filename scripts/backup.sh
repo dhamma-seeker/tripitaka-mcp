@@ -48,13 +48,17 @@ set -a; source .env; set +a
 : "${DO_SPACES_SECRET:?DO_SPACES_SECRET ต้องตั้งใน .env}"
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-7}"
 
-command -v aws >/dev/null 2>&1 || die "aws CLI ไม่พบ — ติดตั้งด้วย 'apt-get install awscli' หรือ pipx"
+# Ubuntu 24.04 ไม่มี awscli ใน apt แล้ว ใช้ snap ซึ่งลงไว้ที่ /snap/bin
+# (cron ไม่มี /snap/bin ใน PATH ต้องใส่บรรทัด PATH= ไว้บนสุดของ crontab)
+command -v aws >/dev/null 2>&1 || die "aws CLI ไม่พบ — ติดตั้งด้วย 'sudo snap install aws-cli --classic' (22.04 ใช้ 'apt-get install awscli' ได้) แล้วเช็ค PATH ของ cron"
 docker ps --format '{{.Names}}' | grep -q '^tripitaka-db$' || die "container tripitaka-db ไม่รัน"
 
 # --- 1. pg_dump --------------------------------------------------------------
 TS="$(date -u +%Y%m%dT%H%M%SZ)"
 DUMP_FILE="/tmp/tripitaka-${TS}.dump"
 OBJECT_KEY="daily/tripitaka-${TS}.dump"
+# ลบ dump ทิ้งเสมอ รวมถึงตอน die กลางทาง · ไฟล์ละ ~800 MB ค้างใน /tmp ทุกครั้งที่ล้มไม่ได้
+trap 'rm -f "${DUMP_FILE}"' EXIT
 
 log "pg_dump → ${DUMP_FILE}"
 docker exec -i tripitaka-db pg_dump -U "${POSTGRES_USER}" -Fc "${POSTGRES_DB}" > "${DUMP_FILE}" \
@@ -66,6 +70,10 @@ log "dump size: ${SIZE}"
 export AWS_ACCESS_KEY_ID="${DO_SPACES_KEY}"
 export AWS_SECRET_ACCESS_KEY="${DO_SPACES_SECRET}"
 export AWS_DEFAULT_REGION="${DO_SPACES_REGION}"
+# aws CLI v2 รุ่นใหม่ส่ง checksum แบบ aws-chunked ทุก request · OCI Object Storage ตอบ
+# "AWS chunked encoding not supported" ส่วน DO Spaces รับได้ · when_required ใช้ได้ทั้งคู่
+export AWS_REQUEST_CHECKSUM_CALCULATION="${AWS_REQUEST_CHECKSUM_CALCULATION:-when_required}"
+export AWS_RESPONSE_CHECKSUM_VALIDATION="${AWS_RESPONSE_CHECKSUM_VALIDATION:-when_required}"
 
 log "upload → s3://${DO_SPACES_BUCKET}/${OBJECT_KEY}"
 aws --endpoint-url "${DO_SPACES_ENDPOINT}" s3 cp \
