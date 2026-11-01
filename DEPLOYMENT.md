@@ -7,6 +7,8 @@ Guide for deploying your own instance on any VPS that runs Docker
 > Examples use `example.org` — replace with your real domain.
 > The infra reference in [`infra/`](infra/) is written as Terraform for DigitalOcean —
 > adapt to whichever cloud provider you use (AWS, GCP, Linode, etc.).
+> For Oracle Cloud's Always Free tier, and for moving a running instance there,
+> see [`docs/ORACLE_CLOUD.md`](docs/ORACLE_CLOUD.md).
 
 ---
 

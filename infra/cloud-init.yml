@@ -1,8 +1,14 @@
 #cloud-config
 # =============================================================================
-# Tripitaka MCP -- Droplet bootstrap (Ubuntu 22.04)
+# Tripitaka MCP -- VPS bootstrap (Ubuntu 22.04 / 24.04, amd64 or arm64)
 # =============================================================================
-# Runs once on droplet creation (DigitalOcean user_data).
+# Runs once on first boot.
+# - DigitalOcean: Terraform passes this as user_data (infra/main.tf)
+# - Oracle Cloud: render with scripts/render-cloud-init.sh, then paste into
+#   Create instance > Advanced options > Management > cloud-init script
+#
+# This file is a Terraform template: the deploy_public_key placeholder is
+# substituted, and a doubled dollar sign escapes a literal one.
 #
 # What it does:
 # 1. Create deploy user (non-root, in docker group)
@@ -108,6 +114,19 @@ runcmd:
   - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   - systemctl enable --now docker
   - systemctl restart docker
+
+  # --- Oracle Cloud: hand the firewall over to UFW ---------------------------
+  # Oracle's Ubuntu images ship iptables rules (/etc/iptables/rules.v4, loaded
+  # by netfilter-persistent) that REJECT every inbound port except 22, so
+  # 80/443 stay closed even after UFW allows them. Flush INPUT and stop the
+  # rules from coming back on reboot. No-op on images without that file (DO).
+  - |
+    if [ -f /etc/iptables/rules.v4 ]; then
+      systemctl disable --now netfilter-persistent || true
+      mv /etc/iptables/rules.v4 /etc/iptables/rules.v4.oracle-default
+      iptables -P INPUT ACCEPT
+      iptables -F INPUT
+    fi
 
   # --- UFW enable -----------------------------------------------------------
   - ufw default deny incoming
