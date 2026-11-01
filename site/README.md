@@ -28,7 +28,7 @@ and `og-image.png` together.
 ## Deploying changes
 
 The `site/` directory is bind-mounted into the Caddy container, so on the
-production droplet:
+production server:
 
 ```bash
 git pull origin main

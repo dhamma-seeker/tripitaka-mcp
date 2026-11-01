@@ -2,7 +2,7 @@
 # =============================================================================
 # Tripitaka MCP — Rollback production ด้วยการสลับ image (ไม่ build ใหม่)
 # =============================================================================
-# รันบน droplet (cwd: /opt/tripitaka) หลัง deploy แล้ว prod พัง
+# รันบนเครื่อง prod (cwd: /opt/tripitaka) หลัง deploy แล้ว prod พัง
 #
 # ทำอะไรบ้าง:
 # 1. อ่านเวอร์ชันที่รันอยู่จาก .env (APP_VERSION) และประวัติจาก .deploy-history
@@ -182,7 +182,7 @@ else
     if [[ ! -s "${HISTORY_FILE}" ]]; then
         die "$(cat <<MSG
 ไม่มี ${HISTORY_FILE} — ไม่รู้ว่าเวอร์ชันก่อนหน้าคืออะไร
-   เกิดกับ droplet ที่ยังไม่เคย deploy ด้วย deploy.sh รุ่นที่ tag เวอร์ชัน
+   เกิดกับเครื่องที่ยังไม่เคย deploy ด้วย deploy.sh รุ่นที่ tag เวอร์ชัน
    รอบนี้ต้อง rollback แบบเดิม: git revert <commit> แล้ว ./scripts/deploy.sh
    deploy ครั้งถัดไปจะเริ่มสะสมประวัติให้เอง แล้วรอบหน้าถึงจะย้อนด้วยสคริปต์นี้ได้
 MSG

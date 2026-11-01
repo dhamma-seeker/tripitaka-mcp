@@ -11,7 +11,7 @@
 #   bash scripts/dump_and_publish.sh                 # full flow
 #   bash scripts/dump_and_publish.sh --dump-only     # just produce the .dump file
 #
-# After this script finishes, on the droplet run `./scripts/deploy.sh` —
+# After this script finishes, on the production server run `./scripts/deploy.sh` —
 # it will pull the new dump from HF and restore.
 
 set -euo pipefail
@@ -106,8 +106,8 @@ huggingface-cli upload \
 echo ""
 echo "✅ Done!"
 echo ""
-echo "Next: SSH to droplet and run ./scripts/deploy.sh"
-echo "  ssh -i ~/.ssh/tripitaka_prod deploy@${DROPLET_IP:-<your-droplet-ip>}"
+echo "Next: SSH to the production server and run ./scripts/deploy.sh"
+echo "  ssh -i ~/.ssh/tripitaka_prod deploy@${PROD_HOST:-${DROPLET_IP:-<server-ip>}}"
 echo "  cd /opt/tripitaka"
 echo "  git pull"
 echo "  rm -f tripitaka_production_data.dump  # force re-download from HF"
