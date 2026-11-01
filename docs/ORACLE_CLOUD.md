@@ -214,8 +214,11 @@ env -i HOME=$HOME PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/
     /opt/tripitaka/scripts/backup.sh
 ```
 
-OCI Object Storage can replace another provider's bucket (Always Free
-includes 20 GB, enough for 7 daily dumps of about 800 MB). It needs a bucket
+OCI Object Storage can replace another provider's bucket. Always Free
+includes 10 GB of Standard storage (plus 10 GB of Archive), enough for 7 daily
+dumps of about 800 MB. Turn on "Uncommitted multipart uploads cleanup" when
+creating the bucket, so an interrupted upload does not keep using that quota.
+It needs a bucket
 and a Customer Secret Key (Profile > User settings > Customer secret keys),
 which is an S3-style access key and secret. The `DO_SPACES_*` variables in
 `.env` then become:
