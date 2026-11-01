@@ -48,7 +48,9 @@ set -a; source .env; set +a
 : "${DO_SPACES_SECRET:?DO_SPACES_SECRET ต้องตั้งใน .env}"
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-7}"
 
-command -v aws >/dev/null 2>&1 || die "aws CLI ไม่พบ — ติดตั้งด้วย 'apt-get install awscli' หรือ pipx"
+# Ubuntu 24.04 ไม่มี awscli ใน apt แล้ว ใช้ snap ซึ่งลงไว้ที่ /snap/bin
+# (cron ไม่มี /snap/bin ใน PATH ต้องใส่บรรทัด PATH= ไว้บนสุดของ crontab)
+command -v aws >/dev/null 2>&1 || die "aws CLI ไม่พบ — ติดตั้งด้วย 'sudo snap install aws-cli --classic' (22.04 ใช้ 'apt-get install awscli' ได้) แล้วเช็ค PATH ของ cron"
 docker ps --format '{{.Names}}' | grep -q '^tripitaka-db$' || die "container tripitaka-db ไม่รัน"
 
 # --- 1. pg_dump --------------------------------------------------------------

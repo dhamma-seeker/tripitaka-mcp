@@ -70,9 +70,13 @@ UFW manages the host firewall afterwards, as on DigitalOcean.
 
 Compute > Instances > Create instance:
 
-- Image: Canonical Ubuntu 24.04 or 22.04, the aarch64 build. Not Oracle
-  Linux: the cloud-init script assumes Ubuntu (apt, ufw, the `ssh` unit).
-- Shape: Ampere, `VM.Standard.A1.Flex`, 4 OCPU, 24 GB.
+- Shape: Ampere, `VM.Standard.A1.Flex`, 4 OCPU, 24 GB. Pick the shape before
+  the image: the image list only offers aarch64 builds once an Ampere shape is
+  selected. The OCPU and memory fields are inside the expanded shape row.
+- Image: Canonical Ubuntu 24.04 (the aarch64 build). This is the tested
+  combination; 22.04 also works but leaves standard support in April 2027.
+  Not Oracle Linux: the cloud-init script assumes Ubuntu (apt, ufw, the `ssh`
+  unit).
 - Networking: the public subnet from step 1, with a public IPv4 address.
 - SSH keys: paste the same public key. OCI installs it for the `ubuntu` user,
   but the hardening in cloud-init only allows `deploy` to log in, so you will
@@ -181,8 +185,50 @@ cutover.
    moves to the new one within a few minutes with Cloudflare proxying, longer
    with plain DNS as old TTLs expire.
 4. Move scheduled jobs. Check `crontab -l` on the old server (for example the
-   `scripts/backup.sh` job) and set the same up on the new one. OCI Object
-   Storage has an S3-compatible API and works as the backup target.
+   `scripts/backup.sh` job) and set the same up on the new one. See
+   "Backups on OCI" below for the AWS CLI and PATH details.
+
+## Backups on OCI
+
+`scripts/backup.sh` uploads with the AWS CLI. Ubuntu 24.04 no longer ships
+`awscli` in apt, so install the snap:
+
+```bash
+sudo snap install aws-cli --classic
+```
+
+The snap lives in `/snap/bin`, which is not on cron's default PATH. Put a
+`PATH=` line at the top of the deploy user's crontab, or the job stops with
+"aws CLI ไม่พบ":
+
+```
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+0 3 * * * /opt/tripitaka/scripts/backup.sh >> /var/log/tripitaka-backup.log 2>&1
+0 4 * * 0 docker builder prune -af --filter until=168h >> /var/log/tripitaka-prune.log 2>&1
+```
+
+To test the job the way cron runs it:
+
+```bash
+env -i HOME=$HOME PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin \
+    /opt/tripitaka/scripts/backup.sh
+```
+
+OCI Object Storage can replace another provider's bucket (Always Free
+includes 20 GB, enough for 7 daily dumps of about 800 MB). It needs a bucket
+and a Customer Secret Key (Profile > User settings > Customer secret keys),
+which is an S3-style access key and secret. The `DO_SPACES_*` variables in
+`.env` then become:
+
+| Variable | Value |
+|---|---|
+| `DO_SPACES_BUCKET` | the bucket name |
+| `DO_SPACES_REGION` | the region id, e.g. `eu-frankfurt-1` |
+| `DO_SPACES_ENDPOINT` | `https://<namespace>.compat.objectstorage.<region>.oraclecloud.com` |
+| `DO_SPACES_KEY` | the Customer Secret Key's access key |
+| `DO_SPACES_SECRET` | the secret, shown once when the key is created |
+
+The namespace is on the bucket's details page and under Tenancy details.
 
 ## 8. Retire the old server
 
