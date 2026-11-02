@@ -136,8 +136,11 @@ remote() { ssh "${SSH_OPTS[@]}" "deploy@${IP}" "$@"; }
 log "เช็คผล cloud-init..."
 remote 'cloud-init status --wait >/dev/null; cloud-init status' | grep -q 'status: done' \
     || die "cloud-init ไม่จบด้วย done · ดู /var/log/cloud-init-output.log บนเครื่อง"
-remote 'docker compose version >/dev/null && /snap/bin/aws --version >/dev/null && test -f /etc/cron.d/tripitaka' \
-    || die "เครื่องใหม่ขาด docker / aws-cli / cron.d · cloud-init ตามไม่ทัน"
+if ! remote 'docker compose version >/dev/null && /snap/bin/aws --version >/dev/null && test -f /etc/cron.d/tripitaka'; then
+    # cloud-init รายงาน done แม้คำสั่งใน runcmd ล้ม · ดึงท้าย log มาให้เห็นสาเหตุก่อนเครื่องถูกลบ
+    remote 'sudo tail -n 30 /var/log/cloud-init-output.log; sudo cat /var/log/tripitaka-bootstrap-errors.log 2>/dev/null' >&2 || true
+    die "เครื่องใหม่ขาด docker / aws-cli / cron.d · cloud-init ตามไม่ทัน"
+fi
 ok "cloud-init ครบ: docker, aws-cli, cron.d"
 
 if [[ "${KEEP}" -eq 0 ]]; then

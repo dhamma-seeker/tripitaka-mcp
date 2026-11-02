@@ -168,7 +168,17 @@ runcmd:
   - chown deploy:deploy /opt/tripitaka
 
   # --- AWS CLI for backup.sh + log files the cron jobs write to ---------------
-  - snap install aws-cli --classic
+  # snapd may still be seeding this early in the first boot, and the snap store
+  # fails now and then; a failed runcmd line does not fail cloud-init, so wait
+  # and retry. (The 2026-11-02 Actions drill got a droplet without the CLI.)
+  - |
+    snap wait system seed.loaded
+    for i in 1 2 3 4 5; do
+      snap install aws-cli --classic && break
+      echo "snap install aws-cli failed (attempt $i/5), retrying in 15s" >&2
+      sleep 15
+    done
+    [ -x /snap/bin/aws ] || echo "[FAIL] aws-cli snap not installed" >> /var/log/tripitaka-bootstrap-errors.log
   - touch /var/log/tripitaka-backup.log /var/log/tripitaka-prune.log
   - chown deploy:deploy /var/log/tripitaka-backup.log /var/log/tripitaka-prune.log
 
