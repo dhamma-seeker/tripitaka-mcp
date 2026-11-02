@@ -22,13 +22,10 @@ output "next_steps" {
 
   ✓ Droplet พร้อมใช้งาน: ${digitalocean_droplet.server.ipv4_address}
 
-  ขั้นตอนถัดไป:
-    1. ssh deploy@${digitalocean_droplet.server.ipv4_address}
-    2. cd /opt/tripitaka && git clone <REPO_URL> .
-    3. ./scripts/deploy.sh
-    4. ตรวจ https://${var.domain_name}/health
+  เครื่องนี้เป็นเครื่องสำรองของ Oracle · ปกติ scripts/failover-drill.sh
+  วาง .env, deploy และทดสอบให้ต่อจากนี้ ถ้าทำเองดู docs/FAILOVER_DO.md
 
-  ⚠️  DNS: ตั้ง A record ของโดเมน → ${digitalocean_droplet.server.ipv4_address}
-      (ถ้าใช้ Cloudflare: เปิด proxy (ส้ม) เพื่อซ่อน origin IP)
+  ⚠️  failover จริง: ชี้ A record (apex, mcp, www) ใน Cloudflare → ${digitalocean_droplet.server.ipv4_address}
+      เปิด proxy ไว้ แล้วรัน scripts/smoke_test.sh
   EOT
 }
