@@ -2,10 +2,18 @@
 # Caddy + rate_limit plugin (สำหรับ tripitaka-mcp production)
 # =============================================================================
 # build ด้วย xcaddy เพื่อรวม github.com/mholt/caddy-ratelimit เข้าไปใน binary
+#
+# ลองซ้ำ 3 รอบ: xcaddy ดึง module จาก proxy.golang.org และตรวจกับ sum.golang.org
+# ทุกครั้งที่ build · การซ้อม failover 2026-11-02 ล้มเพราะ sum.golang.org ตัด
+# stream กลางทาง (INTERNAL_ERROR) ครั้งเดียว
 
 FROM caddy:2-builder-alpine AS builder
-RUN xcaddy build \
-    --with github.com/mholt/caddy-ratelimit
+RUN for i in 1 2 3; do \
+        xcaddy build --with github.com/mholt/caddy-ratelimit && exit 0; \
+        echo "xcaddy build ล้ม (รอบ $i/3) · รอ 20 วินาทีแล้วลองใหม่" >&2; \
+        sleep 20; \
+    done; \
+    exit 1
 
 FROM caddy:2-alpine
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
