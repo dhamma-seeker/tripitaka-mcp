@@ -9,6 +9,8 @@ Guide for deploying your own instance on any VPS that runs Docker
 > adapt to whichever cloud provider you use (AWS, GCP, Linode, etc.).
 > For Oracle Cloud's Always Free tier, and for moving a running instance there,
 > see [`docs/ORACLE_CLOUD.md`](docs/ORACLE_CLOUD.md).
+> To keep a zero-cost standby on DigitalOcean and drill it, see
+> [`docs/FAILOVER_DO.md`](docs/FAILOVER_DO.md).
 
 ---
 

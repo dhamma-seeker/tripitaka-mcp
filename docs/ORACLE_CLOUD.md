@@ -21,13 +21,16 @@ Two account behaviours affect a small, mostly idle server like this one:
 
 - Popular regions often return "Out of capacity" when you create an A1
   instance. Try each availability domain in turn, or retry later.
-- Oracle may reclaim Always Free instances that stay idle (low CPU, network
-  and memory use) for 7 days.
+- Oracle may reclaim (stop) an Always Free instance it considers idle: over
+  7 days, 95th-percentile CPU below 20%, network below 20% and, on A1 shapes,
+  memory below 20%. This stack on a 4 OCPU / 24 GB instance sits under all
+  three most of the time.
 
-Upgrading the account to Pay As You Go solves both: A1 capacity is easier to
-get and idle reclamation no longer applies. Usage inside the Always Free limits
-stays free after the upgrade. Set a budget alert (Billing > Budgets) at a small
-amount so anything outside the free limits shows up quickly.
+Upgrading the account to Pay As You Go is the route Oracle points to for both:
+A1 capacity is easier to get, and idle reclamation targets free-tier accounts.
+Usage inside the Always Free limits stays free after the upgrade. Set a budget
+alert (Billing & Cost Management > Budgets) at a small amount so anything
+outside the free limits shows up quickly.
 
 ## 1. Network
 
@@ -92,8 +95,13 @@ Cloud-init takes a few minutes after the instance shows Running. Check it:
 ssh deploy@<OCI_IP> 'cloud-init status --wait && cat /var/log/tripitaka-bootstrap.log'
 ```
 
-Optionally convert the ephemeral public IP to a reserved one (instance > VNIC >
-IPv4 addresses) so it survives if the instance is ever recreated.
+The public IP assigned at creation is ephemeral. It stays through stop and
+start, but is deleted when the instance is terminated. OCI cannot convert an
+ephemeral IP into a reserved one: switching means removing the ephemeral IP
+and assigning a new reserved address, so DNS has to change. If you want a
+reserved IP, swap it in (instance > Attached VNICs > IPv4 addresses) before any
+DNS points at the instance. Check Oracle's current price list first; whether a
+reserved IP is free is not stated in the Always Free documentation.
 
 ## 4. Copy state from the old server
 
@@ -197,14 +205,21 @@ cutover.
 sudo snap install aws-cli --classic
 ```
 
-The snap lives in `/snap/bin`, which is not on cron's default PATH. Put a
-`PATH=` line at the top of the deploy user's crontab, or the job stops with
-"aws CLI ไม่พบ":
+Hosts built from the current `infra/cloud-init.yml` already have the snap and
+the jobs in `/etc/cron.d/tripitaka`, with `/snap/bin` on its `PATH`. Without
+that `PATH` line the job stops with "aws CLI ไม่พบ", because cron's default
+`PATH` does not include `/snap/bin`.
 
-```
+A host set up before that (with the jobs in the deploy user's crontab) can
+switch to the same file, so every host is configured the same way:
+
+```bash
+sudo tee /etc/cron.d/tripitaka >/dev/null <<'EOF'
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
-0 3 * * * /opt/tripitaka/scripts/backup.sh >> /var/log/tripitaka-backup.log 2>&1
-0 4 * * 0 docker builder prune -af --filter until=168h >> /var/log/tripitaka-prune.log 2>&1
+0 3 * * * deploy [ -f /opt/tripitaka/.env ] && /opt/tripitaka/scripts/backup.sh >> /var/log/tripitaka-backup.log 2>&1
+0 4 * * 0 deploy docker builder prune -af --filter until=168h >> /var/log/tripitaka-prune.log 2>&1
+EOF
+crontab -r
 ```
 
 To test the job the way cron runs it:
@@ -242,7 +257,8 @@ command against OCI with the same two variables.
 ## 8. Retire the old server
 
 Leave the old server running for about a week in case you need to switch DNS
-back. Then, for the DigitalOcean Terraform:
+back. Then, for the DigitalOcean Terraform (keep `infra/` and the DO account if
+you want DO as a standby, see [`FAILOVER_DO.md`](FAILOVER_DO.md)):
 
 ```bash
 cd infra

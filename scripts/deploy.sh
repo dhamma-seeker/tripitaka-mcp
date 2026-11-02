@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Tripitaka MCP — Production deploy (บน droplet)
+# Tripitaka MCP — Production deploy (บนเครื่อง prod)
 # =============================================================================
-# รันบน droplet หลัง cloud-init เสร็จแล้ว (user: deploy, cwd: /opt/tripitaka)
+# รันบนเครื่อง prod หลัง cloud-init เสร็จแล้ว (user: deploy, cwd: /opt/tripitaka)
 #
 # ทำอะไรบ้าง:
 # 1. ตรวจว่ารันจาก /opt/tripitaka (ไม่ใช่ laptop)
@@ -66,7 +66,7 @@ load_env() {
 # --- image versioning -------------------------------------------------------
 # Repos ที่สคริปต์นี้ build เอง (db ใช้ image จาก registry — ไม่เกี่ยว)
 IMAGE_REPOS=(tripitaka-mcp tripitaka-caddy)
-# ประวัติ deploy บน droplet (gitignored) — rollback.sh อ่านไฟล์นี้หาเวอร์ชันก่อนหน้า
+# ประวัติ deploy บนเครื่อง prod (gitignored) — rollback.sh อ่านไฟล์นี้หาเวอร์ชันก่อนหน้า
 HISTORY_FILE="${PROJECT_ROOT}/.deploy-history"
 # เก็บ image ย้อนหลังกี่เวอร์ชัน (นับรวมเวอร์ชันที่รันอยู่) — ดู DEPLOYMENT.md
 KEEP_VERSIONS="${TRIPITAKA_KEEP_VERSIONS:-3}"
@@ -207,6 +207,10 @@ else
     echo "   RO password:   ${TRIPITAKA_RO_PASSWORD:0:8}... (full อยู่ใน .env)"
 fi
 
+# .env ที่ขาด key ที่ .env.example บังคับ = เครื่องนี้ (หรือสำเนาที่เอามาวาง) ตามไม่ทัน
+# หยุดตรงนี้ก่อนจะ build อะไร · key ที่ไม่มีใน .env.example แค่เตือน
+"${SCRIPT_DIR}/check-env.sh" .env .env.example || die "แก้ .env ให้ครบก่อน deploy"
+
 # load specific keys we need — DON'T source the whole .env (handles
 # space-separated values like TRIPITAKA_DOMAIN="a.com b.com")
 POSTGRES_USER="$(load_env POSTGRES_USER)"
@@ -343,7 +347,7 @@ if curl -fsS --max-time 30 "https://${TRIPITAKA_DOMAIN}/health" 2>/dev/null | gr
     ok "https://${TRIPITAKA_DOMAIN}/health → ok"
 else
     warn "health check จาก external ยังไม่ผ่าน"
-    echo "   ตรวจ: DNS ชี้มา droplet นี้แล้วหรือยัง? (dig ${TRIPITAKA_DOMAIN})"
+    echo "   ตรวจ: DNS ชี้มาเครื่องนี้แล้วหรือยัง? (dig ${TRIPITAKA_DOMAIN})"
     echo "   ตรวจ: docker logs tripitaka-caddy  |  docker logs tripitaka-mcp-server"
 fi
 

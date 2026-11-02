@@ -19,6 +19,7 @@
 # 6. Docker CE + compose plugin
 # 7. swapfile 2GB (prevent OOM during embedding build)
 # 8. logrotate config for docker json-file
+# 9. AWS CLI (snap) + /etc/cron.d/tripitaka for scripts/backup.sh
 
 package_update: true
 package_upgrade: true
@@ -92,6 +93,16 @@ write_files:
       APT::Periodic::Unattended-Upgrade "1";
       APT::Periodic::AutocleanInterval "7";
 
+  # --- Scheduled jobs --------------------------------------------------------
+  # Every new host gets the same jobs from here instead of a hand-edited
+  # crontab. backup.sh is skipped until .env exists (before the first deploy).
+  # /snap/bin is on PATH because Ubuntu 24.04 only ships the AWS CLI as a snap.
+  - path: /etc/cron.d/tripitaka
+    content: |
+      PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+      0 3 * * * deploy [ -f /opt/tripitaka/.env ] && /opt/tripitaka/scripts/backup.sh >> /var/log/tripitaka-backup.log 2>&1
+      0 4 * * 0 deploy docker builder prune -af --filter until=168h >> /var/log/tripitaka-prune.log 2>&1
+
   # --- Docker log rotation (prevent disk fill) ------------------------------
   - path: /etc/docker/daemon.json
     content: |
@@ -155,6 +166,11 @@ runcmd:
   # --- Prep deploy directory ------------------------------------------------
   - mkdir -p /opt/tripitaka
   - chown deploy:deploy /opt/tripitaka
+
+  # --- AWS CLI for backup.sh + log files the cron jobs write to ---------------
+  - snap install aws-cli --classic
+  - touch /var/log/tripitaka-backup.log /var/log/tripitaka-prune.log
+  - chown deploy:deploy /var/log/tripitaka-backup.log /var/log/tripitaka-prune.log
 
   # --- Done -----------------------------------------------------------------
   - echo "[OK] Bootstrap complete at $(date -u +%FT%TZ)" > /var/log/tripitaka-bootstrap.log

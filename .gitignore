@@ -18,7 +18,7 @@ env/
 # Docker
 postgres_data/
 
-# ประวัติ deploy (สร้างบน droplet โดย deploy.sh / rollback.sh)
+# ประวัติ deploy (สร้างบนเครื่อง prod โดย deploy.sh / rollback.sh)
 .deploy-history
 
 # IDE
@@ -58,6 +58,9 @@ model_cache/
 *.tfvars
 *.tfvars.json
 .terraform.lock.hcl
+# scripts/failover-drill.sh: ประวัติการซ้อม + known_hosts ชั่วคราวของเครื่องซ้อม
+infra/.drill-history
+infra/.drill-known-hosts
 
 # Database Dumps
 *.dump

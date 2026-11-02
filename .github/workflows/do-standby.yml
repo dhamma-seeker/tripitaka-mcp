@@ -1,0 +1,65 @@
+# Checks that the DigitalOcean standby (docs/FAILOVER_DO.md) can still be
+# created: the image, size and region Terraform asks for must exist on DO.
+# DO retires old Ubuntu images and sizes; this finds out before an emergency.
+#
+# Needs a read-only DO token in the repo secret DO_READ_TOKEN. Without it the
+# job prints a notice and passes. A failure here means: update infra/ and run
+# a drill (scripts/failover-drill.sh).
+name: do-standby
+
+on:
+  schedule:
+    - cron: "0 3 1 * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/do-standby.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  availability:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read Terraform defaults
+        id: tf
+        run: |
+          default_of() {
+            awk -v v="$1" '
+              $0 ~ "variable \"" v "\"" { found = 1 }
+              found && /default/ { gsub(/[" ]/, "", $0); split($0, a, "="); print a[2]; exit }
+            ' infra/variables.tf
+          }
+          echo "image=$(default_of droplet_image)" >> "$GITHUB_OUTPUT"
+          echo "size=$(default_of droplet_size)" >> "$GITHUB_OUTPUT"
+          echo "region=$(default_of region)" >> "$GITHUB_OUTPUT"
+
+      - name: Check DO image, size and region
+        env:
+          DO_TOKEN: ${{ secrets.DO_READ_TOKEN }}
+          IMAGE: ${{ steps.tf.outputs.image }}
+          SIZE: ${{ steps.tf.outputs.size }}
+          REGION: ${{ steps.tf.outputs.region }}
+        run: |
+          if [ -z "${DO_TOKEN}" ]; then
+            echo "::notice::DO_READ_TOKEN is not set; skipping the DigitalOcean availability check"
+            exit 0
+          fi
+          api() { curl -fsS -H "Authorization: Bearer ${DO_TOKEN}" "https://api.digitalocean.com/v2/$1"; }
+          echo "Checking image=${IMAGE} size=${SIZE} region=${REGION}"
+
+          api "images/${IMAGE}" > image.json \
+            || { echo "::error::Image ${IMAGE} no longer exists on DigitalOcean"; exit 1; }
+          jq -e --arg r "${REGION}" '.image.regions | index($r)' image.json >/dev/null \
+            || { echo "::error::Image ${IMAGE} is not offered in ${REGION}"; exit 1; }
+
+          api "sizes?per_page=200" > sizes.json
+          jq -e --arg s "${SIZE}" --arg r "${REGION}" \
+            '.sizes[] | select(.slug == $s and .available and (.regions | index($r)))' sizes.json >/dev/null \
+            || { echo "::error::Size ${SIZE} is not available in ${REGION}"; exit 1; }
+
+          echo "Standby can be created: ${IMAGE} / ${SIZE} / ${REGION}"

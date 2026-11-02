@@ -8,10 +8,12 @@ resource "digitalocean_ssh_key" "main" {
   public_key = file(var.public_key_path)
 }
 
-# 2. Droplet (VPS) — Ubuntu 22.04 พร้อม cloud-init bootstrap
-#    cloud-init.yml ทำ: สร้าง deploy user, ufw, fail2ban, Docker, swap
+# 2. Droplet (VPS) — Ubuntu 24.04 พร้อม cloud-init bootstrap
+#    cloud-init.yml ทำ: สร้าง deploy user, ufw, fail2ban, Docker, swap, aws-cli, cron
+#    ใช้ Ubuntu รุ่นเดียวกับเครื่อง Oracle เพื่อให้เครื่องสำรองไม่ห่างจาก prod
+#    (.github/workflows/do-standby.yml เช็คทุกเดือนว่า image กับ size นี้ยังมีบน DO)
 resource "digitalocean_droplet" "server" {
-  image    = "ubuntu-22-04-x64"
+  image    = var.droplet_image
   name     = "tripitaka-mcp-server"
   region   = var.region
   size     = var.droplet_size

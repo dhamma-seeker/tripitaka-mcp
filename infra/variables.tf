@@ -10,6 +10,12 @@ variable "region" {
   default     = "sgp1"
 }
 
+variable "droplet_image" {
+  description = "Droplet image slug (keep the same Ubuntu release as the Oracle host)"
+  type        = string
+  default     = "ubuntu-24-04-x64"
+}
+
 variable "droplet_size" {
   description = "Droplet size"
   type        = string
