@@ -1,0 +1,53 @@
+# Real failover (docs/FAILOVER_DO.md): build the DigitalOcean standby and keep
+# it running. DNS is not changed here; point the Cloudflare A records at the
+# new droplet afterwards. The droplet IP is masked in this public log; read it
+# from the DigitalOcean dashboard.
+#
+# Uses the `production` environment, which requires a reviewer's approval.
+name: ops-failover
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "failover" to build and keep the standby'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: do-standby
+  cancel-in-progress: false
+
+jobs:
+  failover:
+    if: inputs.confirm == 'failover'
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/ops-setup
+        with:
+          do_token: ${{ secrets.DO_TOKEN }}
+          ssh_key: ${{ secrets.DEPLOY_SSH_KEY }}
+          backend_hcl: ${{ secrets.TF_BACKEND_HCL }}
+          r2_access_key_id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2_secret_access_key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          prod_env: ${{ secrets.PROD_ENV }}
+
+      - name: Build and keep the standby
+        run: ./scripts/failover-drill.sh --env-file "${RUNNER_TEMP}/prod.env" --keep
+
+      - name: Next steps
+        run: |
+          cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
+
+          ## Next steps
+          1. DigitalOcean > Droplets > `tripitaka-mcp-server`: copy the IPv4 address.
+          2. Cloudflare > DNS: point the A records for the apex, `mcp` and `www` at it (proxy on).
+          3. After a few minutes run `scripts/smoke_test.sh` against the MCP host.
+          4. To go back to Oracle later: move DNS back, then run the ops-destroy workflow.
+          EOF

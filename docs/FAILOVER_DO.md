@@ -52,9 +52,14 @@ download and restore the database dump and build its indexes, and the rest to bu
 images. A real failover takes about as long before DNS can move. At about
 $0.036 per hour for the `s-2vcpu-4gb` droplet, each drill costs a few cents.
 
+The `ops-drill` workflow runs a drill on the 1st and 15th of every month (see
+"Running from GitHub Actions" below). To run one from a laptop instead:
+
 Requirements: VPN on (the DO firewall only allows SSH from
-`ssh_allowed_cidrs`), and the checkout that holds `infra/terraform.tfvars` and
-the Terraform state.
+`ssh_allowed_cidrs`), a checkout with `infra/terraform.tfvars` and
+`infra/backend.hcl`, and the R2 credentials exported as `AWS_ACCESS_KEY_ID`
+and `AWS_SECRET_ACCESS_KEY`. The Terraform state lives in Cloudflare R2, so the
+laptop and GitHub Actions see the same droplet.
 
 1. Export `.env` from the password manager to a temporary file, for example
    `~/tripitaka-drill.env`.
@@ -123,11 +128,65 @@ is the point of the drill: it found something a real failover would have hit.
 
 4. Check DO billing a day later to confirm nothing is left running.
 
+## Running from GitHub Actions
+
+Four `workflow_dispatch` workflows do the same jobs without a laptop:
+
+| Workflow | Does | Environment |
+|---|---|---|
+| `ops-drill` | a drill; also scheduled on the 1st and 15th | `standby` |
+| `ops-failover` | builds the standby and keeps it (`--keep`); type `failover` to confirm | `production` |
+| `ops-destroy` | destroys whatever the state holds; type `destroy` to confirm | `production` |
+| `ops-deploy` | `git pull` + `deploy.sh` on the production server | `production` |
+
+The Actions logs of a public repository are public. The workflows mask the
+droplet IP, and the production address is a secret, so neither appears in the
+log; read the standby IP from the DigitalOcean dashboard.
+
+### One-time setup
+
+1. Cloudflare > R2: create a bucket for the state (`tripitaka-tfstate` in the
+   example) and an API token with Object Read & Write on that bucket only.
+2. Copy `infra/backend.hcl.example` to `infra/backend.hcl` and fill in the
+   account id. Export the R2 credentials, then move any local state into R2:
+
+   ```bash
+   cd infra && terraform init -migrate-state -backend-config=backend.hcl
+   ```
+
+3. In the repository settings, create two environments, both limited to the
+   `main` branch: `standby` with no reviewers, and `production` with required
+   reviewers. Limiting them to `main` keeps the secrets away from workflows
+   pushed on other branches.
+4. Add these secrets to both environments:
+
+   | Secret | Value |
+   |---|---|
+   | `DO_TOKEN` | DigitalOcean token with write access |
+   | `DEPLOY_SSH_KEY` | private key of the `deploy` user |
+   | `PROD_ENV` | the production `.env` |
+   | `TF_BACKEND_HCL` | contents of `infra/backend.hcl` |
+   | `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | the R2 token |
+
+   And to `production` only:
+
+   | Secret | Value |
+   |---|---|
+   | `PROD_HOST` | the production server address |
+   | `PROD_KNOWN_HOSTS` | `ssh-keyscan -t ed25519 <PROD_HOST>` output |
+
+When `.env` changes on the server, update `PROD_ENV` in both environments as
+well as the password manager copy.
+
+A drill that is cancelled or times out cannot destroy its droplet. The next
+drill then stops at preflight with "terraform state ยังมีทรัพยากรอยู่"; run
+`ops-destroy` to clear it.
+
 ## Keeping the standby account usable
 
-- The DO API token in `infra/terraform.tfvars` needs write access. If you
-  created it with an expiry, renew it before then; a drill fails fast at
-  `terraform apply` if it has expired.
+- The DO API token (in `infra/terraform.tfvars` and the `DO_TOKEN` secret)
+  needs write access. If you created it with an expiry, renew it in both places
+  before then; a drill fails fast at `terraform apply` if it has expired.
 - Keep a payment method on the DO account. A billing alert at a few dollars
   (Billing > Billing Alerts) catches a droplet that a failed destroy left
   running.
