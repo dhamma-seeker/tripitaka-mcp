@@ -1,0 +1,87 @@
+# Keeps both hosting targets buildable: the Oracle host is arm64, the
+# DigitalOcean standby (docs/FAILOVER_DO.md) is amd64. A change that only
+# works on one of them fails here instead of on the day of a failover.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+  # Base images use floating tags (python:3.12-slim, caddy:2, pgvector:latest)
+  # and requirements are not fully pinned, so rebuild from scratch monthly even
+  # when nothing in the repo changed.
+  schedule:
+    - cron: "0 2 1 * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shell syntax
+        run: for f in scripts/*.sh; do bash -n "$f"; done
+
+      - name: .env.example passes its own check
+        run: ./scripts/check-env.sh .env.example .env.example
+
+      - name: Compose file resolves
+        run: |
+          cp .env.example .env
+          docker compose -f docker-compose.prod.yml config -q
+
+      - name: cloud-init renders to valid YAML
+        run: |
+          ssh-keygen -q -t ed25519 -N '' -f /tmp/ci_key
+          ./scripts/render-cloud-init.sh /tmp/ci_key.pub > /tmp/cloud-init.yml
+          ruby -ryaml -e 'YAML.safe_load(File.read("/tmp/cloud-init.yml"))'
+
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform fmt + validate
+        working-directory: infra
+        run: |
+          terraform fmt -check -diff
+          terraform init -backend=false -input=false
+          terraform validate
+
+  images:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    name: images (${{ matrix.arch }})
+    steps:
+      # The app image is about 10 GB (PyTorch pulls CUDA wheels on both
+      # architectures); the runner's free disk is not enough without this.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          docker system prune -af >/dev/null
+          df -h /
+
+      - uses: actions/checkout@v4
+
+      - name: Build app image
+        run: docker build --pull -t tripitaka-mcp:ci .
+
+      - name: App imports on ${{ matrix.arch }}
+        run: docker run --rm tripitaka-mcp:ci python -c "import fastmcp, sentence_transformers, psycopg2; print('imports ok')"
+
+      - name: Build Caddy image
+        run: docker build --pull -t tripitaka-caddy:ci -f infra/Dockerfile.caddy infra
+
+      - name: Caddy has the rate_limit plugin
+        run: docker run --rm tripitaka-caddy:ci caddy list-modules | grep -q '^http.handlers.rate_limit$'

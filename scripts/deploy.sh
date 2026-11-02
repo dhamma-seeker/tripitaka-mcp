@@ -207,6 +207,10 @@ else
     echo "   RO password:   ${TRIPITAKA_RO_PASSWORD:0:8}... (full อยู่ใน .env)"
 fi
 
+# .env ที่ขาด key ที่ .env.example บังคับ = เครื่องนี้ (หรือสำเนาที่เอามาวาง) ตามไม่ทัน
+# หยุดตรงนี้ก่อนจะ build อะไร · key ที่ไม่มีใน .env.example แค่เตือน
+"${SCRIPT_DIR}/check-env.sh" .env .env.example || die "แก้ .env ให้ครบก่อน deploy"
+
 # load specific keys we need — DON'T source the whole .env (handles
 # space-separated values like TRIPITAKA_DOMAIN="a.com b.com")
 POSTGRES_USER="$(load_env POSTGRES_USER)"

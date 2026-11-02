@@ -205,14 +205,21 @@ cutover.
 sudo snap install aws-cli --classic
 ```
 
-The snap lives in `/snap/bin`, which is not on cron's default PATH. Put a
-`PATH=` line at the top of the deploy user's crontab, or the job stops with
-"aws CLI ไม่พบ":
+Hosts built from the current `infra/cloud-init.yml` already have the snap and
+the jobs in `/etc/cron.d/tripitaka`, with `/snap/bin` on its `PATH`. Without
+that `PATH` line the job stops with "aws CLI ไม่พบ", because cron's default
+`PATH` does not include `/snap/bin`.
 
-```
+A host set up before that (with the jobs in the deploy user's crontab) can
+switch to the same file, so every host is configured the same way:
+
+```bash
+sudo tee /etc/cron.d/tripitaka >/dev/null <<'EOF'
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
-0 3 * * * /opt/tripitaka/scripts/backup.sh >> /var/log/tripitaka-backup.log 2>&1
-0 4 * * 0 docker builder prune -af --filter until=168h >> /var/log/tripitaka-prune.log 2>&1
+0 3 * * * deploy [ -f /opt/tripitaka/.env ] && /opt/tripitaka/scripts/backup.sh >> /var/log/tripitaka-backup.log 2>&1
+0 4 * * 0 deploy docker builder prune -af --filter until=168h >> /var/log/tripitaka-prune.log 2>&1
+EOF
+crontab -r
 ```
 
 To test the job the way cron runs it:
@@ -250,7 +257,8 @@ command against OCI with the same two variables.
 ## 8. Retire the old server
 
 Leave the old server running for about a week in case you need to switch DNS
-back. Then, for the DigitalOcean Terraform:
+back. Then, for the DigitalOcean Terraform (keep `infra/` and the DO account if
+you want DO as a standby, see [`FAILOVER_DO.md`](FAILOVER_DO.md)):
 
 ```bash
 cd infra

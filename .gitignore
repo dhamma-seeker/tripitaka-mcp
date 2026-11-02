@@ -58,6 +58,9 @@ model_cache/
 *.tfvars
 *.tfvars.json
 .terraform.lock.hcl
+# scripts/failover-drill.sh: ประวัติการซ้อม + known_hosts ชั่วคราวของเครื่องซ้อม
+infra/.drill-history
+infra/.drill-known-hosts
 
 # Database Dumps
 *.dump
