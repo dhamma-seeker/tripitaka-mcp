@@ -25,7 +25,8 @@
 #   --branch    branch ที่จะ deploy (default main ซึ่งเป็น branch ของ prod)
 #   --keep      ไม่ destroy ตอนจบ · ใช้ตอน failover จริง
 #
-# ค่าใช้จ่าย: droplet s-2vcpu-4gb ราว $0.036/ชม. การซ้อมหนึ่งรอบใช้ไม่ถึงชั่วโมง
+# ค่าใช้จ่าย: droplet s-2vcpu-4gb ราว $0.036/ชม. การซ้อมที่ผ่านครั้งแรกใช้ 65 นาที
+# (restore dump + index ราว 40 นาที เป็นส่วนที่นานที่สุด)
 
 set -euo pipefail
 

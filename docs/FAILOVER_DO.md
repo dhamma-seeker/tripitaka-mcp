@@ -46,8 +46,11 @@ None of these prove the standby actually comes up. The drill does.
 ## Drill (twice a month)
 
 A drill builds the standby, deploys, tests it over SSH and destroys it. It
-does not touch DNS. Expect well under an hour at about $0.036 per hour for the
-`s-2vcpu-4gb` droplet.
+does not touch DNS. The first passing drill (2026-11-02) took 65 minutes:
+about 5 to create the droplet and run cloud-init, about 40 for `deploy.sh` to
+download and restore the database dump and build its indexes, and the rest to build the
+images. A real failover takes about as long before DNS can move. At about
+$0.036 per hour for the `s-2vcpu-4gb` droplet, each drill costs a few cents.
 
 Requirements: VPN on (the DO firewall only allows SSH from
 `ssh_allowed_cidrs`), and the checkout that holds `infra/terraform.tfvars` and
@@ -69,6 +72,9 @@ result and duration to `infra/.drill-history`.
 
 On the drill droplet Caddy cannot get certificates, because the domain still
 points at Oracle; the certificate step is only exercised in a real failover.
+For the same reason, the `https://<domain>/health → ok` line near the end of
+the `deploy.sh` output reports the Oracle instance, not the drill droplet. The
+script's own tests after it are the ones that check the droplet.
 The script also removes the drill droplet's backup cron job so it does not
 upload to the production bucket.
 
