@@ -58,6 +58,8 @@ model_cache/
 *.tfvars
 *.tfvars.json
 .terraform.lock.hcl
+# ค่าจริงของ backend (R2 account id, bucket) · ดู infra/backend.hcl.example
+infra/backend.hcl
 # scripts/failover-drill.sh: ประวัติการซ้อม + known_hosts ชั่วคราวของเครื่องซ้อม
 infra/.drill-history
 infra/.drill-known-hosts

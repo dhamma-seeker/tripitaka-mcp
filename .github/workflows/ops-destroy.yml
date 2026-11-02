@@ -1,0 +1,49 @@
+# Destroy whatever the standby Terraform state holds: a droplet kept by
+# ops-failover after DNS is back on Oracle, or one a cancelled drill left
+# behind. Destroying a standby that is serving traffic takes the site down,
+# so check DNS first.
+#
+# Uses the `production` environment, which requires a reviewer's approval.
+name: ops-destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy" after checking DNS points at Oracle'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: do-standby
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    if: inputs.confirm == 'destroy'
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/ops-setup
+        with:
+          do_token: ${{ secrets.DO_TOKEN }}
+          ssh_key: ${{ secrets.DEPLOY_SSH_KEY }}
+          backend_hcl: ${{ secrets.TF_BACKEND_HCL }}
+          r2_access_key_id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2_secret_access_key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+
+      - name: Show what will be destroyed
+        run: |
+          terraform init -input=false -backend-config=backend.hcl
+          terraform state list | tee -a "${GITHUB_STEP_SUMMARY}"
+
+      - name: Destroy
+        run: terraform destroy -auto-approve -input=false

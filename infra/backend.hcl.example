@@ -1,0 +1,25 @@
+# Terraform state backend: Cloudflare R2
+# คัดลอกเป็น backend.hcl แล้วแก้ <ACCOUNT_ID> กับชื่อ bucket
+#   cp backend.hcl.example backend.hcl
+#   terraform init -backend-config=backend.hcl
+#
+# Credentials ไม่อยู่ในไฟล์นี้ ส่งผ่าน environment:
+#   export AWS_ACCESS_KEY_ID=<R2 access key id>
+#   export AWS_SECRET_ACCESS_KEY=<R2 secret access key>
+# (สร้างที่ Cloudflare > R2 > Manage API tokens · สิทธิ์ Object Read & Write เฉพาะ bucket นี้)
+
+bucket = "tripitaka-tfstate"
+key    = "do-standby/terraform.tfstate"
+region = "auto"
+
+endpoints = {
+  s3 = "https://<ACCOUNT_ID>.r2.cloudflarestorage.com"
+}
+
+use_path_style              = true
+use_lockfile                = true
+skip_credentials_validation = true
+skip_region_validation      = true
+skip_requesting_account_id  = true
+skip_metadata_api_check     = true
+skip_s3_checksum            = true

@@ -1,0 +1,70 @@
+# Prepares a runner to drive the DigitalOcean standby with the same
+# scripts/failover-drill.sh and infra/ Terraform used from a laptop.
+# Secrets arrive as inputs because composite actions cannot read `secrets`.
+name: ops-setup
+description: SSH key, R2 state backend, Terraform variables and the .env copy
+
+inputs:
+  do_token:
+    description: DigitalOcean token with write access
+    required: true
+  ssh_key:
+    description: Private key of the deploy user (ed25519)
+    required: true
+  backend_hcl:
+    description: Contents of infra/backend.hcl
+    required: true
+  r2_access_key_id:
+    description: R2 access key id for the state bucket
+    required: true
+  r2_secret_access_key:
+    description: R2 secret access key for the state bucket
+    required: true
+  prod_env:
+    description: Contents of the production .env (only needed to build a server)
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        # The wrapper adds extra lines to stdout, which breaks `terraform output -raw`.
+        terraform_wrapper: false
+
+    - name: Write key, backend config and .env copy
+      shell: bash
+      env:
+        SSH_KEY: ${{ inputs.ssh_key }}
+        BACKEND_HCL: ${{ inputs.backend_hcl }}
+        PROD_ENV: ${{ inputs.prod_env }}
+      run: |
+        install -d -m 700 ~/.ssh
+        printf '%s\n' "${SSH_KEY}" > ~/.ssh/tripitaka_prod
+        chmod 600 ~/.ssh/tripitaka_prod
+        ssh-keygen -y -f ~/.ssh/tripitaka_prod > ~/.ssh/tripitaka_prod.pub
+        printf '%s\n' "${BACKEND_HCL}" > infra/backend.hcl
+        if [ -n "${PROD_ENV}" ]; then
+          install -m 600 /dev/null "${RUNNER_TEMP}/prod.env"
+          printf '%s\n' "${PROD_ENV}" > "${RUNNER_TEMP}/prod.env"
+        fi
+
+    - name: Export Terraform and R2 settings
+      shell: bash
+      env:
+        DO_TOKEN: ${{ inputs.do_token }}
+        R2_KEY: ${{ inputs.r2_access_key_id }}
+        R2_SECRET: ${{ inputs.r2_secret_access_key }}
+      run: |
+        # The DO firewall only allows SSH from ssh_allowed_cidrs; open it to this runner.
+        runner_ip="$(curl -fsS --retry 3 https://api.ipify.org)"
+        echo "::add-mask::${runner_ip}"
+        {
+          echo "TF_VAR_do_token=${DO_TOKEN}"
+          echo "TF_VAR_public_key_path=${HOME}/.ssh/tripitaka_prod.pub"
+          echo "TF_VAR_ssh_allowed_cidrs=[\"${runner_ip}/32\"]"
+          echo "AWS_ACCESS_KEY_ID=${R2_KEY}"
+          echo "AWS_SECRET_ACCESS_KEY=${R2_SECRET}"
+          echo "TF_IN_AUTOMATION=1"
+        } >> "${GITHUB_ENV}"

@@ -1,0 +1,42 @@
+# Failover drill (docs/FAILOVER_DO.md): build the DigitalOcean standby from
+# main, deploy, test it over SSH and destroy it. Runs on the 1st and 15th.
+#
+# Uses the `standby` environment (secrets limited to the main branch). A
+# failed run that left a droplet behind blocks the next drill at preflight;
+# clear it with the ops-destroy workflow.
+name: ops-drill
+
+on:
+  schedule:
+    - cron: "0 1 1,15 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One job at a time may touch the standby Terraform state.
+concurrency:
+  group: do-standby
+  cancel-in-progress: false
+
+jobs:
+  drill:
+    runs-on: ubuntu-24.04
+    environment: standby
+    # A drill takes about 65 minutes. Hitting the limit kills the job before
+    # the script can destroy the droplet, so keep generous headroom.
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/ops-setup
+        with:
+          do_token: ${{ secrets.DO_TOKEN }}
+          ssh_key: ${{ secrets.DEPLOY_SSH_KEY }}
+          backend_hcl: ${{ secrets.TF_BACKEND_HCL }}
+          r2_access_key_id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          r2_secret_access_key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          prod_env: ${{ secrets.PROD_ENV }}
+
+      - name: Drill
+        run: ./scripts/failover-drill.sh --env-file "${RUNNER_TEMP}/prod.env"

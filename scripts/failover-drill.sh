@@ -2,9 +2,13 @@
 # =============================================================================
 # Tripitaka MCP — สร้างเครื่องสำรองบน DigitalOcean (ซ้อม หรือใช้จริง)
 # =============================================================================
-# รันจาก laptop ใน checkout ที่มี infra/terraform.tfvars + terraform state
-# (ปกติคือ repo หลัก ไม่ใช่ worktree) · ต้องเปิด VPN เพราะ firewall ของ DO
-# ให้ SSH เฉพาะ ssh_allowed_cidrs
+# รันได้สองที่:
+# - laptop: checkout ที่มี infra/terraform.tfvars + infra/backend.hcl และ export
+#   AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY ของ R2 ไว้ · ต้องเปิด VPN เพราะ
+#   firewall ของ DO ให้ SSH เฉพาะ ssh_allowed_cidrs
+# - GitHub Actions (.github/workflows/ops-*.yml): ค่าทั้งหมดมาจาก TF_VAR_* และ secrets
+#
+# Terraform state อยู่ใน R2 (infra/backend.hcl) ทั้งสองที่จึงเห็นเครื่องชุดเดียวกัน
 #
 # ทำอะไรบ้าง:
 # 1. เช็คสำเนา .env ด้วย check-env.sh ก่อนสร้างเครื่อง (สำเนาเก่า = หยุดตั้งแต่ยังไม่เสียเงิน)
@@ -35,7 +39,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 INFRA_DIR="${PROJECT_ROOT}/infra"
 HISTORY_FILE="${INFRA_DIR}/.drill-history"
 REPO_URL="https://github.com/dhamma-seeker/tripitaka-mcp.git"
-SSH_KEY="${HOME}/.ssh/tripitaka_prod"
+SSH_KEY="${SSH_KEY:-${HOME}/.ssh/tripitaka_prod}"
 
 if [[ -t 1 ]]; then
     C_RESET=$'\033[0m'; C_RED=$'\033[31m'; C_GREEN=$'\033[32m'; C_YELLOW=$'\033[33m'; C_BLUE=$'\033[34m'
@@ -67,15 +71,19 @@ done
 [[ -n "${ENV_FILE}" && -f "${ENV_FILE}" ]] || die "ต้องระบุ --env-file ที่มีอยู่จริง"
 command -v terraform >/dev/null 2>&1 || die "ไม่พบ terraform"
 [[ -f "${SSH_KEY}" ]] || die "ไม่พบ ${SSH_KEY}"
-[[ -f "${INFRA_DIR}/terraform.tfvars" ]] \
-    || die "ไม่พบ ${INFRA_DIR}/terraform.tfvars · รันจาก checkout ที่มี tfvars + state (ปกติคือ repo หลัก)"
+[[ -f "${INFRA_DIR}/terraform.tfvars" || -n "${TF_VAR_do_token:-}" ]] \
+    || die "ไม่พบ ${INFRA_DIR}/terraform.tfvars และไม่ได้ตั้ง TF_VAR_do_token"
+[[ -f "${INFRA_DIR}/backend.hcl" ]] \
+    || die "ไม่พบ ${INFRA_DIR}/backend.hcl · คัดลอกจาก backend.hcl.example (state อยู่ใน R2)"
+[[ -n "${AWS_ACCESS_KEY_ID:-}" && -n "${AWS_SECRET_ACCESS_KEY:-}" ]] \
+    || die "ต้อง export AWS_ACCESS_KEY_ID และ AWS_SECRET_ACCESS_KEY ของ R2 ก่อน"
 
 log "เช็คสำเนา .env กับ .env.example..."
 "${SCRIPT_DIR}/check-env.sh" "${ENV_FILE}" "${PROJECT_ROOT}/.env.example" \
     || die "สำเนา .env ไม่ครบ · แก้ก่อนแล้วค่อยสร้างเครื่อง"
 
 cd "${INFRA_DIR}"
-terraform init -input=false >/dev/null
+terraform init -input=false -backend-config=backend.hcl >/dev/null
 if [[ -n "$(terraform state list 2>/dev/null)" ]]; then
     die "terraform state ยังมีทรัพยากรอยู่ (เครื่องเก่าหรือเครื่องซ้อมที่ค้าง) · ดู terraform state list แล้ว destroy ก่อน"
 fi
@@ -104,6 +112,10 @@ cleanup() {
     rm -f "${INFRA_DIR}/.drill-known-hosts"
     printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${RESULT}" "$(elapsed)" \
         "${BRANCH}" "$([[ ${KEEP} -eq 1 ]] && echo keep || echo drill)" >> "${HISTORY_FILE}"
+    if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+        echo "ผล: **${RESULT}** · ใช้เวลา $(elapsed) · branch ${BRANCH} · $([[ ${KEEP} -eq 1 ]] && echo keep || echo drill)" \
+            >> "${GITHUB_STEP_SUMMARY}"
+    fi
     echo
     echo "ผล: ${RESULT} · ใช้เวลา $(elapsed) · บันทึกใน ${HISTORY_FILE}"
     exit "${code}"
@@ -114,6 +126,9 @@ trap cleanup EXIT
 log "terraform apply (รวมรอ cloud-init)..."
 terraform apply -auto-approve -input=false >/dev/null
 IP="$(terraform output -raw droplet_ip)"
+# log ของ Actions ใน repo public ใครก็อ่านได้ · ตอน failover จริง IP นี้คือ origin ของเว็บ
+# ดู IP ได้จาก DigitalOcean dashboard หรือ terraform output บน laptop
+[[ -n "${GITHUB_ACTIONS:-}" ]] && echo "::add-mask::${IP}"
 ok "droplet: ${IP}  (สร้างเสร็จที่ $(elapsed))"
 remote() { ssh "${SSH_OPTS[@]}" "deploy@${IP}" "$@"; }
 

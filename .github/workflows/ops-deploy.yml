@@ -1,0 +1,52 @@
+# Deploy main to the production server: git pull + scripts/deploy.sh over SSH,
+# the same steps as DEPLOYMENT.md. The server must already be on main.
+#
+# Uses the `production` environment, which requires a reviewer's approval.
+# PROD_HOST and PROD_KNOWN_HOSTS are secrets so the address stays out of this
+# public log.
+name: ops-deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      with_caddy:
+        description: "Also rebuild Caddy (all services drop for 10-15 seconds)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prod-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 60
+    steps:
+      - name: SSH key and pinned host key
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.PROD_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "${SSH_KEY}" > ~/.ssh/tripitaka_prod
+          chmod 600 ~/.ssh/tripitaka_prod
+          printf '%s\n' "${KNOWN_HOSTS}" > ~/.ssh/known_hosts
+
+      - name: Pull and deploy
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          CADDY_FLAG: ${{ inputs.with_caddy && '--with-caddy' || '' }}
+        run: |
+          ssh -i ~/.ssh/tripitaka_prod -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+              "deploy@${PROD_HOST}" "set -e
+            cd /opt/tripitaka
+            branch=\$(git rev-parse --abbrev-ref HEAD)
+            [ \"\$branch\" = main ] || { echo \"server is on \$branch, not main\" >&2; exit 1; }
+            git pull --ff-only
+            git log --oneline -1
+            ./scripts/deploy.sh ${CADDY_FLAG}"
