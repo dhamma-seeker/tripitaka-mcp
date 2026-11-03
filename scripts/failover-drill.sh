@@ -89,8 +89,11 @@ if [[ -n "$(terraform state list 2>/dev/null)" ]]; then
 fi
 ok "preflight ผ่าน"
 
+# ServerAlive: pg_restore เงียบไปหลายนาที ถ้าไม่ส่งอะไรเลยเครือข่ายระหว่างทางตัดการเชื่อมต่อทิ้ง
+# (ซ้อมรอบ 2026-11-03 หลุดด้วย "client_loop: send disconnect: Broken pipe" ตรงนี้)
 SSH_OPTS=(-i "${SSH_KEY}" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new
-          -o UserKnownHostsFile="${INFRA_DIR}/.drill-known-hosts" -o ConnectTimeout=15)
+          -o UserKnownHostsFile="${INFRA_DIR}/.drill-known-hosts" -o ConnectTimeout=15
+          -o ServerAliveInterval=30 -o ServerAliveCountMax=10)
 RESULT="failed"
 IP=""
 
@@ -156,7 +159,9 @@ remote "set -e; cd /opt/tripitaka; chmod 600 .env
         mv /tmp/repo/.git . && rm -rf /tmp/repo && git checkout -q -f '${BRANCH}'"
 
 log "deploy.sh (build image + restore dump จาก Hugging Face)..."
-if ! remote 'cd /opt/tripitaka && ./scripts/deploy.sh' 2>&1 | sed 's/^/   │ /'; then
+# sed -u: ไม่อย่างนั้น sed เก็บ output ไว้ส่งทีเดียวตอนจบ เวลาใน log ของ Actions จะเป็นเวลาเดียวกันหมด
+# และบอกไม่ได้ว่าขั้นไหนใน deploy.sh ใช้เวลาเท่าไร
+if ! remote 'cd /opt/tripitaka && ./scripts/deploy.sh' 2>&1 | sed -u 's/^/   │ /'; then
     die "deploy.sh ล้มเหลว"
 fi
 
