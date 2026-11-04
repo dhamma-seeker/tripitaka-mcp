@@ -8,7 +8,7 @@
 # 1. ตรวจว่ารันจาก /opt/tripitaka (ไม่ใช่ laptop)
 # 2. สร้าง .env ด้วย password สุ่ม ถ้ายังไม่มี
 # 3. prompt ให้ใส่ TRIPITAKA_DOMAIN
-# 4. ดาวน์โหลด + restore dump จาก HF (ถ้ายัง)
+# 4. ดาวน์โหลด + restore dump จาก HF (ถ้ายัง) · ถ้าต้อง restore จะ build image ไปพร้อมกัน
 # 5. ตั้ง readonly user
 # 6. build + up -d เฉพาะ service ของแอป (ไม่แตะ caddy/db — ดู --with-caddy)
 # 7. tag image ตาม git short sha + บันทึก .deploy-history + ลบเวอร์ชันที่เกินโควตา
@@ -262,6 +262,31 @@ done
 # --- 5. restore (ข้ามถ้า DB มีข้อมูลอยู่แล้ว, --force-restore เพื่อ drop+reload) ----
 EXISTING=$(docker exec tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Atc "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='segment'" 2>/dev/null || echo "0")
 
+# Hard Rule: deploy ปกติห้ามแตะ caddy/db · caddy ถือ 80/443 การ recreate = ทุกบริการ
+# ขาดราว 10-15 วินาที ส่วน db ไม่มีเหตุให้ recreate เพราะโค้ดที่ deploy ไม่ได้อยู่ในนั้น
+# ข้อยกเว้นเดียว: เครื่องที่ยังไม่มีคอนเทนเนอร์ caddy เลย = ติดตั้งครั้งแรก ต้องสตาร์ตให้
+DEPLOY_SERVICES=(mcp-server mcp-server-http reader)
+if [[ "${WITH_CADDY}" -eq 1 ]]; then
+    DEPLOY_SERVICES+=(caddy)
+    warn "--with-caddy: caddy จะถูก recreate — ทุกบริการขาดราว 10-15 วินาที"
+elif ! docker compose -f docker-compose.prod.yml ps -q caddy 2>/dev/null | grep -q .; then
+    DEPLOY_SERVICES+=(caddy)
+    log "ยังไม่มีคอนเทนเนอร์ caddy (ติดตั้งครั้งแรก) — จะสตาร์ตให้ด้วย"
+fi
+
+# เครื่องใหม่ (failover, ซ้อม) ต้องทั้ง restore และ build image (ซ้อม 2026-11-03 บน droplet
+# 2 vCPU: restore 39 นาที, build 21 นาที) สองงานนี้ไม่ได้รอกัน จึง build ไปพร้อม restore · deploy ปกติไม่มี restore ก็ build ตามเดิมในขั้น 7
+BUILD_PID=""
+BUILD_LOG=""
+if [[ "${EXISTING}" -eq 0 || "${FORCE_RESTORE}" -eq 1 ]]; then
+    BUILD_LOG="$(mktemp /tmp/tripitaka-build.XXXXXX)"
+    log "เริ่ม build image ไปพร้อม restore (log: ${BUILD_LOG})"
+    docker compose -f docker-compose.prod.yml build "${DEPLOY_SERVICES[@]}" >"${BUILD_LOG}" 2>&1 &
+    BUILD_PID=$!
+    # die ระหว่าง restore ไม่ต้องปล่อย build วิ่งต่อ
+    trap '[[ -n "${BUILD_PID}" ]] && kill "${BUILD_PID}" 2>/dev/null; true' EXIT
+fi
+
 if [[ "${EXISTING}" -gt 0 && "${FORCE_RESTORE}" -eq 0 ]]; then
     COUNT=$(docker exec tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Atc "SELECT COUNT(*) FROM segment" 2>/dev/null || echo "0")
     warn "DB มี segment อยู่แล้ว ${COUNT} rows — ข้าม restore (ใช้ --force-restore เพื่อ drop+reload)"
@@ -277,7 +302,11 @@ else
         ok "schema ดรอปและสร้างใหม่ + extensions พร้อม"
     fi
     log "Restore จาก ${DUMP_PATH}..."
-    docker exec -i tripitaka-db pg_restore -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" --no-owner --no-acl < "${DUMP_PATH}" \
+    # ค่าตั้งต้น maintenance_work_mem 64MB เล็กเกินกว่าจะถือ HNSW graph ของ 444K แถว
+    # index นั้นจึงกินเวลาเกือบทั้งหมดของ restore · วัดบน container 2 CPU / 2 GB (2026-11-04):
+    #   ค่าตั้งต้น 665s · 1GB 188s · 512MB กับ pg_restore -j 2 450s (graph ไม่พอดีอีก)
+    # 1GB ยังอยู่ใต้ memory limit 2G ของ service db
+    docker exec -i -e PGOPTIONS="-c maintenance_work_mem=1GB" tripitaka-db pg_restore -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" --no-owner --no-acl < "${DUMP_PATH}" \
         || warn "pg_restore มี warnings (ปกติ) — ตรวจ count ด้านล่าง"
     COUNT=$(docker exec tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -Atc "SELECT COUNT(*) FROM segment")
     [[ "${COUNT}" -gt 0 ]] || die "restore เสร็จแต่ segment ว่าง — dump file อาจเสีย"
@@ -299,20 +328,21 @@ docker exec -i tripitaka-db psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" < scr
 ok "diacritic-insensitive search พร้อม (f_unaccent + 2 GIN indexes)"
 
 # --- 7. start app services --------------------------------------------------
-# Hard Rule: deploy ปกติห้ามแตะ caddy/db · caddy ถือ 80/443 การ recreate = ทุกบริการ
-# ขาดราว 10-15 วินาที ส่วน db ไม่มีเหตุให้ recreate เพราะโค้ดที่ deploy ไม่ได้อยู่ในนั้น
-# ข้อยกเว้นเดียว: เครื่องที่ยังไม่มีคอนเทนเนอร์ caddy เลย = ติดตั้งครั้งแรก ต้องสตาร์ตให้
-DEPLOY_SERVICES=(mcp-server mcp-server-http reader)
-if [[ "${WITH_CADDY}" -eq 1 ]]; then
-    DEPLOY_SERVICES+=(caddy)
-    warn "--with-caddy: caddy จะถูก recreate — ทุกบริการขาดราว 10-15 วินาที"
-elif ! docker compose -f docker-compose.prod.yml ps -q caddy 2>/dev/null | grep -q .; then
-    DEPLOY_SERVICES+=(caddy)
-    log "ยังไม่มีคอนเทนเนอร์ caddy (ติดตั้งครั้งแรก) — จะสตาร์ตให้ด้วย"
+if [[ -n "${BUILD_PID}" ]]; then
+    log "รอ build image ที่เริ่มไว้ตั้งแต่ก่อน restore..."
+    if ! wait "${BUILD_PID}"; then
+        sed 's/^/   /' "${BUILD_LOG}" | tail -60 >&2
+        die "build image ล้มเหลว (log เต็มอยู่ที่ ${BUILD_LOG})"
+    fi
+    BUILD_PID=""
+    sed 's/^/   /' "${BUILD_LOG}"
+    ok "build เสร็จ"
+    log "start: ${DEPLOY_SERVICES[*]}"
+    docker compose -f docker-compose.prod.yml up -d "${DEPLOY_SERVICES[@]}"
+else
+    log "build + start: ${DEPLOY_SERVICES[*]}"
+    docker compose -f docker-compose.prod.yml up -d --build "${DEPLOY_SERVICES[@]}"
 fi
-
-log "build + start: ${DEPLOY_SERVICES[*]}"
-docker compose -f docker-compose.prod.yml up -d --build "${DEPLOY_SERVICES[@]}"
 
 # --- 7b. tag latest + บันทึกเวอร์ชัน + เก็บย้อนหลังเท่าที่ตั้งใจ --------------
 # `docker tag` ชี้ชื่อที่สองมาที่ image เดิม ไม่ได้ copy layer → ไม่กินดิสก์เพิ่ม
