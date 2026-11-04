@@ -46,10 +46,22 @@ None of these prove the standby actually comes up. The drill does.
 ## Drill (twice a month)
 
 A drill builds the standby, deploys, tests it over SSH and destroys it. It
-does not touch DNS. The first passing drill (2026-11-02) took 65 minutes:
-about 5 to create the droplet and run cloud-init, about 40 for `deploy.sh` to
-download and restore the database dump and build its indexes, and the rest to build the
-images. A real failover takes about as long before DNS can move. At about
+does not touch DNS. The first passing drill (2026-11-02) took 65 minutes. Since
+2026-11-04 it takes about 24:
+
+| Step | Time |
+|---|---|
+| Create the droplet and run cloud-init | 5 min |
+| Download the dump from Hugging Face | under 10 s |
+| `pg_restore`, with the image pull from GHCR running beside it | 16 min |
+| Readonly user, unaccent indexes, start, health checks | 1 min |
+| Tests and destroy | 1 min |
+
+The restore is the whole critical path. Most of it is the HNSW index, which is
+why `deploy.sh` restores with `maintenance_work_mem=1GB`. If CI has not pushed
+images for the commit, `deploy.sh` builds them during the restore instead, and
+the drill took 33 minutes that way. A real failover takes about as long before
+DNS can move. At about
 $0.036 per hour for the `s-2vcpu-4gb` droplet, each drill costs a few cents.
 
 The `ops-drill` workflow runs a drill on the 1st and 15th of every month (see

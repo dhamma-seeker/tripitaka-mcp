@@ -23,8 +23,10 @@ jobs:
   drill:
     runs-on: ubuntu-24.04
     environment: standby
-    # A drill takes about 65 minutes. Hitting the limit kills the job before
-    # the script can destroy the droplet, so keep generous headroom.
+    # A drill takes about 24 minutes, or about 33 when it has to build the
+    # images itself, and a stalled restore once ran past 140. Hitting the limit
+    # kills the job before the script can destroy the droplet, so keep generous
+    # headroom.
     timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
