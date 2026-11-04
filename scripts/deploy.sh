@@ -10,7 +10,7 @@
 # 3. prompt ให้ใส่ TRIPITAKA_DOMAIN
 # 4. ดาวน์โหลด + restore dump จาก HF (ถ้ายัง) · ถ้าต้อง restore จะ build image ไปพร้อมกัน
 # 5. ตั้ง readonly user
-# 6. build + up -d เฉพาะ service ของแอป (ไม่แตะ caddy/db — ดู --with-caddy)
+# 6. ดึง image ของ commit นี้จาก GHCR (ไม่มีก็ build เอง) + up -d เฉพาะ service ของแอป (ไม่แตะ caddy/db — ดู --with-caddy)
 # 7. tag image ตาม git short sha + บันทึก .deploy-history + ลบเวอร์ชันที่เกินโควตา
 # 8. รอ healthcheck + ทดสอบ /health จาก external
 #
@@ -162,6 +162,39 @@ docker compose version >/dev/null 2>&1 || die "docker compose plugin ไม่�
 docker info >/dev/null 2>&1 || die "docker daemon ไม่ทำงาน"
 ok "environment พร้อม"
 
+# image ที่ CI build ไว้แล้ว (.github/workflows/ci.yml job publish) · ดึงมาแทนการ build เอง
+# ประหยัดราว 20 นาทีบนเครื่อง 2 vCPU · ไม่มี image ของ commit นี้ (ยังไม่ merge, CI ยังไม่เสร็จ,
+# package ยังไม่ public) ก็ build เองเหมือนเดิม
+REGISTRY="ghcr.io/dhamma-seeker"
+PREBUILT_COMMIT=""
+pull_prebuilt() {
+    local repo
+    [[ -n "${PREBUILT_COMMIT}" ]] || return 1
+    for repo in "${IMAGE_REPOS[@]}"; do
+        if ! docker pull -q "${REGISTRY}/${repo}:${PREBUILT_COMMIT}" >/dev/null 2>&1; then
+            # ได้มาไม่ครบก็ไม่ใช้ · ลบตัวที่ดึงมาแล้ว image แอปใหญ่ราว 10 GB
+            for repo in "${IMAGE_REPOS[@]}"; do
+                docker image rm "${REGISTRY}/${repo}:${PREBUILT_COMMIT}" >/dev/null 2>&1 || true
+            done
+            return 1
+        fi
+    done
+    for repo in "${IMAGE_REPOS[@]}"; do
+        docker tag "${REGISTRY}/${repo}:${PREBUILT_COMMIT}" "${repo}:${APP_VERSION}"
+        docker image rm "${REGISTRY}/${repo}:${PREBUILT_COMMIT}" >/dev/null
+    done
+}
+
+# ดึงจาก GHCR ถ้ามี ไม่อย่างนั้น build เอง · ได้ tag <repo>:${APP_VERSION} เหมือนกันทั้งสองทาง
+build_images() {
+    if pull_prebuilt; then
+        ok "ใช้ image จาก ${REGISTRY} (commit ${PREBUILT_COMMIT:0:7}) ไม่ต้อง build"
+        return 0
+    fi
+    [[ -n "${PREBUILT_COMMIT}" ]] && log "ไม่มี image ของ commit นี้ใน ${REGISTRY} — build เอง"
+    docker compose -f docker-compose.prod.yml build "$@"
+}
+
 # --- 1b. version tag ---------------------------------------------------------
 # ทุก build ต้องได้ tag ที่ผูกกับ commit ไม่ใช่ทับ `latest` ทิ้งทุกครั้ง
 # เวอร์ชันก่อนหน้าจึงยังอยู่ให้ rollback สลับกลับได้ (scripts/rollback.sh)
@@ -178,6 +211,8 @@ else
         warn "tag ที่ลงท้าย -dirty ถูกทับได้ด้วย build ถัดไปจาก commit เดียวกัน อย่าใช้เป็นจุด rollback"
     fi
     ok "APP_VERSION=${APP_VERSION}  (branch $(git rev-parse --abbrev-ref HEAD))"
+    # CI push image ของทุก commit บน main ไว้ที่ GHCR · ใช้ได้เฉพาะ build จาก commit ที่สะอาด
+    [[ "${APP_VERSION}" != *-dirty ]] && PREBUILT_COMMIT="$(git rev-parse HEAD)"
 fi
 export APP_VERSION
 
@@ -280,8 +315,8 @@ BUILD_PID=""
 BUILD_LOG=""
 if [[ "${EXISTING}" -eq 0 || "${FORCE_RESTORE}" -eq 1 ]]; then
     BUILD_LOG="$(mktemp /tmp/tripitaka-build.XXXXXX)"
-    log "เริ่ม build image ไปพร้อม restore (log: ${BUILD_LOG})"
-    docker compose -f docker-compose.prod.yml build "${DEPLOY_SERVICES[@]}" >"${BUILD_LOG}" 2>&1 &
+    log "เริ่มเตรียม image ไปพร้อม restore (log: ${BUILD_LOG})"
+    build_images "${DEPLOY_SERVICES[@]}" >"${BUILD_LOG}" 2>&1 &
     BUILD_PID=$!
     # die ระหว่าง restore ไม่ต้องปล่อย build วิ่งต่อ
     trap '[[ -n "${BUILD_PID}" ]] && kill "${BUILD_PID}" 2>/dev/null; true' EXIT
@@ -329,19 +364,21 @@ ok "diacritic-insensitive search พร้อม (f_unaccent + 2 GIN indexes)"
 
 # --- 7. start app services --------------------------------------------------
 if [[ -n "${BUILD_PID}" ]]; then
-    log "รอ build image ที่เริ่มไว้ตั้งแต่ก่อน restore..."
+    log "รอ image ที่เริ่มเตรียมไว้ตั้งแต่ก่อน restore..."
     if ! wait "${BUILD_PID}"; then
         sed 's/^/   /' "${BUILD_LOG}" | tail -60 >&2
-        die "build image ล้มเหลว (log เต็มอยู่ที่ ${BUILD_LOG})"
+        die "เตรียม image ล้มเหลว (log เต็มอยู่ที่ ${BUILD_LOG})"
     fi
     BUILD_PID=""
     sed 's/^/   /' "${BUILD_LOG}"
-    ok "build เสร็จ"
+    ok "image พร้อม"
     log "start: ${DEPLOY_SERVICES[*]}"
     docker compose -f docker-compose.prod.yml up -d "${DEPLOY_SERVICES[@]}"
 else
-    log "build + start: ${DEPLOY_SERVICES[*]}"
-    docker compose -f docker-compose.prod.yml up -d --build "${DEPLOY_SERVICES[@]}"
+    log "เตรียม image: ${DEPLOY_SERVICES[*]}"
+    build_images "${DEPLOY_SERVICES[@]}"
+    log "start: ${DEPLOY_SERVICES[*]}"
+    docker compose -f docker-compose.prod.yml up -d "${DEPLOY_SERVICES[@]}"
 fi
 
 # --- 7b. tag latest + บันทึกเวอร์ชัน + เก็บย้อนหลังเท่าที่ตั้งใจ --------------

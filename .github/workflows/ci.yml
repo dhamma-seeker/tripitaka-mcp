@@ -63,6 +63,9 @@ jobs:
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     name: images (${{ matrix.arch }})
+    permissions:
+      contents: read
+      packages: write
     steps:
       # The app image is about 10 GB (PyTorch pulls CUDA wheels on both
       # architectures); the runner's free disk is not enough without this.
@@ -75,13 +78,43 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build app image
-        run: docker build --pull -t tripitaka-mcp:ci .
+        run: docker build --pull --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" -t tripitaka-mcp:ci .
 
       - name: App imports on ${{ matrix.arch }}
         run: docker run --rm tripitaka-mcp:ci python -c "import fastmcp, sentence_transformers, psycopg2; print('imports ok')"
 
       - name: Build Caddy image
-        run: docker build --pull -t tripitaka-caddy:ci -f infra/Dockerfile.caddy infra
+        run: docker build --pull --label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" -t tripitaka-caddy:ci -f infra/Dockerfile.caddy infra
 
       - name: Caddy has the rate_limit plugin
         run: docker run --rm tripitaka-caddy:ci caddy list-modules | grep -q '^http.handlers.rate_limit$'
+
+      # deploy.sh pulls ghcr.io/dhamma-seeker/<repo>:<commit> instead of building
+      # (about 20 minutes on a 2 vCPU droplet). Only commits on main, which is
+      # what prod and the DO standby deploy.
+      - name: Push ${{ matrix.arch }} images to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for repo in tripitaka-mcp tripitaka-caddy; do
+            docker tag "${repo}:ci" "ghcr.io/dhamma-seeker/${repo}:${GITHUB_SHA}-${{ matrix.arch }}"
+            docker push -q "ghcr.io/dhamma-seeker/${repo}:${GITHUB_SHA}-${{ matrix.arch }}"
+          done
+
+  publish:
+    needs: images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      # One tag per commit covering both architectures, so the Oracle host
+      # (arm64) and the DO standby (amd64) pull the same name.
+      - name: Join amd64 and arm64 under one tag
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          for repo in tripitaka-mcp tripitaka-caddy; do
+            base="ghcr.io/dhamma-seeker/${repo}:${GITHUB_SHA}"
+            docker buildx imagetools create -t "${base}" "${base}-amd64" "${base}-arm64"
+          done
