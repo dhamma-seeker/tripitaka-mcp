@@ -3032,6 +3032,13 @@ def verify_quote(text: str, limit: int = 3) -> dict[str, Any]:
     in order), `contained` (present whole) and `spans` (segments joined; >1 →
     `segment_id` is the first only).
 
+    🏷️ **Every match carries `source_layer`**: `four-nikayas` (DN MN SN AN),
+    `early-khuddaka` (Dhp Ud Iti Snp Thag Thig), `vinaya`, or `later-texts`
+    (Niddesa, Paṭisambhidāmagga, Abhidhamma, Milindapañha, Jātaka …). `exact`
+    says the words are in the corpus, not that the Buddha spoke them — the
+    Milindapañha is in here too. When a match is not `four-nikayas`, name the
+    layer it came from.
+
     Args:
         text: The passage as quoted. Diacritics optional, folded internally.
             One line works best; the canon is segmented line by line, so a

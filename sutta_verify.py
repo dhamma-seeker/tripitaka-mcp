@@ -27,6 +27,7 @@ from difflib import SequenceMatcher
 from typing import Any
 
 from db.normalize import fold_pali
+from sutta_strata import source_layer
 
 # token ที่สั้นกว่านี้ไม่ใช้เป็น recall key — `ca` `ti` `so` โผล่ทุกที่
 _MIN_RECALL_LEN = 5
@@ -255,6 +256,11 @@ def verify_quote(
                 continue
             scored.append({
                 "sutta_id": row["sutta_id"],
+                # ชั้นคัมภีร์ของบรรทัดที่ยืนยัน — `exact` บอกแค่ว่าข้อความนี้มีอยู่
+                # ในคลัง ไม่ได้บอกว่าใครพูด มิลินทปัญหาอยู่ในคลังด้วย การตอบ
+                # `exact` เฉยๆ กับประโยคของผู้เล่าเรื่องในนั้น อ่านเหมือนรับรอง
+                # ว่าเป็นพุทธพจน์ (AN 2.24 เนยยัตถะ/นีตัตถะ)
+                "source_layer": source_layer(row["sutta_id"]),
                 "segment_id": row["segment_id"],
                 "field": "pali" if field == "text_pali" else "english",
                 "text": row[field],

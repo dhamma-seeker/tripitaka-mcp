@@ -34,6 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from db.normalize import fold_pali  # noqa: E402
 from sutta_definitions import classify_answer, find_definitions  # noqa: E402
+from sutta_strata import LAYERS  # noqa: E402
 
 SNAPSHOT_PATH = Path(__file__).resolve().parent / "definitions_snapshot.json"
 LIMIT = 5
@@ -248,9 +249,8 @@ def run_invariants() -> int:
     return failed
 
 
-# ชั้นคัมภีร์ที่ `source_layer` เป็นได้ (ดู `_SOURCE_LAYER` ใน sutta_definitions.py)
+# ชั้นคัมภีร์ที่ `source_layer` เป็นได้ (`LAYERS` จาก sutta_strata.py)
 # ใช้สองอย่าง: ตรวจว่า snapshot เป็นรูปแบบใหม่หรือเก่า และกันพิมพ์ผิดตอนแก้ไฟล์ด้วยมือ
-LAYERS = frozenset({"four-nikayas", "early-khuddaka", "vinaya", "later-texts"})
 
 
 def snapshot_of() -> dict[str, list[str]]:

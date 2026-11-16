@@ -28,6 +28,7 @@ import re
 from typing import Any
 
 from db.normalize import fold_pali
+from sutta_strata import SOURCE_LAYER, book_prefix, source_layer, stratum
 
 # ---------------------------------------------------------------------------
 # Definitional markers (folded — ตรงกับ FTS5 `remove_diacritics 2` + fold_pali)
@@ -115,12 +116,6 @@ _FALSE_MARKER_TOKENS = frozenset({"katam"})
 # ประโยค `nibbānaṁ iti vuccatī'ti.` มีเหมือนกันเป๊ะทั้งใน sn1.64, snp5.14 และ cnd17
 # ตอนยุบซ้ำเหลือได้ตัวเดียว การเรียงตาม sutta_id ล้วนๆ ทำให้ `cnd17` ชนะเพราะ c มาก่อน s
 # ซึ่งเอนไปทางคัมภีร์ชั้นหลังอย่างเป็นระบบ (cnd/mnd/ja/kv/mil/pp/vb ขึ้นต้นด้วยอักษรต้นๆ)
-_STRATUM = {
-    **{b: 0 for b in ("dn", "mn", "sn", "an")},                       # สี่นิกาย
-    **{b: 1 for b in ("dhp", "ud", "iti", "snp", "thag", "thig")},    # ขุททกะชั้นต้น
-}
-_STRATUM_VINAYA = 2
-_STRATUM_OTHER = 3  # นิทเทส ปฏิสัมภิทา อภิธรรม มิลินท์ ชาดก อปทาน ฯลฯ
 
 # ชั้นคัมภีร์มีน้ำหนักในคะแนนด้วย ไม่ใช่แค่ตอนเสมอ: คัมภีร์ชั้นหลังใช้สูตร
 # `ayaṁ vuccati X` สั้นๆ บ่อยกว่ามาก พอไม่ถ่วงน้ำหนัก มันจะกวาดอันดับต้นไปหมด
@@ -134,12 +129,6 @@ _STRATUM_PENALTY = {0: 0, 1: -2, 2: -4, 3: -8}
 # ชั้นหลัง ทั้งที่สองอย่างนี้มีน้ำหนักต่างกันมากเวลาจะยกไปอ้าง
 # (AN 2.24 เนยยัตถะ/นีตัตถะ — สิ่งที่ต้องตีความ ต้องไม่ถูกเสนอเป็นสิ่งที่ชัดในตัว
 #  AN 4.3 — ผู้อ่านต้องได้เห็นหลักฐาน ไม่ใช่แค่คำตัดสินของเรา)
-_SOURCE_LAYER = {
-    0: "four-nikayas",     # DN MN SN AN
-    1: "early-khuddaka",   # Dhp Ud Iti Snp Thag Thig
-    2: "vinaya",
-    3: "later-texts",      # นิทเทส ปฏิสัมภิทา อภิธรรม มิลินท์ ชาดก อปทาน ฯลฯ
-}
 
 # สูตรปิดของวิภังค์: คำชี้เฉพาะ + vuccati + ศัพท์ ("ayaṁ vuccati, bhikkhave, taṇhā")
 # ต่างจาก `ārā nibbāna vuccati` ("ท่านชื่อว่าอยู่ไกลจากนิพพาน") ที่ไม่มีคำชี้เฉพาะ
@@ -169,12 +158,6 @@ def _is_closer(tokens: list[str], forms: set[str]) -> bool:
         for i in range(len(tokens) - 1)
     )
 
-
-def _stratum(sutta_id: str) -> int:
-    book = book_prefix(sutta_id)
-    if book in _STRATUM:
-        return _STRATUM[book]
-    return _STRATUM_VINAYA if book.startswith("pli-tv") else _STRATUM_OTHER
 
 # ให้ระยะห่าง token ระหว่าง term กับ marker ที่ยังถือว่า "ใกล้พอจะนิยาม"
 _PROXIMITY_TOKENS = 14
@@ -541,7 +524,7 @@ def _score(row: dict[str, Any], cls: dict[str, Any]) -> int:
     score += max(0, _PROXIMITY_TOKENS - cls["min_distance"])
     if cls.get("closer"):
         score += _CLOSER_BONUS
-    score += _STRATUM_PENALTY[_stratum(row["sutta_id"])]
+    score += _STRATUM_PENALTY[stratum(row["sutta_id"])]
     return score
 
 
@@ -593,16 +576,6 @@ def _detail_from_block(block: list[dict[str, Any]]) -> str:
     for seg in block:
         toks.update(_tokens(fold_pali(seg["pali"])))
     return "enumerative" if (toks & _NUMERAL_WORDS) else "descriptive"
-
-
-def book_prefix(sutta_id: str) -> str:
-    """`mn141` → `mn`, `mil7.2.2` → `mil`, `pli-tv-bu-vb-ss11` → `pli-tv-bu-vb-ss`.
-
-    The leading non-digit run of a sutta_id is its book, one-to-one with
-    `book.code` across the whole corpus (verified against the DB).
-    """
-    head = re.split(r"\d", sutta_id, maxsplit=1)[0].rstrip("-.")
-    return head or sutta_id
 
 
 def _in_sources(sutta_id: str, sources: set[str]) -> bool:
@@ -696,7 +669,7 @@ def find_definitions(
     def _rank(item: dict[str, Any]) -> tuple[float, int, str, str]:
         return (
             -item["score"],
-            _stratum(item["sutta_id"]),
+            stratum(item["sutta_id"]),
             item["sutta_id"],
             item["segment_id"],
         )
@@ -721,9 +694,9 @@ def find_definitions(
     n_ctx = min(2, limit // 3, len(ctx))
     top = sorted(main[: limit - n_ctx] + ctx[:n_ctx], key=_rank)
 
-    # ป้ายที่มา (ดู `_SOURCE_LAYER`) — แสดงหลักฐานให้ผู้อ่านตัดสินเอง
+    # ป้ายที่มา (ดู `sutta_strata.SOURCE_LAYER`) — แสดงหลักฐานให้ผู้อ่านตัดสินเอง
     for item in top:
-        item["source_layer"] = _SOURCE_LAYER[_stratum(item["sutta_id"])]
+        item["source_layer"] = source_layer(item["sutta_id"])
 
     # block-windowing — ดึงท่อนนิยามเต็มรอบ anchor + refine descriptive/enumerative
     # จาก context ทั้ง block (ทำเฉพาะ top `limit` เพื่อคุมจำนวน query)
@@ -827,7 +800,7 @@ def parent_set(cur, backend_name: str, term: str) -> str | None:
 def classify_answer(
     cur, backend_name: str, term: str, results: list[dict[str, Any]]
 ) -> tuple[str, str | None]:
-    """(answer_type, ชื่อหมู่ถ้าเป็น patipuccha) — ดู `_SOURCE_LAYER` ประกอบ"""
+    """(answer_type, ชื่อหมู่ถ้าเป็น patipuccha) — ดู `sutta_strata.SOURCE_LAYER` ประกอบ"""
     if not results:
         return "thapaniya", None
     direct = [r for r in results if r["kind"] == "direct"]
@@ -836,7 +809,7 @@ def classify_answer(
 
     # "อ่อน" = นิยามที่ได้มาจากคัมภีร์ชั้นหลังล้วน ไม่มีพระโอษฐ์ในสี่นิกายเลย
     # เป็นสัญญาณว่าศัพท์นี้อาจไม่ได้ถูกนิยามในฐานะตัวมันเอง
-    if all(r.get("source_layer") == _SOURCE_LAYER[3] for r in direct):
+    if all(r.get("source_layer") == SOURCE_LAYER[3] for r in direct):
         parent = parent_set(cur, backend_name, term)
         if parent:
             return "patipuccha", parent
