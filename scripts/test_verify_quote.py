@@ -19,6 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from sutta_strata import LAYERS, source_layer  # noqa: E402
 from sutta_verify import verify_quote  # noqa: E402
 
 # (ข้อความ, verdict ที่ต้องได้, segment ที่ต้องเป็นอันดับหนึ่ง | None, ทำไมถึงคุมข้อนี้)
@@ -117,7 +118,15 @@ def run_cases(cases, *, known_fail: bool = False) -> tuple[int, int]:
         r = rows(text)
         got = r["verdict"]
         top = r["matches"][0]["segment_id"] if r["matches"] else None
-        ok = got == want_verdict and (want_seg is None or top == want_seg)
+        # ทุกแถวต้องมีป้ายชั้นคัมภีร์ที่ตรงกับ sutta_id ของมัน — `exact` บอกแค่ว่า
+        # ข้อความมีอยู่ในคลัง ป้ายนี้คือสิ่งที่บอกว่ามาจากชั้นไหน (AN 2.24)
+        layers_ok = all(
+            m.get("source_layer") in LAYERS
+            and m["source_layer"] == source_layer(m["sutta_id"])
+            for m in r["matches"]
+        )
+        ok = (got == want_verdict and (want_seg is None or top == want_seg)
+              and layers_ok)
         mark = ("🎉" if ok else "⏳") if known_fail else ("✅" if ok else "❌")
         print(f"  {mark} {want_verdict:<9} {text[:46]}")
         if ok and known_fail:
@@ -133,7 +142,8 @@ def run_cases(cases, *, known_fail: bool = False) -> tuple[int, int]:
         else:
             failed += 1
         print(f"       why: {why}")
-        print(f"       got: verdict={got} top={top}")
+        print(f"       got: verdict={got} top={top}"
+              + ("" if layers_ok else "  ⚠ source_layer หายหรือไม่ตรงชั้น"))
         for m in r["matches"]:
             print(f"            {m['similarity']:.3f} {m['segment_id']} {(m['text'] or '')[:50]}")
     return failed, surprises
