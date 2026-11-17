@@ -1809,8 +1809,12 @@ def search_semantic(
 ) -> list[dict[str, Any]]:
     """Semantic search — match by meaning, not exact words.
 
-    Uses vector similarity (cosine distance) over `text_pali` embedded with
-    a multilingual MiniLM model.
+    Uses vector similarity (cosine distance) over a multilingual MiniLM
+    embedding of each segment. What is embedded is the Pāli joined with the
+    segment's English and Thai translations where it has them, as one
+    string — not the Pāli alone. So an English query is compared against
+    text that includes English, and a segment with no translation is
+    represented by its Pāli alone.
 
     🤔 **In most cases you should use `search_hybrid` instead** — it
     combines this semantic search with keyword search and ranks better.
@@ -1821,8 +1825,14 @@ def search_semantic(
     - To debug what semantic alone picks up vs keyword
 
     ⚠️ Known limitations:
-    - The index is **Pāli only** (English/Thai queries pass through the
-      multilingual embedding but the model isn't tuned on Pāli)
+    - **A Pāli query is the weakest way to use this tool.** The model
+      barely separates Pāli content: measured on this corpus, the exact
+      Pāli text of a line retrieves unrelated Pāli lines at distance
+      0.089, closer than any true English match we have measured
+      (0.14-0.20). Search Pāli words with `search_by_keyword` instead.
+    - Because every vector mixes Pāli with the translation, segments sit
+      closer together than their meanings warrant; short segments, and
+      sutta titles in particular, surface easily
     - English queries usually embed better than Thai (model is EN-primary)
     - For specific Pāli terms (`appamāda`, `dukkha`), exact match is
       better — use `search_by_keyword` instead
@@ -1900,6 +1910,7 @@ def search_semantic(
     conn = backend.connect()
     try:
         cur = backend.cursor(conn)
+        _set_ef_search(cur)
 
         cur.execute(
             """
@@ -1944,6 +1955,41 @@ def search_semantic(
     finally:
         cur.close()
         backend.release(conn)
+
+
+_HNSW_EF_SEARCH = int(os.getenv("HNSW_EF_SEARCH", "100"))
+
+_EF_SEARCH_NOTE = """ทำไมต้องตั้ง hnsw.ef_search เองทุกครั้งก่อนค้นเวกเตอร์
+
+ค่า default ของ pgvector คือ 40 ซึ่งต่ำเกินไปสำหรับคลังนี้ เพราะเวกเตอร์ 444,673 ตัว
+กระจุกกันแน่น (ทุกเวกเตอร์เฉลี่ย token บาลีกับคำแปลรวมกัน บาลีจึงดึงทุกตัวเข้าหากัน)
+HNSW จึงเดินกราฟไม่ถึงย่านที่ถูกต้อง
+
+วัดกับ prod 2026-11-17 เทียบ recall@10 กับ exact scan (ปิด indexscan):
+  คำค้น = ข้อความอังกฤษของ mn22:13.1  ef=40 ได้ 3/10 และ **พลาดอันดับ 1 จริง**
+    ที่ระยะ 0.1662 ไปทั้งตัว สิ่งที่คืนมาใกล้สุดคือ 0.4303 · ef=100 ได้ 10/10
+  คำค้น = the night of the Buddha's awakening   ef=40 ได้ 9/10 · ef=100 ได้ 10/10
+  คำค้น = the man who refuses treatment …       ef=40 ได้ 8/10 · ef=100 ได้ 10/10
+ที่ 200 และ 400 ไม่ได้อะไรเพิ่มจาก 100 จึงตั้ง 100
+
+**สิ่งที่การแก้นี้ให้:** ผลที่คืนมาตรงกับการค้นแบบไล่ทั้งคลังในเคสที่วัด
+**สิ่งที่มันไม่ให้:** ความถูกต้องของอันดับ ถ้าเพื่อนบ้านที่ใกล้ที่สุดจริงๆ ไม่ใช่คำตอบ
+ที่คนถามต้องการ ef_search ช่วยไม่ได้ เช่น "คืนตรัสรู้" ที่ exact scan เองก็คืนชื่อสูตร
+กับคาถาอปทาน ไม่มี MN 4/36/85 — อันนั้นเป็นเรื่องของโมเดล ไม่ใช่ของ index
+"""
+
+
+def _set_ef_search(cur) -> None:
+    """ตั้ง hnsw.ef_search ก่อนคิวรีเวกเตอร์ทุกครั้ง — ดู _EF_SEARCH_NOTE
+
+    connection มาจาก pool และถูกใช้ซ้ำ ค่าที่ SET จึงค้างอยู่กับ connection นั้น
+    ซึ่งไม่เป็นไรเพราะตั้งค่าเดิมทุกครั้ง · พังเมื่อไหร่ให้ค้นต่อด้วยค่า default
+    ยอมได้ผลแย่ลงดีกว่าทั้งคำขอล้มเหลว
+    """
+    try:
+        cur.execute(f"SET hnsw.ef_search = {_HNSW_EF_SEARCH}")
+    except Exception:
+        pass
 
 
 _SORT_TIEBREAK_NOTE = """ทำไมตัวตัดสินท้ายของ vector search ถึงอยู่ใน Python ไม่ใช่ SQL
@@ -2109,7 +2155,8 @@ def search_hybrid(
     conn = backend.connect()
     try:
         cur = backend.cursor(conn)
-        
+        _set_ef_search(cur)
+
         # 1. Semantic Search (Top 50)
         cur.execute(
             """
