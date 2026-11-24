@@ -19,7 +19,7 @@ load_dotenv()
 
 MODEL_NAME = os.getenv(
     "EMBEDDING_MODEL",
-    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "dhamma-seeker/tripitaka-mcp-embedder",
 )
 
 
