@@ -323,14 +323,14 @@ Details in [`skills/README.md`](./skills/README.md).
 
 ### ⚠️ Note on `search_semantic`
 
-The vector index is built only on `text_pali`, using a multilingual MiniLM model that was not trained specifically on Pāli. (`bilara-data` carries Thai for 6 files in all, and the public server loads no Thai edition.) So:
+The vector index is built on `text_pali` alone, using a model fine-tuned on Pāli↔English aligned pairs (bilara-data), so English→Pāli cross-lingual retrieval works directly. (`bilara-data` carries Thai for 6 files in all, and the public server loads no Thai edition.) So:
 
-- Pāli and English queries come back accurate, with good cross-lingual alignment.
+- English queries retrieve Pāli passages accurately (cross-lingual).
 - Thai queries return loose matches and aren't recommended.
 - For an exact keyword like `appamāda`, `search_by_keyword` is more precise.
-- For general-purpose search, `search_hybrid` (keyword + semantic) tolerates the limitation best.
+- For general-purpose search, `search_hybrid` (keyword + semantic + multi-level chunk/sutta) tolerates the limitation best.
 
-Moving to a Pāli-trained embedding model such as bge-m3, and embedding the Thai edition, are both on the roadmap.
+Embedding the Thai edition, and training on synthetic question data to improve concept queries, are both on the roadmap.
 
 ## 📁 Project structure
 
