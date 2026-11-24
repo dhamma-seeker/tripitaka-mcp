@@ -17,6 +17,7 @@ env/
 
 # Docker
 postgres_data/
+postgres_test_data/
 
 # ประวัติ deploy (สร้างบนเครื่อง prod โดย deploy.sh / rollback.sh)
 .deploy-history
