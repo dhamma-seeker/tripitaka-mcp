@@ -2157,20 +2157,53 @@ def search_hybrid(
         cur = backend.cursor(conn)
         _set_ef_search(cur)
 
-        # 1. Semantic Search (Top 50)
+        # 1. Semantic Search (Top 50) — segment level
         cur.execute(
             """
-            SELECT seg.id, seg.embedding <=> %s::vector AS distance
+            SELECT seg.id, sec.sutta_id, seg.embedding <=> %s::vector AS distance
             FROM segment seg
+            JOIN section sec ON seg.section_id = sec.id
             WHERE seg.embedding IS NOT NULL
             ORDER BY distance
             LIMIT 50
             """,
             (query_embedding,)
         )
-        # (id, distance) → เรียงซ้ำด้วย (distance, id) ก่อนแจกอันดับ ดู _SORT_TIEBREAK_NOTE
-        semantic_results = sorted(cur.fetchall(), key=lambda r: (r[1], r[0]))
+        # (id, sutta_id, distance) → เรียงซ้ำด้วย (distance, id) ก่อนแจกอันดับ ดู _SORT_TIEBREAK_NOTE
+        semantic_results = sorted(cur.fetchall(), key=lambda r: (r[2], r[0]))
         semantic_ranks = {row[0]: rank + 1 for rank, row in enumerate(semantic_results)}
+        seg_to_sutta = {row[0]: row[1] for row in semantic_results}
+
+        # 1b. Multi-level semantic: sutta + chunk (idea-level signal)
+        #     Degrade gracefully ถ้าตารางยังไม่ถูก build (ข้ามไป ไม่พังทั้งคำขอ)
+        sutta_ranks: dict[str, int] = {}
+        try:
+            cur.execute(
+                """
+                SELECT sec.sutta_id, se.embedding <=> %s::vector AS distance
+                FROM sutta_embedding se
+                JOIN section sec ON se.section_id = sec.id
+                ORDER BY distance
+                LIMIT 30
+                """,
+                (query_embedding,)
+            )
+            sutta_ranks = {row[0]: rank + 1 for rank, row in enumerate(cur.fetchall())}
+            cur.execute(
+                """
+                SELECT sec.sutta_id, ce.embedding <=> %s::vector AS distance
+                FROM chunk_embedding ce
+                JOIN section sec ON ce.section_id = sec.id
+                ORDER BY distance
+                LIMIT 30
+                """,
+                (query_embedding,)
+            )
+            for row in cur.fetchall():
+                if row[0] not in sutta_ranks:
+                    sutta_ranks[row[0]] = len(sutta_ranks) + 1
+        except Exception:
+            sutta_ranks = {}
 
         # 2. Keyword Search (Top 50)
         # Tokenize query: multi-word phrases rarely appear verbatim in any column,
@@ -2233,6 +2266,9 @@ def search_hybrid(
                 score += 1.0 / (k + semantic_ranks[seg_id])
             if seg_id in keyword_ranks:
                 score += 1.0 / (k + keyword_ranks[seg_id])
+            sutta_id = seg_to_sutta.get(seg_id)
+            if sutta_id and sutta_id in sutta_ranks:
+                score += 1.0 / (k + sutta_ranks[sutta_id])
             rrf_scores[seg_id] = score
             
         # Select Top N

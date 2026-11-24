@@ -104,6 +104,26 @@ def create_tables() -> None:
         """)
 
         # ------------------------------------------------------------------
+        # ระดับ chunk / sutta สำหรับ multi-level semantic retrieval
+        # (chunk = กลุ่ม 6 segment ติดกันใน section เดียว · sutta = ค่าเฉลี่ยเวกเตอร์ของ section)
+        # ------------------------------------------------------------------
+        cur.execute(f"""
+            CREATE TABLE IF NOT EXISTS chunk_embedding (
+                id              SERIAL PRIMARY KEY,
+                section_id      INTEGER NOT NULL REFERENCES section(id) ON DELETE CASCADE,
+                start_segment_id INTEGER NOT NULL REFERENCES segment(id) ON DELETE CASCADE,
+                embedding       vector({EMBEDDING_DIMENSIONS}),
+                UNIQUE (section_id, start_segment_id)
+            );
+        """)
+        cur.execute(f"""
+            CREATE TABLE IF NOT EXISTS sutta_embedding (
+                section_id      INTEGER PRIMARY KEY REFERENCES section(id) ON DELETE CASCADE,
+                embedding       vector({EMBEDDING_DIMENSIONS})
+            );
+        """)
+
+        # ------------------------------------------------------------------
         # Indexes สำหรับ performance
         # ------------------------------------------------------------------
 
