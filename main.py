@@ -1809,12 +1809,12 @@ def search_semantic(
 ) -> list[dict[str, Any]]:
     """Semantic search — match by meaning, not exact words.
 
-    Uses vector similarity (cosine distance) over a multilingual MiniLM
-    embedding of each segment. What is embedded is the Pāli joined with the
-    segment's English and Thai translations where it has them, as one
-    string — not the Pāli alone. So an English query is compared against
-    text that includes English, and a segment with no translation is
-    represented by its Pāli alone.
+    Uses vector similarity (cosine distance) over a fine-tuned multilingual
+    embedding model. What is embedded is the segment's **Pāli text alone** —
+    the model was fine-tuned on Pāli↔English aligned pairs (bilara-data), so
+    an English query is compared directly against the Pāli text (cross-lingual),
+    with no English/Thai translation mixed into the vector. A segment with no
+    translation is represented by its Pāli exactly like any other segment.
 
     🤔 **In most cases you should use `search_hybrid` instead** — it
     combines this semantic search with keyword search and ranks better.
@@ -1825,14 +1825,9 @@ def search_semantic(
     - To debug what semantic alone picks up vs keyword
 
     ⚠️ Known limitations:
-    - **A Pāli query is the weakest way to use this tool.** The model
-      barely separates Pāli content: measured on this corpus, the exact
-      Pāli text of a line retrieves unrelated Pāli lines at distance
-      0.089, closer than any true English match we have measured
-      (0.14-0.20). Search Pāli words with `search_by_keyword` instead.
-    - Because every vector mixes Pāli with the translation, segments sit
-      closer together than their meanings warrant; short segments, and
-      sutta titles in particular, surface easily
+    - The model was fine-tuned for English→Pāli cross-lingual retrieval, so
+      **English queries work best**; Pāli→Pāli queries are less tested. For
+      exact Pāli terms, prefer `search_by_keyword`.
     - English queries usually embed better than Thai (model is EN-primary)
     - For specific Pāli terms (`appamāda`, `dukkha`), exact match is
       better — use `search_by_keyword` instead
